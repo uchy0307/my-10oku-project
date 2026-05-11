@@ -1,0 +1,10 @@
+node_modules/
+.env
+.env.local
+*.log
+.DS_Store
+
+# YouTube出力物：生成ファイルは除外、state.jsonと.gitkeepは残す
+youtube/output/*
+!youtube/output/.gitkeep
+!youtube/output/state.json

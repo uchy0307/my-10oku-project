@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "001",
+      "title": "（タイトル）",
+      "body": "（本文）",
+      "publish": false,
+      "status": "pending",
+      "scheduled_at": null,
+      "posted_at": null,
+      "error": null
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+name: toi-suite Deploy Hook
+
+# toi-suite 本体は別repo（uchy0307/toi-suite）でVercelが自動デプロイを行うため、
+# 本ワークフローは「マスタリポジトリ側からのdeploy通知」を打つ補助的な役割です。
+# Vercel Deploy Hook URLを Secrets に登録すれば実稼働、未登録ならlogのみ。
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'apps/toi-suite-link.md'
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Vercel deploy hook (if configured)
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$VERCEL_DEPLOY_HOOK_URL" ]; then
+            echo "VERCEL_DEPLOY_HOOK_URL not set — skipping (Vercel auto-deploy on toi-suite repo is primary)."
+            exit 0
+          fi
+          curl -X POST "$VERCEL_DEPLOY_HOOK_URL"
+          echo "Vercel deploy hook triggered."

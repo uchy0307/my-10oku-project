@@ -1,0 +1,88 @@
+name: note Auto Post (B-plan / slow & safe)
+
+# ⚠️ note.com の規約上、自動投稿はグレーゾーン。
+# 本workflowは「1日2本以下・ランダム遅延・人間操作シミュレート」で
+# BAN回避を試みる。利用者責任で運用すること。
+
+on:
+  workflow_dispatch:
+    inputs:
+      max:
+        description: '1回の起動で投稿する最大件数'
+        required: false
+        default: '1'
+  schedule:
+    # 1日2回（UTC基準）。実行時刻はworkflow内で更にランダム遅延を挟む。
+    # 03:17 UTC = 日本時間 12:17
+    - cron: '17 3 * * *'
+    # 11:43 UTC = 日本時間 20:43
+    - cron: '43 11 * * *'
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Random pre-delay (0-15 min)
+        run: |
+          DELAY=$((RANDOM % 900))
+          echo "Sleeping $DELAY seconds before posting (human-like scatter)..."
+          sleep $DELAY
+
+      - name: Run note auto post
+        id: post
+        env:
+          NOTE_EMAIL: ${{ secrets.NOTE_EMAIL }}
+          NOTE_PASSWORD: ${{ secrets.NOTE_PASSWORD }}
+        run: |
+          MAX_INPUT="${{ github.event.inputs.max }}"
+          MAX="${MAX_INPUT:-1}"
+          node note-auto/post.mjs --max=$MAX
+
+      - name: Commit & push queue.json changes
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add note-auto/queue.json || true
+          if git diff --staged --quiet; then
+            echo "No queue changes to commit."
+          else
+            git commit -m "chore(note): update queue.json [skip ci]"
+            git push
+          fi
+
+      - name: Open issue on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "note auto post failed: $(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --body "note 自動投稿 workflow が失敗しました。
+
+          Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          queue.json の \`status: \"error\"\` を確認し、必要に応じて手動投稿に切り替えてください。" \
+            --label "automation,note,failure" || echo "issue create skipped (label may not exist)"

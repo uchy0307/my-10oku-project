@@ -1,0 +1,3 @@
+# このフォルダはGitHub Actionsが生成物（台本・音声・動画・state.json）を書き出す場所です。
+# .gitignore で中身は除外していますが、フォルダ自体は残すため .gitkeep を置いています。
+# state.json のみ workflow から個別にcommit & pushされます。

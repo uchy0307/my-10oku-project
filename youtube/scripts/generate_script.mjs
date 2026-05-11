@@ -16,7 +16,7 @@ const TOPICS_FILE = path.join(ROOT, 'topics.json');
 const STATE_FILE = path.join(OUTPUT_DIR, 'state.json');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-pro-latest';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 const PROMPT_TEMPLATE = (title, category) => `あなたは「侍の美学」を体現する歴史ナレーション作家です。

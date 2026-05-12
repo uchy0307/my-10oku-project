@@ -172,16 +172,23 @@ async function scrapeAllPosts(page) {
       return results;
     });
 
-    console.log(`[INFO]   ${items.length} cards found`);
-    for (const it of items) {
-      const status = it.status || defaultStatus;
-      if (!collected.has(it.draftId)) {
-        collected.set(it.draftId, { ...it, status });
-      } else {
-        // 既存より長いタイトル or published情報があれば更新
-        const prev = collected.get(it.draftId);
-        if (!prev.title || it.title.length > prev.title.length) prev.title = it.title;
-        if (status === 'published') prev.status = 'published';
+      console.log(`[INFO]   ${items.length} cards found`);
+      for (const it of items) {
+        const status = it.status || defaultStatus;
+        if (!collected.has(it.draftId)) {
+          collected.set(it.draftId, { ...it, status });
+        } else {
+          // 既存より長いタイトル or published情報があれば更新
+          const prev = collected.get(it.draftId);
+          if (!prev.title || it.title.length > prev.title.length) prev.title = it.title;
+          if (status === 'published') prev.status = 'published';
+        }
+      }
+
+      // このページで新規追加が無ければ次のbaseへ
+      if (collected.size === beforeCount && pageNum > 1) {
+        console.log(`[INFO]   no new items on page=${pageNum}, moving on`);
+        break;
       }
     }
   }

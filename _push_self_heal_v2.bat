@@ -8,14 +8,17 @@ if "%GITHUB_TOKEN%"=="" (
   exit /b 1
 )
 
-echo [1/3] git add -A
+echo [1/4] git fetch origin
+git fetch origin
+
+echo [2/4] git add -A
 git add -A
 
-echo [2/3] git commit (may say nothing to commit if already done)
+echo [3/4] git commit
 git commit -m "feat: self-heal + note draft-edit + YouTube full impl (per Gemini spec)" --allow-empty
 
-echo [3/3] git push origin main --force-with-lease (overwrite remote with our state)
-git push origin main --force-with-lease
+echo [4/4] git push origin main --force (overwrite remote)
+git push origin main --force
 
 echo.
 echo === Done ===

@@ -74,43 +74,62 @@ async function loadLocalBody(num) {
 async function scrapeAllPosts(page) {
   const collected = new Map(); // draftId -> { draftId, title, status }
 
-  // 下書き一覧 + 公開済 一覧 両方を巡回
-  const urls = [
+  // 下書き一覧 + 公開済 一覧 両方を、ページネーション巡回
+  const bases = [
     { url: 'https://note.com/notes?status=draft', defaultStatus: 'draft' },
     { url: 'https://note.com/notes?status=published', defaultStatus: 'published' },
   ];
 
-  for (const { url, defaultStatus } of urls) {
-    console.log(`[INFO] scraping: ${url} (defaultStatus=${defaultStatus})`);
-    try {
-      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    } catch (err) {
-      console.warn(`[WARN] navigation failed: ${url}: ${err.message}`);
-      continue;
-    }
-    // 認証状態の診断
-    const actualUrl = page.url();
-    const pageTitle = await page.title();
-    console.log(`[DEBUG]   actual URL: ${actualUrl}`);
-    console.log(`[DEBUG]   page title: ${pageTitle}`);
-    const hasLoginBtn = await page.evaluate(() => {
-      const t = document.body.innerText || '';
-      return t.includes('ログイン') && t.includes('会員登録');
-    }).catch(() => false);
-    if (hasLoginBtn) {
-      console.warn(`[WARN]   ログインが効いていません（"ログイン/会員登録"ボタン検出）`);
-    }
-    await sleep(3000);
+  for (const { url: baseUrl, defaultStatus } of bases) {
+    console.log(`[INFO] scraping base: ${baseUrl} (defaultStatus=${defaultStatus})`);
+    let prevTotalForThisBase = 0;
+    for (let pageNum = 1; pageNum <= 50; pageNum++) {
+      const url = baseUrl.includes('?') ? `${baseUrl}&page=${pageNum}` : `${baseUrl}?page=${pageNum}`;
+      try {
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+      } catch (err) {
+        console.warn(`[WARN] navigation failed: ${url}: ${err.message}`);
+        break;
+      }
+      const actualUrl = page.url();
+      if (pageNum === 1) {
+        const pageTitle = await page.title();
+        console.log(`[DEBUG]   page=${pageNum} actual URL: ${actualUrl}`);
+        console.log(`[DEBUG]   page=${pageNum} page title: ${pageTitle}`);
+        const hasLoginBtn = await page.evaluate(() => {
+          const t = document.body.innerText || '';
+          return t.includes('ログイン') && t.includes('会員登録');
+        }).catch(() => false);
+        if (hasLoginBtn) {
+          console.warn(`[WARN]   ログインが効いていません（"ログイン/会員登録"ボタン検出）`);
+        }
+      }
+      await sleep(2000);
 
-    // 無限スクロール対応: ページ末尾までスクロール
-    let lastHeight = 0;
-    for (let i = 0; i < 40; i++) {
-      const height = await page.evaluate(() => document.body.scrollHeight);
-      if (height === lastHeight) break;
-      lastHeight = height;
-      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-      await sleep(1500);
-    }
+      // 各ページ内でスクロール（lazy load対応）
+      let lastHeight = 0;
+      for (let i = 0; i < 20; i++) {
+        const height = await page.evaluate(() => document.body.scrollHeight);
+        if (height === lastHeight) break;
+        lastHeight = height;
+        await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+        await sleep(800);
+      }
+      // 「もっと見る」「次へ」「Load more」ボタンが見つかれば全部クリック
+      try {
+        for (let k = 0; k < 30; k++) {
+          const clicked = await page.evaluate(() => {
+            const btns = Array.from(document.querySelectorAll('button, a'));
+            const target = btns.find((b) => /もっと|続きを|Load more|次へ|次の/.test((b.textContent || '').trim()));
+            if (target) { target.click(); return true; }
+            return false;
+          });
+          if (!clicked) break;
+          await sleep(1200);
+        }
+      } catch {}
+      // この時点でのページ収集
+      const beforeCount = collected.size;
 
     // ページ内の全カードから draftId とタイトルを取り出す
     const items = await page.evaluate(() => {

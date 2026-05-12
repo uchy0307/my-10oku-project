@@ -48,6 +48,13 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
+      - name: Sync drafts from note.com (auto-match by #NNN)
+        id: sync
+        env:
+          NOTE_STORAGE_STATE: ${{ secrets.NOTE_STORAGE_STATE }}
+        run: |
+          node note-auto/sync-drafts.mjs
+
       - name: Random pre-delay (0-15 min)
         run: |
           DELAY=$((RANDOM % 900))
@@ -63,15 +70,15 @@ jobs:
           MAX="${MAX_INPUT:-1}"
           node note-auto/post.mjs --max=$MAX
 
-      - name: Commit & push queue.json changes
+      - name: Commit & push queue.json / articles changes
         if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add note-auto/queue.json || true
+          git add note-auto/queue.json articles/ || true
           if git diff --staged --quiet; then
-            echo "No queue changes to commit."
+            echo "No queue/articles changes to commit."
           else
-            git commit -m "chore(note): update queue.json [skip ci]"
+            git commit -m "chore(note): sync drafts & update queue.json [skip ci]"
             git push
           fi

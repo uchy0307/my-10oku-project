@@ -77,7 +77,7 @@ async function uploadVideo(youtube, videoPath, meta) {
           defaultAudioLanguage: meta.defaultLanguage || 'ja',
         },
         status: {
-          privacyStatus: meta.privacyStatus || 'private',
+          privacyStatus: meta.privacyStatus || 'public',
           selfDeclaredMadeForKids: !!meta.madeForKids,
         },
       },

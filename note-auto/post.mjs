@@ -18,11 +18,33 @@
 
 import { chromium } from 'playwright';
 import { readFile, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const QUEUE_PATH = join(__dirname, 'queue.json');
+const ARTICLES_DIR = join(__dirname, '..', 'articles');
+
+/**
+ * queue.json item から body を解決する。
+ * 優先順位:
+ *   1. item.body があればそれを使う (旧互換)
+ *   2. articles/note_${item.id}.md を読み込む (新方式)
+ *      ※ sync-drafts.mjs が _hasLocalBody フラグを立てている。
+ */
+async function resolveBody(item) {
+  if (item.body && typeof item.body === 'string' && item.body.trim().length > 0) {
+    return item.body;
+  }
+  const fp = join(ARTICLES_DIR, `note_${item.id}.md`);
+  if (existsSync(fp)) {
+    return await readFile(fp, 'utf-8');
+  }
+  throw new Error(
+    `本文が見つかりません: item.body も articles/note_${item.id}.md も存在しません。`,
+  );
+}
 
 // note.com DOMセレクタ（変更時はここを更新）
 const SELECTORS = {
@@ -79,6 +101,7 @@ async function editDraft(page, item) {
   if (!item.draftId) {
     throw new Error(`item ${item.id} に draftId がありません。`);
   }
+  const resolvedBody = await resolveBody(item);
   const draftUrl = `https://note.com/notes/${item.draftId}/edit`;
   console.log(`[INFO] open draft: ${draftUrl}`);
   await page.goto(draftUrl, { waitUntil: 'domcontentloaded' });
@@ -114,7 +137,7 @@ async function editDraft(page, item) {
   await page.keyboard.press('Delete');
   await randDelay(500, 1000);
 
-  const paragraphs = (item.body || '').split('\n');
+  const paragraphs = (resolvedBody || '').split('\n');
   for (let i = 0; i < paragraphs.length; i++) {
     const line = paragraphs[i];
     if (line.length > 0) {

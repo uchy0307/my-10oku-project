@@ -1,0 +1,42 @@
+name: Self-Heal on Failure
+
+# 失敗した上流 workflow を検知し、Gemini で原因推定 + 修正案を GitHub Issue として起票する。
+# 同一エラーの再発は repeated-failure ラベルで強調する。
+on:
+  workflow_run:
+    workflows:
+      - "YouTube Auto Cycle"
+      - "note Auto Post (B-plan / slow & safe)"
+    types: [completed]
+
+permissions:
+  contents: read
+  issues: write
+  actions: read
+
+jobs:
+  heal:
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci || npm install --no-audit --no-fund
+
+      - name: Run self-heal
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WORKFLOW_RUN_ID: ${{ github.event.workflow_run.id }}
+          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+          WORKFLOW_HTML_URL: ${{ github.event.workflow_run.html_url }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: node scripts/self_heal.mjs

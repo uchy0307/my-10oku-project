@@ -3,6 +3,10 @@ name: note Auto Post (B-plan / slow & safe)
 # ⚠️ note.com の規約上、自動投稿はグレーゾーン。
 # 本workflowは「1日2本以下・ランダム遅延・人間操作シミュレート」で
 # BAN回避を試みる。利用者責任で運用すること。
+#
+# 新方針: 完全自動ログインは bot 検知で失敗しやすいため、
+# NOTE_STORAGE_STATE （Playwright storageState JSON）に保存された
+# 認証済セッションを再利用して下書きを編集・保存する。
 
 on:
   workflow_dispatch:
@@ -53,8 +57,7 @@ jobs:
       - name: Run note auto post
         id: post
         env:
-          NOTE_EMAIL: ${{ secrets.NOTE_EMAIL }}
-          NOTE_PASSWORD: ${{ secrets.NOTE_PASSWORD }}
+          NOTE_STORAGE_STATE: ${{ secrets.NOTE_STORAGE_STATE }}
         run: |
           MAX_INPUT="${{ github.event.inputs.max }}"
           MAX="${MAX_INPUT:-1}"
@@ -72,17 +75,3 @@ jobs:
             git commit -m "chore(note): update queue.json [skip ci]"
             git push
           fi
-
-      - name: Open issue on failure
-        if: failure()
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh issue create \
-            --title "note auto post failed: $(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            --body "note 自動投稿 workflow が失敗しました。
-
-          Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
-          queue.json の \`status: \"error\"\` を確認し、必要に応じて手動投稿に切り替えてください。" \
-            --label "automation,note,failure" || echo "issue create skipped (label may not exist)"

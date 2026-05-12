@@ -1,12 +1,20 @@
 // youtube/scripts/upload_youtube.mjs
-// YouTube Data API v3 で動画アップロード（resumable upload）
-// 現状はSTUB ─ 動画ファイル未生成のため「skip upload」モード
-// ただし、state.json には投稿ジョブの記録を残し、ファイル生成後の本実装に備える
+// YouTube Data API v3（googleapis）で動画をアップロードする本実装。
+//
+// env:
+//   YOUTUBE_CLIENT_ID
+//   YOUTUBE_CLIENT_SECRET
+//   YOUTUBE_REFRESH_TOKEN
+//
+// 入力: youtube/output/<id>_video.mp4 + <id>_meta.json
+// 出力: youtube/output/<id>_uploaded.json （videoId, url, snippet）
+// state.json も更新。
 
 import fs from 'node:fs/promises';
+import { createReadStream } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import fetch from 'node-fetch';
+import { google } from 'googleapis';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,9 +22,11 @@ const ROOT = path.resolve(__dirname, '..');
 const OUTPUT_DIR = path.join(ROOT, 'output');
 const STATE_FILE = path.join(OUTPUT_DIR, 'state.json');
 
-const YOUTUBE_CLIENT_ID = process.env.YOUTUBE_CLIENT_ID;
-const YOUTUBE_CLIENT_SECRET = process.env.YOUTUBE_CLIENT_SECRET;
-const YOUTUBE_REFRESH_TOKEN = process.env.YOUTUBE_REFRESH_TOKEN;
+const {
+  YOUTUBE_CLIENT_ID,
+  YOUTUBE_CLIENT_SECRET,
+  YOUTUBE_REFRESH_TOKEN,
+} = process.env;
 
 async function loadState() {
   const raw = await fs.readFile(STATE_FILE, 'utf-8');
@@ -36,70 +46,55 @@ async function fileExists(p) {
   }
 }
 
-// OAuth refresh token から access token を取得
-async function refreshAccessToken() {
+function buildOauthClient() {
   if (!YOUTUBE_CLIENT_ID || !YOUTUBE_CLIENT_SECRET || !YOUTUBE_REFRESH_TOKEN) {
     return null;
   }
-  const res = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      client_id: YOUTUBE_CLIENT_ID,
-      client_secret: YOUTUBE_CLIENT_SECRET,
-      refresh_token: YOUTUBE_REFRESH_TOKEN,
-      grant_type: 'refresh_token',
-    }),
-  });
-  if (!res.ok) {
-    throw new Error(`OAuth refresh failed: ${await res.text()}`);
-  }
-  const json = await res.json();
-  return json.access_token;
+  const oauth2 = new google.auth.OAuth2(
+    YOUTUBE_CLIENT_ID,
+    YOUTUBE_CLIENT_SECRET,
+    'urn:ietf:wg:oauth:2.0:oob',
+  );
+  oauth2.setCredentials({ refresh_token: YOUTUBE_REFRESH_TOKEN });
+  return oauth2;
 }
 
-// 本実装: 動画ファイルをYouTube Data API v3 にアップロード
-async function uploadVideo(videoPath, meta, accessToken) {
-  // 1) Resumable upload セッション初期化
-  const initRes = await fetch(
-    'https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status',
+async function uploadVideo(youtube, videoPath, meta) {
+  console.log(`[upload_youtube] resumable upload 開始: ${videoPath}`);
+  const stat = await fs.stat(videoPath);
+  console.log(`[upload_youtube] file size: ${stat.size} bytes`);
+
+  const res = await youtube.videos.insert(
     {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-        'X-Upload-Content-Type': 'video/mp4',
-      },
-      body: JSON.stringify({
+      part: ['snippet', 'status'],
+      requestBody: {
         snippet: {
           title: meta.title,
           description: meta.description,
-          tags: meta.tags,
-          categoryId: meta.categoryId,
+          tags: meta.tags || [],
+          categoryId: meta.categoryId || '27',
+          defaultLanguage: meta.defaultLanguage || 'ja',
+          defaultAudioLanguage: meta.defaultLanguage || 'ja',
         },
         status: {
-          privacyStatus: meta.privacyStatus,
-          madeForKids: meta.madeForKids,
+          privacyStatus: meta.privacyStatus || 'private',
+          selfDeclaredMadeForKids: !!meta.madeForKids,
         },
-      }),
-    }
+      },
+      media: {
+        body: createReadStream(videoPath),
+      },
+    },
+    {
+      // resumable upload: googleapis が自動で扱う
+      onUploadProgress: (evt) => {
+        const pct = stat.size ? Math.round((evt.bytesRead / stat.size) * 100) : 0;
+        process.stdout.write(`\r[upload_youtube] progress: ${pct}% (${evt.bytesRead}/${stat.size})`);
+      },
+    },
   );
-  if (!initRes.ok) {
-    throw new Error(`Upload init failed: ${await initRes.text()}`);
-  }
-  const uploadUrl = initRes.headers.get('Location');
-
-  // 2) 動画本体をPUT
-  const videoBuf = await fs.readFile(videoPath);
-  const putRes = await fetch(uploadUrl, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'video/mp4', 'Content-Length': videoBuf.length.toString() },
-    body: videoBuf,
-  });
-  if (!putRes.ok) {
-    throw new Error(`Upload PUT failed: ${await putRes.text()}`);
-  }
-  return await putRes.json();
+  process.stdout.write('\n');
+  return res.data;
 }
 
 async function main() {
@@ -112,57 +107,63 @@ async function main() {
 
   const videoPath = path.join(OUTPUT_DIR, `${topic.id}_video.mp4`);
   const metaPath = path.join(OUTPUT_DIR, `${topic.id}_meta.json`);
+  const uploadedPath = path.join(OUTPUT_DIR, `${topic.id}_uploaded.json`);
 
-  const hasVideo = await fileExists(videoPath);
-  const hasMeta = await fileExists(metaPath);
-
-  if (!hasVideo) {
-    console.log(`[upload_youtube] STUB MODE: video file not generated yet (${videoPath}).`);
-    console.log('[upload_youtube] Recording upload job in state.json and skipping actual upload.');
-
-    state.uploadQueue = state.uploadQueue || [];
-    state.uploadQueue.push({
-      topicId: topic.id,
-      title: topic.title,
-      queuedAt: new Date().toISOString(),
-      reason: 'video_pending_compile',
-    });
-    // STUBモードでもサイクルを進めるため processed に追加
-    state.processed = state.processed || [];
-    if (!state.processed.includes(topic.id)) state.processed.push(topic.id);
-    state.lastUploadResult = { status: 'skipped_stub', topicId: topic.id };
-    state.lastUploadAt = new Date().toISOString();
-    state.currentTopic = null;
-    await saveState(state);
-    return;
+  if (!(await fileExists(videoPath))) {
+    throw new Error(`Video file not found: ${videoPath}`);
   }
-
-  if (!hasMeta) {
+  if (!(await fileExists(metaPath))) {
     throw new Error(`Meta file not found: ${metaPath}`);
   }
 
   const meta = JSON.parse(await fs.readFile(metaPath, 'utf-8'));
-  const accessToken = await refreshAccessToken();
-  if (!accessToken) {
-    console.warn('[upload_youtube] YouTube credentials missing — skipping actual upload.');
+
+  const oauth = buildOauthClient();
+  if (!oauth) {
+    console.warn('[upload_youtube] OAuth 資格情報が未設定。アップロードをスキップ。');
     state.lastUploadResult = { status: 'skipped_no_credentials', topicId: topic.id };
+    state.lastUploadAt = new Date().toISOString();
     await saveState(state);
     return;
   }
 
+  const youtube = google.youtube({ version: 'v3', auth: oauth });
+
   console.log(`[upload_youtube] Uploading [${topic.id}] ${meta.title}`);
-  const result = await uploadVideo(videoPath, meta, accessToken);
-  console.log(`[upload_youtube] SUCCESS. videoId=${result.id}`);
+  const result = await uploadVideo(youtube, videoPath, meta);
+  const videoId = result.id;
+  const url = `https://www.youtube.com/watch?v=${videoId}`;
+  console.log(`[upload_youtube] SUCCESS. videoId=${videoId} url=${url}`);
+
+  const uploadedRecord = {
+    topicId: topic.id,
+    videoId,
+    url,
+    title: meta.title,
+    privacyStatus: meta.privacyStatus,
+    uploadedAt: new Date().toISOString(),
+    raw: {
+      kind: result.kind,
+      etag: result.etag,
+    },
+  };
+  await fs.writeFile(uploadedPath, JSON.stringify(uploadedRecord, null, 2), 'utf-8');
+  console.log(`[upload_youtube] record: ${uploadedPath}`);
 
   state.processed = state.processed || [];
   if (!state.processed.includes(topic.id)) state.processed.push(topic.id);
-  state.lastUploadResult = { status: 'success', topicId: topic.id, videoId: result.id };
+  state.lastUploadResult = {
+    status: 'success',
+    topicId: topic.id,
+    videoId,
+    url,
+  };
   state.lastUploadAt = new Date().toISOString();
   state.currentTopic = null;
   await saveState(state);
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error('[upload_youtube] FAILED:', err);
   process.exit(1);
 });

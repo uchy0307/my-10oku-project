@@ -2,20 +2,23 @@
   "name": "10oku-project",
   "private": true,
   "type": "module",
-  "version": "0.1.0",
-  "description": "年商10億完全自動化マスタープロジェクト ｜ YouTube自動投稿 + toi-suite連携 + note自動投稿",
+  "version": "0.2.0",
+  "description": "年商10億完全自動化マスタープロジェクト ｜ YouTube自動投稿 + toi-suite連携 + note自動投稿 + Self-Heal",
   "scripts": {
     "youtube:script": "node youtube/scripts/generate_script.mjs",
     "youtube:voice": "node youtube/scripts/generate_voice.mjs",
     "youtube:compile": "node youtube/scripts/compile_video.mjs",
     "youtube:upload": "node youtube/scripts/upload_youtube.mjs",
     "youtube:cycle": "node youtube/scripts/generate_script.mjs && node youtube/scripts/generate_voice.mjs && node youtube/scripts/compile_video.mjs && node youtube/scripts/upload_youtube.mjs",
-    "note:post": "node note-auto/post.mjs --max=1"
+    "note:post": "node note-auto/post.mjs --max=1",
+    "note:capture": "node note-auto/capture-session.mjs",
+    "self-heal": "node scripts/self_heal.mjs"
   },
   "dependencies": {
-    "node-fetch": "^3.3.2"
-  },
-  "devDependencies": {
-    "playwright": "^1.45.0"
+    "@octokit/rest": "^21.0.0",
+    "googleapis": "^144.0.0",
+    "node-fetch": "^3.3.2",
+    "playwright": "^1.48.0",
+    "sharp": "^0.33.0"
   }
 }

@@ -1,8 +1,9 @@
 {
-  "version": 1,
+  "version": 2,
   "items": [
     {
       "id": "001",
+      "draftId": "",
       "title": "（タイトル）",
       "body": "（本文）",
       "publish": false,

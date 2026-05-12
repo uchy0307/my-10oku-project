@@ -8,3 +8,6 @@ node_modules/
 youtube/output/*
 !youtube/output/.gitkeep
 !youtube/output/state.json
+
+# note-auto: storageState.json は cookie を含むため絶対に commit しない
+note-auto/storageState.json

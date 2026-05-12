@@ -76,9 +76,8 @@ async function scrapeAllPosts(page) {
 
   // 下書き一覧 + 公開済 一覧 両方を巡回
   const urls = [
-    { url: 'https://note.com/notes', defaultStatus: 'unknown' },
-    { url: 'https://note.com/notes?kind=draft', defaultStatus: 'draft' },
-    { url: 'https://note.com/notes?kind=publish', defaultStatus: 'published' },
+    { url: 'https://note.com/notes?status=draft', defaultStatus: 'draft' },
+    { url: 'https://note.com/notes?status=published', defaultStatus: 'published' },
   ];
 
   for (const { url, defaultStatus } of urls) {

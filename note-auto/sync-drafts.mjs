@@ -88,6 +88,18 @@ async function scrapeAllPosts(page) {
       console.warn(`[WARN] navigation failed: ${url}: ${err.message}`);
       continue;
     }
+    // 認証状態の診断
+    const actualUrl = page.url();
+    const pageTitle = await page.title();
+    console.log(`[DEBUG]   actual URL: ${actualUrl}`);
+    console.log(`[DEBUG]   page title: ${pageTitle}`);
+    const hasLoginBtn = await page.evaluate(() => {
+      const t = document.body.innerText || '';
+      return t.includes('ログイン') && t.includes('会員登録');
+    }).catch(() => false);
+    if (hasLoginBtn) {
+      console.warn(`[WARN]   ログインが効いていません（"ログイン/会員登録"ボタン検出）`);
+    }
     await sleep(3000);
 
     // 無限スクロール対応: ページ末尾までスクロール

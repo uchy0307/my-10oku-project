@@ -70,9 +70,73 @@ async function loadLocalBody(num) {
   return await readFile(fp, 'utf-8');
 }
 
+/** JSON応答からノート配列を取り出す（note.comはレスポンス形式が多様） */
+function pickNoteArray(data) {
+  if (!data) return null;
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data.notes)) return data.notes;
+  if (data.data) {
+    if (Array.isArray(data.data)) return data.data;
+    if (Array.isArray(data.data.notes)) return data.data.notes;
+    if (Array.isArray(data.data.contents)) return data.data.contents;
+    if (Array.isArray(data.data.items)) return data.data.items;
+  }
+  if (Array.isArray(data.contents)) return data.contents;
+  if (Array.isArray(data.items)) return data.items;
+  return null;
+}
+
+/** ノートオブジェクトから status を推定 */
+function inferStatus(it) {
+  if (!it) return null;
+  const s = String(it.status ?? it.state ?? it.note_status ?? '').toLowerCase();
+  if (s.includes('publish')) return 'published';
+  if (s.includes('draft')) return 'draft';
+  if (it.published === true || it.publish === true) return 'published';
+  if (it.is_draft === true || it.is_draft === 1) return 'draft';
+  return null;
+}
+
 /** note.com の下書き/記事一覧ページをスクレイプ */
 async function scrapeAllPosts(page) {
   const collected = new Map(); // draftId -> { draftId, title, status }
+  const apiSeen = new Set();
+
+  // ───────────────────────────────────────────────
+  // 1) ネットワーク監視: note.com が裏で叩く /api/ コールを記録 + JSON解析
+  //    note.com の管理一覧は SPA + 無限スクロールで /api/v2/notes 等を呼ぶ。
+  //    そこから直接記事IDを拾うのが最も確実。
+  // ───────────────────────────────────────────────
+  page.on('response', async (response) => {
+    try {
+      const u = response.url();
+      if (!/note\.com\/api\//.test(u)) return;
+      if (!/notes|drafts|contents/i.test(u)) return;
+      const ct = response.headers()['content-type'] || '';
+      if (!ct.includes('json')) return;
+      if (!apiSeen.has(u)) {
+        apiSeen.add(u);
+        console.log(`[API] ${u}`);
+      }
+      const data = await response.json().catch(() => null);
+      if (!data) return;
+      const arr = pickNoteArray(data);
+      if (!arr || !arr.length) return;
+      for (const it of arr) {
+        const draftId = String(it.id ?? it.key ?? it.note_id ?? it.uuid ?? '').trim();
+        const title = String(it.name ?? it.title ?? '').trim();
+        if (!draftId || !title) continue;
+        const status = inferStatus(it);
+        if (!collected.has(draftId)) {
+          collected.set(draftId, { draftId, title, status });
+        } else {
+          const prev = collected.get(draftId);
+          if (title.length > (prev.title || '').length) prev.title = title;
+          if (status === 'published') prev.status = 'published';
+        }
+      }
+    } catch {}
+  });
 
   // 下書き一覧 + 公開済 一覧 両方を、ページネーション巡回
   const bases = [
@@ -104,17 +168,28 @@ async function scrapeAllPosts(page) {
           console.warn(`[WARN]   ログインが効いていません（"ログイン/会員登録"ボタン検出）`);
         }
       }
-      await sleep(2000);
+      await sleep(2500);
 
-      // 各ページ内でスクロール（lazy load対応）
+      // ───────────────────────────────────────────────
+      // 2) 強化版・無限スクロール
+      //    高さが N 回連続で変わらなかったら終了。最大 80 ループ。
+      // ───────────────────────────────────────────────
       let lastHeight = 0;
-      for (let i = 0; i < 20; i++) {
+      let stableCount = 0;
+      for (let i = 0; i < 80; i++) {
         const height = await page.evaluate(() => document.body.scrollHeight);
-        if (height === lastHeight) break;
-        lastHeight = height;
+        if (height === lastHeight) {
+          stableCount++;
+          if (stableCount >= 6) break; // 6回連続でheight変わらず → loaded
+        } else {
+          stableCount = 0;
+          lastHeight = height;
+        }
         await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-        await sleep(800);
+        await sleep(1500);
       }
+      console.log(`[DEBUG]   final scrollHeight=${lastHeight}, collected so far=${collected.size}`);
+
       // 「もっと見る」「次へ」「Load more」ボタンが見つかれば全部クリック
       try {
         for (let k = 0; k < 30; k++) {
@@ -125,7 +200,7 @@ async function scrapeAllPosts(page) {
             return false;
           });
           if (!clicked) break;
-          await sleep(1200);
+          await sleep(1500);
         }
       } catch {}
       // この時点でのページ収集

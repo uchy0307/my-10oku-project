@@ -7,9 +7,10 @@
   "scripts": {
     "youtube:script": "node youtube/scripts/generate_script.mjs",
     "youtube:voice": "node youtube/scripts/generate_voice.mjs",
+    "youtube:images": "node youtube/scripts/generate_images.mjs",
     "youtube:compile": "node youtube/scripts/compile_video.mjs",
     "youtube:upload": "node youtube/scripts/upload_youtube.mjs",
-    "youtube:cycle": "node youtube/scripts/generate_script.mjs && node youtube/scripts/generate_voice.mjs && node youtube/scripts/compile_video.mjs && node youtube/scripts/upload_youtube.mjs",
+    "youtube:cycle": "node youtube/scripts/generate_script.mjs && node youtube/scripts/generate_voice.mjs && node youtube/scripts/generate_images.mjs && node youtube/scripts/compile_video.mjs && node youtube/scripts/upload_youtube.mjs",
     "note:post": "node note-auto/post.mjs --max=1",
     "note:sync": "node note-auto/sync-drafts.mjs",
     "note:capture": "node note-auto/capture-session.mjs",

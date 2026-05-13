@@ -19,26 +19,59 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
-const PROMPT_TEMPLATE = (title, category) => `あなたは「侍の美学」を体現する歴史ナレーション作家です。
-以下のテーマで、YouTube向け約30分の台本を執筆してください。
+// ─── プロンプト群 ───
+const OUTLINE_PROMPT = (title, category) => `あなたは「侍の美学」を体現する歴史ナレーション作家。
+以下のテーマで30分のYouTube動画台本の「章立てアウトライン」を作成せよ。
 
 【テーマ】${title}
 【カテゴリ】${category}
 
-【絶対要件】
-1. **序盤30秒で強力なフック** ─ 視聴者の心臓を掴む問いかけから始める
-2. **3幕構成** ─ 第一幕「導入と謎」/ 第二幕「対立と展開」/ 第三幕「結末と教訓」
-3. **3-5秒ごとに視覚変化指示** ─ 各段落の冒頭に [VISUAL: ...] でカメラワーク・素材指示を明記
-4. **侍の美学トーン** ─ 簡潔・凛とした言葉遣い・余白を尊ぶ・断言を恐れない
-5. **約30分尺** ─ 日本語で約8000〜10000字
-6. **章立て** ─ 「第一章 ◯◯」「第二章 ◯◯」のように章タイトルを付ける
-7. **最後に「結語」** ─ 視聴者の人生に持ち帰れる教訓を1〜2文で凝縮
+【出力ルール】
+- 5章構成。各章タイトル（10〜20字）と、その章で語る要点を2〜4行
+- マークダウン記号（**, ##, *）禁止
+- 「ナレーション:」「BGM:」「VISUAL:」等のラベル禁止
+- 出力は純粋な日本語の章タイトルと要点のみ
 
-【トーンの参考】
+【出力例】
+第一章 闇を裂く問いかけ
+桶狭間の戦いとは何であったか、視聴者に最初の謎を投げかける。
+信長の出生と尾張の地政学的背景を簡潔に提示。
+
+第二章 ……
+……
+
+それでは執筆を開始せよ。`;
+
+const CHAPTER_PROMPT = (title, category, outline, chapterIndex, chapterTitle, chapterBrief, prevSummary) => `あなたは「侍の美学」を体現する歴史ナレーション作家。
+全5章構成の歴史ナレーション動画の「第${chapterIndex}章」本文を執筆せよ。
+
+【動画テーマ】${title}
+【カテゴリ】${category}
+【全体アウトライン】
+${outline}
+
+【今書く章】
+第${chapterIndex}章 ${chapterTitle}
+要点: ${chapterBrief}
+
+${prevSummary ? `【前章までの要約】\n${prevSummary}\n` : ''}
+
+【絶対要件】
+1. 文字数: 日本語で6000〜8000字（句読点・改行含む）
+2. 純粋なナレーション本文のみ。マークダウン記号（**, ##, *, _, バッククォート）禁止
+3. 「ナレーション:」「ナレーター:」「BGM:」「SE:」「VISUAL:」「テロップ:」等のラベル禁止
+4. ハッシュタグ（#）禁止
+5. 括弧書き（注釈・ト書き・カメラ指示）禁止
+6. 「※」「→」等の記号は最小限
+7. 章タイトルも省略。本文だけ書く
+8. 段落は2〜4行、改行で区切る
+9. 侍の美学トーン: 凛とした断言・余白を尊ぶ・短文と長文のリズム
+
+【トーン参考】
 「闇を裂く一閃の刃ーー それが、織田信長という男であった。」
 「彼は、何を見ていたのか。何を、賭けていたのか。」
 
-それでは、執筆を開始してください。`;
+第${chapterIndex}章の本文を、純粋なナレーションとしてのみ出力せよ。`;
 
 async function ensureDir(dir) {
   await fs.mkdir(dir, { recursive: true });
@@ -133,6 +166,24 @@ async function callGemini(prompt, attempt = 1) {
   return text;
 }
 
+/** アウトラインテキストから章タイトルと要点を5個取り出す */
+function parseOutline(outlineText) {
+  const lines = outlineText.split('\n').map((l) => l.trim()).filter(Boolean);
+  const chapters = [];
+  let current = null;
+  for (const line of lines) {
+    const m = line.match(/^第([一二三四五六七八九十0-9０-９]+)章\s*[ 　・:：]?\s*(.+)$/);
+    if (m) {
+      if (current) chapters.push(current);
+      current = { title: m[2].trim(), brief: '' };
+    } else if (current) {
+      current.brief += (current.brief ? '\n' : '') + line;
+    }
+  }
+  if (current) chapters.push(current);
+  return chapters.slice(0, 5);
+}
+
 async function main() {
   await ensureDir(OUTPUT_DIR);
   const topics = await loadTopics();
@@ -146,16 +197,54 @@ async function main() {
 
   console.log(`[generate_script] Selected topic: [${topic.id}] ${topic.title} (${topic.category})`);
 
-  const prompt = PROMPT_TEMPLATE(topic.title, topic.category);
-  const script = await callGemini(prompt);
+  // ─── 1. アウトライン生成 ───
+  console.log('[generate_script] Step 1/6: outline generation');
+  const outlineText = await callGemini(OUTLINE_PROMPT(topic.title, topic.category));
+  const chapters = parseOutline(outlineText);
+  console.log(`[generate_script] Parsed ${chapters.length} chapters from outline`);
+  if (chapters.length < 3) {
+    // フォールバック: 固定5章
+    chapters.splice(0, chapters.length,
+      { title: '導入と謎', brief: 'テーマと最初の問いを提示' },
+      { title: '対立と展開', brief: '中心人物と背景を描く' },
+      { title: '深淵と決断', brief: '転換点と覚悟' },
+      { title: '結末と余韻', brief: '勝敗と人々への影響' },
+      { title: '結語', brief: '視聴者への教訓' },
+    );
+  }
+
+  // ─── 2〜6. 各章を順番に生成 ───
+  const sections = [];
+  let prevSummary = '';
+  for (let i = 0; i < chapters.length; i++) {
+    const idx = i + 1;
+    const ch = chapters[i];
+    console.log(`[generate_script] Step ${idx + 1}/${chapters.length + 1}: chapter ${idx} "${ch.title}"`);
+    const body = await callGemini(
+      CHAPTER_PROMPT(topic.title, topic.category, outlineText, idx, ch.title, ch.brief, prevSummary),
+    );
+    sections.push({ index: idx, title: ch.title, body });
+    // 次章へ渡す要約は冒頭300字でOK
+    prevSummary += `第${idx}章「${ch.title}」概要: ${body.slice(0, 300).replace(/\n/g, ' ')}\n`;
+  }
+
+  // 結合
+  const fullScript = sections
+    .map((s) => `第${s.index}章 ${s.title}\n\n${s.body}`)
+    .join('\n\n');
+
+  const totalChars = fullScript.length;
+  console.log(`[generate_script] Total script: ${totalChars} chars (${sections.length} chapters)`);
 
   const scriptPath = path.join(OUTPUT_DIR, `${topic.id}_script.txt`);
-  await fs.writeFile(scriptPath, script, 'utf-8');
+  await fs.writeFile(scriptPath, fullScript, 'utf-8');
   console.log(`[generate_script] Script written: ${scriptPath}`);
 
   state.currentTopic = topic;
   state.lastRun = new Date().toISOString();
   state.lastScriptPath = scriptPath;
+  state.lastScriptChars = totalChars;
+  state.lastScriptChapters = sections.map((s) => ({ index: s.index, title: s.title, chars: s.body.length }));
   await saveState(state);
   console.log('[generate_script] State updated.');
 }

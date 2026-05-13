@@ -28,12 +28,29 @@ const ELEVENLABS_VOICE_ID = process.env.ELEVENLABS_VOICE_ID;
 const ELEVENLABS_MODEL = process.env.ELEVENLABS_MODEL || 'eleven_multilingual_v2';
 const USE_ELEVENLABS = process.env.USE_ELEVENLABS === 'true';
 
-// 台本から[VISUAL: ...]や章マーカーを除いて純粋な読み上げテキストにする
+// 台本から読み上げ不要な装飾（マークダウン・ト書き）を全部剥がして純粋な日本語に
 function stripVisualDirectives(text) {
-  return text
-    .replace(/\[VISUAL:[^\]]*\]/g, '')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
+  let t = text;
+  // 1. ト書き・舞台指示 [VISUAL: ...] [BGM: ...] [SE: ...] [...] 全部消す
+  t = t.replace(/\[[^\]\n]*\]/g, '');
+  // 2. マークダウン見出し `## タイトル` 行ごと削除（章番号は別途残したいので注意）
+  t = t.replace(/^#{1,6}\s.*$/gm, '');
+  // 3. 太字・斜体マーカー **text** *text* _text_ を中身だけ残す
+  t = t.replace(/\*\*\*?([^*]+)\*\*\*?/g, '$1');
+  t = t.replace(/\*([^*]+)\*/g, '$1');
+  t = t.replace(/_([^_]+)_/g, '$1');
+  // 4. 残ったアスタリスク・アンダースコア単独を消す
+  t = t.replace(/[*_]+/g, '');
+  // 5. ハッシュタグ `#日本史` を読み上げない
+  t = t.replace(/#[^\s#]+/g, '');
+  // 6. 「ナレーション:」「ナレーター:」「BGM:」「SE:」「効果音:」等のラベル削除（行頭近辺）
+  t = t.replace(/^\s*(ナレーション|ナレーター|BGM|SE|効果音|台本|タイトル|オープニング|エンディング|エピローグ|プロローグ|テロップ|字幕)\s*[:：]\s*/gm, '');
+  // 7. URL や https? を読み上げない
+  t = t.replace(/https?:\/\/\S+/g, '');
+  // 8. バックティック・カギカッコ外のメタ括弧 (例: 「※注」) は残してOK。
+  // 9. 連続改行整理
+  t = t.replace(/\n{3,}/g, '\n\n');
+  return t.trim();
 }
 
 async function loadState() {

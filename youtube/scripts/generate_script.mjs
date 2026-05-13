@@ -67,7 +67,7 @@ function pickNextTopic(topics, state) {
   return topics.find(t => !processed.has(t.id)) || null;
 }
 
-async function callGemini(prompt) {
+async function callGemini(prompt, attempt = 1) {
   if (!GEMINI_API_KEY) {
     console.warn('[generate_script] GEMINI_API_KEY not set — emitting stub script.');
     return `[STUB SCRIPT]\n${prompt}\n\n--- ここにGemini生成台本が入ります ---`;
@@ -77,8 +77,19 @@ async function callGemini(prompt) {
     contents: [{ parts: [{ text: prompt }] }],
     generationConfig: {
       temperature: 0.85,
-      maxOutputTokens: 8192,
+      // gemini-2.5-flash は thinkingMode が default で有効。thinking が
+      // maxOutputTokens を食い潰すので、thinkingBudget=0 で無効化する。
+      thinkingConfig: { thinkingBudget: 0 },
+      maxOutputTokens: 32768,
+      responseMimeType: 'text/plain',
     },
+    // 歴史題材で safety filter が誤発動するケースを抑止
+    safetySettings: [
+      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+    ],
   };
   const res = await fetch(url, {
     method: 'POST',
@@ -90,8 +101,28 @@ async function callGemini(prompt) {
     throw new Error(`Gemini API error ${res.status}: ${errText}`);
   }
   const json = await res.json();
-  const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error('Gemini returned empty content');
+  const cand = json?.candidates?.[0];
+  const text = cand?.content?.parts?.[0]?.text;
+  const finishReason = cand?.finishReason;
+  const usage = json?.usageMetadata;
+  console.log(
+    `[generate_script] attempt=${attempt} finishReason=${finishReason} ` +
+    `promptTokens=${usage?.promptTokenCount} candidateTokens=${usage?.candidatesTokenCount} ` +
+    `totalTokens=${usage?.totalTokenCount} text.length=${text?.length || 0}`,
+  );
+  if (!text) {
+    // safetyや空応答の場合 1回だけリトライ
+    if (attempt < 2) {
+      console.warn('[generate_script] empty text. Retrying...');
+      return callGemini(prompt, attempt + 1);
+    }
+    throw new Error(`Gemini returned empty content (finishReason=${finishReason})`);
+  }
+  // 200文字以下は事実上失敗とみなしリトライ
+  if (text.length < 1000 && attempt < 2) {
+    console.warn(`[generate_script] suspiciously short response (${text.length} chars). Retrying...`);
+    return callGemini(prompt, attempt + 1);
+  }
   return text;
 }
 

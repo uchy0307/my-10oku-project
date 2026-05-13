@@ -11,3 +11,5 @@ youtube/output/*
 
 # note-auto: storageState.json は cookie を含むため絶対に commit しない
 note-auto/storageState.json
+note-auto/client_secret.json
+note-auto/youtube_tokens.json

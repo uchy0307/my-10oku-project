@@ -125,7 +125,7 @@ function generateMeta(topic, scriptText) {
     tags: [...new Set(tags)].slice(0, 15),
     categoryId: '27', // YouTube category: Education
     defaultLanguage: 'ja',
-    privacyStatus: 'private', // 安全側: 初回は private、確認後に public 化
+    privacyStatus: 'public', // 完全自動化方針: 公開で投稿
     madeForKids: false,
   };
 }

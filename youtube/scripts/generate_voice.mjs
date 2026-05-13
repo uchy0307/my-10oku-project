@@ -14,9 +14,19 @@ const ROOT = path.resolve(__dirname, '..');
 const OUTPUT_DIR = path.join(ROOT, 'output');
 const STATE_FILE = path.join(OUTPUT_DIR, 'state.json');
 
+// ─── 主TTS: Google Cloud Text-to-Speech ─────────────
+// Google Cloud Free Tierが100万字/月まで無料。ElevenLabsはGitHub Actions IPを
+// VPN扱いするためFree Tier無効化される問題を回避。
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
+const GOOGLE_TTS_VOICE = process.env.GOOGLE_TTS_VOICE || 'ja-JP-Neural2-D'; // 男性・落ち着いた声
+const GOOGLE_TTS_SPEAKING_RATE = parseFloat(process.env.GOOGLE_TTS_SPEAKING_RATE || '1.0');
+const GOOGLE_TTS_PITCH = parseFloat(process.env.GOOGLE_TTS_PITCH || '-2.0'); // 少し低め (侍トーン)
+
+// ─── 旧TTS: ElevenLabs (fallback) ─────────────
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 const ELEVENLABS_VOICE_ID = process.env.ELEVENLABS_VOICE_ID;
 const ELEVENLABS_MODEL = process.env.ELEVENLABS_MODEL || 'eleven_multilingual_v2';
+const USE_ELEVENLABS = process.env.USE_ELEVENLABS === 'true';
 
 // 台本から[VISUAL: ...]や章マーカーを除いて純粋な読み上げテキストにする
 function stripVisualDirectives(text) {
@@ -29,6 +39,59 @@ function stripVisualDirectives(text) {
 async function loadState() {
   const raw = await fs.readFile(STATE_FILE, 'utf-8');
   return JSON.parse(raw);
+}
+
+/** Google Cloud TTS: 5000バイト/リクエスト制限があるので分割合成→結合 */
+async function callGoogleTTS(text) {
+  if (!GOOGLE_API_KEY) {
+    throw new Error('GOOGLE_API_KEY (or GEMINI_API_KEY) が未設定');
+  }
+  // 句点 or 改行で分割し、約4000バイト以下のチャンクにまとめる
+  const sentences = text.split(/(?<=[。\n！？])/);
+  const chunks = [];
+  let cur = '';
+  for (const s of sentences) {
+    const tentative = cur + s;
+    if (Buffer.byteLength(tentative, 'utf8') > 4500) {
+      if (cur) chunks.push(cur);
+      cur = s;
+    } else {
+      cur = tentative;
+    }
+  }
+  if (cur) chunks.push(cur);
+  console.log(`[generate_voice] Google TTS: ${chunks.length} chunks`);
+
+  const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${GOOGLE_API_KEY}`;
+  const audioBufs = [];
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i];
+    const body = {
+      input: { text: chunk },
+      voice: { languageCode: 'ja-JP', name: GOOGLE_TTS_VOICE },
+      audioConfig: {
+        audioEncoding: 'MP3',
+        speakingRate: GOOGLE_TTS_SPEAKING_RATE,
+        pitch: GOOGLE_TTS_PITCH,
+      },
+    };
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Google TTS API error ${res.status}: ${errText}`);
+    }
+    const json = await res.json();
+    if (!json.audioContent) {
+      throw new Error(`Google TTS returned no audioContent for chunk ${i + 1}`);
+    }
+    audioBufs.push(Buffer.from(json.audioContent, 'base64'));
+    console.log(`[generate_voice]   chunk ${i + 1}/${chunks.length}: ${audioBufs[i].length} bytes`);
+  }
+  return Buffer.concat(audioBufs);
 }
 
 async function callElevenLabs(text) {
@@ -64,6 +127,15 @@ async function callElevenLabs(text) {
   return Buffer.from(arrayBuf);
 }
 
+async function synthesize(text) {
+  if (USE_ELEVENLABS) {
+    console.log('[generate_voice] Engine: ElevenLabs (USE_ELEVENLABS=true)');
+    return callElevenLabs(text);
+  }
+  console.log('[generate_voice] Engine: Google Cloud TTS');
+  return callGoogleTTS(text);
+}
+
 async function main() {
   const state = await loadState();
   const topic = state.currentTopic;
@@ -81,7 +153,7 @@ async function main() {
   console.log(`[generate_voice] Synthesizing voice for [${topic.id}] ${topic.title}`);
   console.log(`[generate_voice] Text length: ${cleanText.length} chars`);
 
-  const audio = await callElevenLabs(cleanText);
+  const audio = await synthesize(cleanText);
   await fs.writeFile(voicePath, audio);
   console.log(`[generate_voice] Voice written: ${voicePath}`);
 

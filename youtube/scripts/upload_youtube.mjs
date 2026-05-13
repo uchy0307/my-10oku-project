@@ -152,6 +152,29 @@ async function main() {
     console.warn(`[upload_youtube] Thumbnail file not found: ${thumbPath}`);
   }
 
+  // ─── 再生リスト「ALL」に追加 ───
+  const playlistIds = [process.env.YOUTUBE_PLAYLIST_ALL_ID]
+    .concat((process.env.YOUTUBE_PLAYLIST_EXTRA_IDS || '').split(','))
+    .map((s) => (s || '').trim())
+    .filter(Boolean);
+  for (const plId of playlistIds) {
+    try {
+      console.log(`[upload_youtube] Add to playlist: ${plId}`);
+      await youtube.playlistItems.insert({
+        part: ['snippet'],
+        requestBody: {
+          snippet: {
+            playlistId: plId,
+            resourceId: { kind: 'youtube#video', videoId },
+          },
+        },
+      });
+      console.log(`[upload_youtube] Added to playlist ${plId}`);
+    } catch (e) {
+      console.warn(`[upload_youtube] Playlist add failed for ${plId} (non-fatal): ${e.message}`);
+    }
+  }
+
   const uploadedRecord = {
     topicId: topic.id,
     videoId,

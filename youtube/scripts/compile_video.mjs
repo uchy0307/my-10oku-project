@@ -270,7 +270,7 @@ function generateMeta(topic, scriptText) {
   return {
     id: topic.id,
     title: `【侍の美学】${topic.title}`,
-    description: `${opening}...\n\n#日本史 #歴史 #${topic.category || ''} #ナレーション\n\n― 侍の美学 ―\n10oku-project｜年商10億完全自動化プロジェクト`,
+    description: `${opening}...\n\n#日本史 #歴史 #${topic.category || ''} #ナレーション\n\n― 侍の美学 ―`,
     tags: [...new Set(tags)].slice(0, 15),
     categoryId: '27',
     defaultLanguage: 'ja',

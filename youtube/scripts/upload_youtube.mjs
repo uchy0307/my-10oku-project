@@ -135,6 +135,23 @@ async function main() {
   const url = `https://www.youtube.com/watch?v=${videoId}`;
   console.log(`[upload_youtube] SUCCESS. videoId=${videoId} url=${url}`);
 
+  // ─── サムネイル設定 ───
+  const thumbPath = path.join(OUTPUT_DIR, `${topic.id}_thumb.png`);
+  if (await fileExists(thumbPath)) {
+    try {
+      console.log(`[upload_youtube] Setting thumbnail: ${thumbPath}`);
+      await youtube.thumbnails.set({
+        videoId,
+        media: { body: createReadStream(thumbPath), mimeType: 'image/png' },
+      });
+      console.log('[upload_youtube] Thumbnail set OK');
+    } catch (e) {
+      console.warn(`[upload_youtube] Thumbnail set failed (non-fatal): ${e.message}`);
+    }
+  } else {
+    console.warn(`[upload_youtube] Thumbnail file not found: ${thumbPath}`);
+  }
+
   const uploadedRecord = {
     topicId: topic.id,
     videoId,

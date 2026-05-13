@@ -181,9 +181,14 @@ async function main() {
   const storageState = parseStorageState();
 
   const queue = await loadQueue();
-  const pendings = (queue.items || []).filter((i) => i.status === 'pending');
+  const allPendings = (queue.items || []).filter((i) => i.status === 'pending');
+  const pendings = allPendings.filter((i) => i.draftId && i.draftId.trim() !== '');
+  const skipped = allPendings.length - pendings.length;
+  if (skipped > 0) {
+    console.warn(`[WARN] draftId 未設定の pending を ${skipped} 件スキップ（sync-drafts未マッチ）`);
+  }
   if (pendings.length === 0) {
-    console.log('[INFO] pending な記事はありません。終了します。');
+    console.log('[INFO] 投稿対象（pending + draftId付き）はありません。終了します。');
     return;
   }
   const targets = pendings.slice(0, max);
@@ -222,7 +227,8 @@ async function main() {
         item.error = msg;
         console.error(`[ERROR] 投稿失敗: id=${item.id} ${msg}`);
         await saveQueue(queue);
-        throw err;
+        // 1件失敗してもループは継続（全件で同じバグなら次でも落ちる）
+        await randDelay(5000, 10000);
       }
     }
   } finally {

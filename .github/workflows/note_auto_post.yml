@@ -80,5 +80,6 @@ jobs:
             echo "No queue/articles changes to commit."
           else
             git commit -m "chore(note): sync drafts & update queue.json [skip ci]"
-            git push
+            git pull --rebase origin main || git rebase --abort || true
+            git push origin main || git push origin main --force-with-lease
           fi

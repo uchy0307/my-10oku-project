@@ -97,6 +97,60 @@ function inferStatus(it) {
   return null;
 }
 
+/** ───────────────────────────────────────────────
+ *  API 直叩き版: note.com の管理一覧APIを cookie 付きで直接叩く
+ *  発見済エンドポイント:
+ *    GET /api/v2/notes/note_list/contents?page=N&status={draft|published}
+ *  ─────────────────────────────────────────────── */
+async function fetchAllViaApi(page, status) {
+  const collected = new Map(); // id -> {draftId,title,status}
+  for (let p = 1; p <= 30; p++) {
+    const url = `https://note.com/api/v2/notes/note_list/contents?page=${p}&status=${status}`;
+    let data;
+    try {
+      data = await page.evaluate(async (u) => {
+        const r = await fetch(u, {
+          credentials: 'include',
+          headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        });
+        const text = await r.text();
+        try { return { ok: r.ok, status: r.status, json: JSON.parse(text) }; }
+        catch { return { ok: r.ok, status: r.status, raw: text.slice(0, 500) }; }
+      }, url);
+    } catch (err) {
+      console.warn(`[WARN] API fetch failed page=${p}: ${err.message}`);
+      break;
+    }
+    if (p === 1) {
+      console.log(`[DEBUG] API resp ok=${data?.ok} status=${data?.status} keys=${data?.json ? Object.keys(data.json) : '(raw)'}`);
+      if (data?.json) {
+        // 構造ダンプ（1回だけ）
+        const sample = JSON.stringify(data.json).slice(0, 800);
+        console.log(`[DEBUG] API sample: ${sample}`);
+      } else if (data?.raw) {
+        console.log(`[DEBUG] API raw: ${data.raw}`);
+      }
+    }
+    if (!data?.ok || !data?.json) break;
+    const arr = pickNoteArray(data.json);
+    if (!arr || !arr.length) {
+      console.log(`[INFO] API status=${status} page=${p} 空、終了`);
+      break;
+    }
+    console.log(`[INFO] API status=${status} page=${p}: ${arr.length} items`);
+    for (const it of arr) {
+      const draftId = String(
+        it.id ?? it.key ?? it.note_id ?? it.uuid ?? it.note_key ?? it.draft_id ?? ''
+      ).trim();
+      const title = String(it.name ?? it.title ?? it.body_title ?? '').trim();
+      if (!draftId || !title) continue;
+      const s = inferStatus(it) || status;
+      collected.set(draftId, { draftId, title, status: s });
+    }
+  }
+  return Array.from(collected.values());
+}
+
 /** note.com の下書き/記事一覧ページをスクレイプ */
 async function scrapeAllPosts(page) {
   const collected = new Map(); // draftId -> { draftId, title, status }
@@ -316,7 +370,32 @@ async function main() {
 
   let scraped = [];
   try {
-    scraped = await scrapeAllPosts(page);
+    // まず note.com に1回アクセス（cookie warmup + 認証確認）
+    try {
+      await page.goto('https://note.com/notes?status=draft', { waitUntil: 'domcontentloaded', timeout: 30000 });
+      await sleep(2000);
+      const pt = await page.title();
+      console.log(`[DEBUG] warmup page title: ${pt}`);
+    } catch (e) {
+      console.warn(`[WARN] warmup failed: ${e.message}`);
+    }
+
+    // ① API 直叩きで全件取得（最有力ルート）
+    const draftViaApi = await fetchAllViaApi(page, 'draft');
+    const pubViaApi = await fetchAllViaApi(page, 'published');
+    console.log(`[INFO] via API: draft=${draftViaApi.length}, published=${pubViaApi.length}`);
+    const apiAll = new Map();
+    for (const it of [...draftViaApi, ...pubViaApi]) {
+      apiAll.set(it.draftId, it);
+    }
+
+    // ② API が空ならDOM scrape にフォールバック
+    if (apiAll.size === 0) {
+      console.warn('[WARN] API が空。DOMスクレイプにフォールバック');
+      scraped = await scrapeAllPosts(page);
+    } else {
+      scraped = Array.from(apiAll.values());
+    }
   } finally {
     await context.close();
     await browser.close();

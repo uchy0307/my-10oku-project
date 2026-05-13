@@ -48,6 +48,7 @@ jobs:
         run: npm run youtube:cycle
 
       - name: Commit & push state changes
+        if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -58,5 +59,6 @@ jobs:
             echo "No state changes to commit."
           else
             git commit -m "chore(youtube): update state.json [skip ci]"
-            git push
+            git pull --rebase origin main || git rebase --abort || true
+            git push origin main || git push origin main --force-with-lease
           fi

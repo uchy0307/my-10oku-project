@@ -59,6 +59,8 @@ jobs:
           if [ -f youtube/output/state.json ]; then
             git add -f youtube/output/state.json
           fi
+          # topics.json も補充された場合はコミット
+          git add youtube/topics.json || true
           if git diff --staged --quiet; then
             echo "No state changes to commit."
           else

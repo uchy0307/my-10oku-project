@@ -433,7 +433,12 @@ async function main() {
     //   - note.com 側で 'published' → 'published' (これ以上触らない)
     //   - 上記以外 (note.com 上が draft) → 'pending'
     let status;
-    if (prev?.status === 'published' || prev?.status === 'draft_saved') {
+    if (
+      prev?.status === 'published' ||
+      prev?.status === 'draft_saved' ||
+      prev?.status === 'published_manual'
+    ) {
+      // 完了・手動公開済は保持して再処理しない
       status = prev.status;
     } else if (noteStatus === 'published') {
       status = 'published';

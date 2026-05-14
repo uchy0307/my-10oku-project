@@ -1,17 +1,15 @@
 // youtube/scripts/generate_images.mjs
-// Pollinations.ai で章ごとのシーン画像を生成（5枚 / 動画）
-// 無料・APIキー不要。PNGバイナリを直接 GET。
+// 章ごとの「実画像」をWikipedia/Wikimedia Commonsから取得（AI画像は使わない）
+// フォールバックでも実画像のみ。最終フォールバックは黒背景（compileがハードコード字幕で生かす）。
 //
-// input:
-//   state.json.currentTopic, state.lastScriptChapters
-// output:
-//   youtube/output/<id>_img_1.png 〜 <id>_img_5.png (1280x720)
+// input:  state.json.currentTopic, state.lastScriptChapters
+// output: youtube/output/<id>_img_1.png 〜 <id>_img_5.png (1280x720)
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import fetch from 'node-fetch';
 import sharp from 'sharp';
+import { fetchWikiImage, buildCandidateQueries } from './fetch_portrait.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,76 +17,53 @@ const ROOT = path.resolve(__dirname, '..');
 const OUTPUT_DIR = path.join(ROOT, 'output');
 const STATE_FILE = path.join(OUTPUT_DIR, 'state.json');
 
-const IMAGE_MODEL = process.env.POLLINATIONS_MODEL || 'flux';
-const IMAGE_WIDTH = 1280;
-const IMAGE_HEIGHT = 720;
-const REQUEST_TIMEOUT_MS = 30000;
+const IMAGE_W = 1280;
+const IMAGE_H = 720;
 
 async function loadState() {
   const raw = await fs.readFile(STATE_FILE, 'utf-8');
   return JSON.parse(raw);
 }
 
-function buildImagePrompt(topic, chapterTitle, chapterIndex) {
-  const moods = [
-    'serene and majestic, pre-dawn twilight, opening moment of history',
-    'tense confrontation, deep shadows, cold light',
-    'intense action, clashing swords, dust and fire',
-    'a moment of decision, quiet resolve, solitary, moonlight',
-    'aftermath, dusk, emptiness, wind-swept banners, silence',
-  ];
-  const mood = moods[(chapterIndex - 1) % moods.length];
-  // Mix Japanese title context + English style keywords for Pollinations / flux.
-  return `Japanese ukiyo-e style historical painting depicting "${topic.title}" — ${chapterTitle}.
-Samurai warriors, Sengoku era, cinematic dramatic lighting. ${mood}.
-Oil painting style, theatrical and realistic, deep contrast, 16:9 widescreen.
-No text, no captions, no lettering, no watermark.`;
+// 章ごとの検索候補クエリ
+function buildChapterQueries(topic, chapter) {
+  const queries = [];
+  if (chapter?.title) {
+    const cleaned = chapter.title.replace(/[「」『』【】]/g, '').trim();
+    if (cleaned.length >= 3) queries.push(cleaned);
+  }
+  queries.push(...buildCandidateQueries(topic.title || ''));
+  if (topic?.category) queries.push(topic.category);
+  return [...new Set(queries)].filter(Boolean);
 }
 
-async function fetchWithTimeout(url, ms) {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), ms);
-  try {
-    return await fetch(url, { signal: controller.signal });
-  } finally {
-    clearTimeout(id);
+async function fetchChapterImage(topic, chapter) {
+  const queries = buildChapterQueries(topic, chapter);
+  for (const q of queries) {
+    const r = await fetchWikiImage(q);
+    if (r && r.buffer) {
+      console.log(`[generate_images]   matched "${q}" -> ${r.sourceUrl}`);
+      return r.buffer;
+    }
   }
+  return null;
 }
 
-async function generateImage(prompt, attempt = 1) {
-  const seed = Math.floor(Math.random() * 1000000);
-  const encoded = encodeURIComponent(prompt);
-  const url = `https://image.pollinations.ai/prompt/${encoded}?width=${IMAGE_WIDTH}&height=${IMAGE_HEIGHT}&model=${IMAGE_MODEL}&nologo=true&seed=${seed}`;
-  let res;
-  try {
-    res = await fetchWithTimeout(url, REQUEST_TIMEOUT_MS);
-  } catch (e) {
-    if (attempt < 4) {
-      const wait = Math.pow(2, attempt) * 15;
-      console.warn(`[generate_images] network/timeout retry in ${wait}s (attempt ${attempt + 1}): ${e.message}`);
-      await new Promise((r) => setTimeout(r, wait * 1000));
-      return generateImage(prompt, attempt + 1);
-    }
-    throw e;
-  }
-  if (!res.ok) {
-    const errText = await res.text().catch(() => '');
-    if ((res.status === 503 || res.status === 429 || res.status === 502 || res.status === 500) && attempt < 4) {
-      const wait = Math.pow(2, attempt) * 15;
-      console.warn(`[generate_images] ${res.status} retry in ${wait}s (attempt ${attempt + 1})`);
-      await new Promise((r) => setTimeout(r, wait * 1000));
-      return generateImage(prompt, attempt + 1);
-    }
-    throw new Error(`Image API error ${res.status}: ${errText.slice(0, 200)}`);
-  }
-  const ab = await res.arrayBuffer();
-  const rawBuf = Buffer.from(ab);
-  if (rawBuf.length < 1024) {
-    throw new Error(`Image API returned suspiciously small payload: ${rawBuf.length} bytes`);
-  }
-  // re-encode to exact 1280x720 PNG (idempotent: guarantees codec + size)
-  const resized = await sharp(rawBuf).resize(IMAGE_WIDTH, IMAGE_HEIGHT, { fit: 'cover' }).png().toBuffer();
-  return resized;
+async function fallbackBlackImage() {
+  return sharp({
+    create: { width: IMAGE_W, height: IMAGE_H, channels: 3, background: { r: 14, g: 14, b: 14 } },
+  })
+    .png()
+    .toBuffer();
+}
+
+async function processImage(rawBuf) {
+  // すべて 1280x720 cover で整形 + わずかに sepia / vignette を掛けて統一感を出す
+  return sharp(rawBuf)
+    .resize(IMAGE_W, IMAGE_H, { fit: 'cover', position: 'centre' })
+    .modulate({ saturation: 0.85 })
+    .png()
+    .toBuffer();
 }
 
 async function main() {
@@ -100,22 +75,24 @@ async function main() {
   }
   const chapters = state.lastScriptChapters || [];
   if (chapters.length === 0) {
-    console.warn('[generate_images] No chapters info in state. Fallback to 5 generic.');
-    for (let i = 1; i <= 5; i++) {
-      chapters.push({ index: i, title: `第${i}章` });
-    }
+    console.warn('[generate_images] No chapters. Fallback to 5 generic chapter slots.');
+    for (let i = 1; i <= 5; i++) chapters.push({ index: i, title: `第${i}章` });
   }
 
   const imagePaths = [];
   for (const ch of chapters) {
-    const prompt = buildImagePrompt(topic, ch.title, ch.index);
     const outPath = path.join(OUTPUT_DIR, `${topic.id}_img_${ch.index}.png`);
     console.log(`[generate_images] Chapter ${ch.index} "${ch.title}" -> ${outPath}`);
     try {
-      const buf = await generateImage(prompt);
-      await fs.writeFile(outPath, buf);
+      let raw = await fetchChapterImage(topic, ch);
+      if (!raw) {
+        console.warn(`[generate_images]   no wiki image, fallback black`);
+        raw = await fallbackBlackImage();
+      }
+      const finalBuf = await processImage(raw);
+      await fs.writeFile(outPath, finalBuf);
       imagePaths.push(outPath);
-      console.log(`[generate_images] saved ${outPath} (${buf.length} bytes)`);
+      console.log(`[generate_images] saved ${outPath} (${finalBuf.length} bytes)`);
     } catch (e) {
       console.warn(`[generate_images]   FAILED chapter ${ch.index}: ${e.message}`);
     }

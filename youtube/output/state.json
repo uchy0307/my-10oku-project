@@ -6,43 +6,43 @@
     "004",
     "005"
   ],
-  "lastRun": "2026-05-14T14:18:49.535Z",
+  "lastRun": "2026-05-14T14:32:55.659Z",
   "currentTopic": {
     "id": "006",
     "title": "上杉謙信 義に生きた軍神",
     "category": "人物軸"
   },
   "lastScriptPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_script.txt",
-  "lastScriptChars": 9545,
+  "lastScriptChars": 9155,
   "lastScriptChapters": [
     {
       "index": 1,
-      "title": "越後の龍、誕生秘話",
-      "chars": 2105
+      "title": "北越の龍、目覚める",
+      "chars": 2397
     },
     {
       "index": 2,
-      "title": "天下を揺るがす統一の道",
-      "chars": 2184
+      "title": "信義の旗、天下に翻る",
+      "chars": 1676
     },
     {
       "index": 3,
-      "title": "川中島の龍虎相搏",
-      "chars": 1633
+      "title": "川中島の龍虎相搏つ",
+      "chars": 1569
     },
     {
       "index": 4,
-      "title": "義の旗、関東を駆ける",
-      "chars": 2182
+      "title": "北陸の風雲、そして天下へ",
+      "chars": 1814
     },
     {
       "index": 5,
-      "title": "軍神の遺志、時代を超えて",
-      "chars": 1353
+      "title": "神将、散華の刻",
+      "chars": 1614
     }
   ],
   "lastVoicePath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_voice.mp3",
-  "lastVoiceAt": "2026-05-14T14:19:52.260Z",
+  "lastVoiceAt": "2026-05-14T14:33:54.218Z",
   "lastImagePaths": [
     "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_img_1.png",
     "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_img_2.png",
@@ -50,13 +50,13 @@
     "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_img_4.png",
     "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_img_5.png"
   ],
-  "lastImageGenAt": "2026-05-14T14:19:57.774Z",
+  "lastImageGenAt": "2026-05-14T14:34:04.330Z",
   "lastMetaPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_meta.json",
   "lastThumbPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_thumb.png",
   "lastVideoPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_video.mp4",
   "lastAssPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_subs.ass",
-  "lastSubsCount": 574,
-  "lastCompileAt": "2026-05-14T14:26:45.675Z",
+  "lastSubsCount": 562,
+  "lastCompileAt": "2026-05-14T14:40:33.503Z",
   "videoStatus": "ready",
   "lastUploadResult": {
     "status": "success",
@@ -66,6 +66,8 @@
   },
   "lastUploadAt": "2026-05-14T09:41:51.759Z",
   "lastImageSources": [
-    "https://upload.wikimedia.org/wikipedia/commons/8/88/Uesugi_Kenshin_Portrait_from_Uesugi_Shrine.png"
+    "https://upload.wikimedia.org/wikipedia/commons/8/88/Uesugi_Kenshin_Portrait_from_Uesugi_Shrine.png",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Taipei_Skyline_2022.06.29.jpg/3840px-Taipei_Skyline_2022.06.29.jpg?utm_source=ja.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "https://upload.wikimedia.org/wikipedia/commons/b/ba/Hokuriku_subregion.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled"
   ]
 }

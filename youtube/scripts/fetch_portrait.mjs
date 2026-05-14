@@ -53,18 +53,19 @@ async function summaryImage(title, lang) {
   return json?.originalimage?.source || json?.thumbnail?.source || null;
 }
 
-async function commonsCategoryImage(category) {
-  const url = `https://commons.wikimedia.org/w/api.php?action=query&generator=categorymembers&gcmtitle=${encodeURIComponent(category)}&gcmtype=file&gcmlimit=10&prop=imageinfo&iiprop=url&iiurlwidth=1280&format=json&origin=*`;
+async function commonsCategoryImages(category, limit = 10) {
+  const url = `https://commons.wikimedia.org/w/api.php?action=query&generator=categorymembers&gcmtitle=${encodeURIComponent(category)}&gcmtype=file&gcmlimit=${limit}&prop=imageinfo&iiprop=url&iiurlwidth=1280&format=json&origin=*`;
   const res = await fetchWithTimeout(url, SEARCH_TIMEOUT, { headers: { 'User-Agent': UA } });
-  if (!res.ok) return null;
+  if (!res.ok) return [];
   const json = await res.json();
   const pages = json?.query?.pages || {};
+  const urls = [];
   for (const k of Object.keys(pages)) {
     const ii = pages[k]?.imageinfo?.[0];
     const src = ii?.thumburl || ii?.url;
-    if (src && /\.(jpe?g|png)$/i.test(src)) return src;
+    if (src && /\.(jpe?g|png)$/i.test(src)) urls.push(src);
   }
-  return null;
+  return urls;
 }
 
 async function commonsFileSearch(query) {
@@ -173,15 +174,17 @@ export async function fetchWikiImageMulti(query, opts = {}) {
     } catch {}
   }
 
-  // commons category fallback
+  // commons category fallback (multiple candidates)
   if (opts.commonsCategory) {
     try {
-      const url = await commonsCategoryImage(opts.commonsCategory);
-      if (url && !excludeUrls.has(url)) {
-        const buffer = await downloadImage(url);
-        if (buffer && buffer.length >= 1024) {
-          return { buffer, sourceUrl: url, pageTitle: opts.commonsCategory };
-        }
+      const urls = await commonsCategoryImages(opts.commonsCategory, 10);
+      for (const u of urls) {
+        if (excludeUrls.has(u)) continue;
+        try {
+          const buffer = await downloadImage(u);
+          if (!buffer || buffer.length < 1024) continue;
+          return { buffer, sourceUrl: u, pageTitle: opts.commonsCategory };
+        } catch (e) { continue; }
       }
     } catch {}
   }

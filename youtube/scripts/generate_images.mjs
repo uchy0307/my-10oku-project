@@ -1,5 +1,6 @@
 // youtube/scripts/generate_images.mjs
-// Gemini Image API (preview) で章ごとのシーン画像を生成（5枚 / 動画）
+// Pollinations.ai で章ごとのシーン画像を生成（5枚 / 動画）
+// 無料・APIキー不要。PNGバイナリを直接 GET。
 //
 // input:
 //   state.json.currentTopic, state.lastScriptChapters
@@ -18,9 +19,10 @@ const ROOT = path.resolve(__dirname, '..');
 const OUTPUT_DIR = path.join(ROOT, 'output');
 const STATE_FILE = path.join(OUTPUT_DIR, 'state.json');
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const IMAGE_MODEL = process.env.GEMINI_IMAGE_MODEL || 'gemini-2.0-flash-preview-image-generation';
-const IMAGE_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${IMAGE_MODEL}:generateContent`;
+const IMAGE_MODEL = process.env.POLLINATIONS_MODEL || 'flux';
+const IMAGE_WIDTH = 1280;
+const IMAGE_HEIGHT = 720;
+const REQUEST_TIMEOUT_MS = 30000;
 
 async function loadState() {
   const raw = await fs.readFile(STATE_FILE, 'utf-8');
@@ -29,55 +31,63 @@ async function loadState() {
 
 function buildImagePrompt(topic, chapterTitle, chapterIndex) {
   const moods = [
-    '静謐で重厚、夜明け前の薄明、歴史の始まりを告げる構図',
-    '緊迫感、対峙、緊張、深い影と冷たい光',
-    '激しい動き、衝突、刀の閃き、砂塵、炎の影',
-    '決断の瞬間、静かな覚悟、孤高、月光',
-    '余韻、夕暮れ、虚無、風に揺れる旗、静寂',
+    'serene and majestic, pre-dawn twilight, opening moment of history',
+    'tense confrontation, deep shadows, cold light',
+    'intense action, clashing swords, dust and fire',
+    'a moment of decision, quiet resolve, solitary, moonlight',
+    'aftermath, dusk, emptiness, wind-swept banners, silence',
   ];
   const mood = moods[(chapterIndex - 1) % moods.length];
-  return `日本史「${topic.title}」の${chapterTitle}を描いた歴史画。
-${mood}。
-油絵風・劇画調・写実的な人物表現・深いコントラスト・16:9横長。
-文字・キャプション・テロップは描かない。`;
+  // Mix Japanese title context + English style keywords for Pollinations / flux.
+  return `Japanese ukiyo-e style historical painting depicting "${topic.title}" — ${chapterTitle}.
+Samurai warriors, Sengoku era, cinematic dramatic lighting. ${mood}.
+Oil painting style, theatrical and realistic, deep contrast, 16:9 widescreen.
+No text, no captions, no lettering, no watermark.`;
+}
+
+async function fetchWithTimeout(url, ms) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), ms);
+  try {
+    return await fetch(url, { signal: controller.signal });
+  } finally {
+    clearTimeout(id);
+  }
 }
 
 async function generateImage(prompt, attempt = 1) {
-  if (!GEMINI_API_KEY) {
-    throw new Error('GEMINI_API_KEY not set');
+  const seed = Math.floor(Math.random() * 1000000);
+  const encoded = encodeURIComponent(prompt);
+  const url = `https://image.pollinations.ai/prompt/${encoded}?width=${IMAGE_WIDTH}&height=${IMAGE_HEIGHT}&model=${IMAGE_MODEL}&nologo=true&seed=${seed}`;
+  let res;
+  try {
+    res = await fetchWithTimeout(url, REQUEST_TIMEOUT_MS);
+  } catch (e) {
+    if (attempt < 4) {
+      const wait = Math.pow(2, attempt) * 15;
+      console.warn(`[generate_images] network/timeout retry in ${wait}s (attempt ${attempt + 1}): ${e.message}`);
+      await new Promise((r) => setTimeout(r, wait * 1000));
+      return generateImage(prompt, attempt + 1);
+    }
+    throw e;
   }
-  const url = `${IMAGE_ENDPOINT}?key=${GEMINI_API_KEY}`;
-  const body = {
-    contents: [{ parts: [{ text: prompt }] }],
-    generationConfig: {
-      responseModalities: ['TEXT', 'IMAGE'],
-    },
-  };
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
   if (!res.ok) {
-    const errText = await res.text();
-    if ((res.status === 503 || res.status === 429) && attempt < 4) {
+    const errText = await res.text().catch(() => '');
+    if ((res.status === 503 || res.status === 429 || res.status === 502 || res.status === 500) && attempt < 4) {
       const wait = Math.pow(2, attempt) * 15;
       console.warn(`[generate_images] ${res.status} retry in ${wait}s (attempt ${attempt + 1})`);
       await new Promise((r) => setTimeout(r, wait * 1000));
       return generateImage(prompt, attempt + 1);
     }
-    throw new Error(`Image API error ${res.status}: ${errText}`);
+    throw new Error(`Image API error ${res.status}: ${errText.slice(0, 200)}`);
   }
-  const json = await res.json();
-  const parts = json?.candidates?.[0]?.content?.parts || [];
-  const inlinePart = parts.find((p) => p.inlineData || p.inline_data);
-  const b64 = inlinePart?.inlineData?.data || inlinePart?.inline_data?.data;
-  if (!b64) {
-    throw new Error(`Image API returned no image data: ${JSON.stringify(json).slice(0, 500)}`);
+  const ab = await res.arrayBuffer();
+  const rawBuf = Buffer.from(ab);
+  if (rawBuf.length < 1024) {
+    throw new Error(`Image API returned suspiciously small payload: ${rawBuf.length} bytes`);
   }
-  const rawBuf = Buffer.from(b64, 'base64');
-  // resize to 1280x720 (16:9) to prevent OOM in downstream compile
-  const resized = await sharp(rawBuf).resize(1280, 720, { fit: 'cover' }).png().toBuffer();
+  // re-encode to exact 1280x720 PNG (idempotent: guarantees codec + size)
+  const resized = await sharp(rawBuf).resize(IMAGE_WIDTH, IMAGE_HEIGHT, { fit: 'cover' }).png().toBuffer();
   return resized;
 }
 

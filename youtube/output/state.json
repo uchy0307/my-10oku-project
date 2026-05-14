@@ -1,54 +1,55 @@
 {
   "processed": [
-    "001"
+    "001",
+    "002"
   ],
-  "lastRun": "2026-05-14T02:36:46.254Z",
+  "lastRun": "2026-05-14T05:25:10.892Z",
   "currentTopic": null,
-  "lastScriptPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/001_script.txt",
-  "lastScriptChars": 10354,
+  "lastScriptPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/002_script.txt",
+  "lastScriptChars": 10934,
   "lastScriptChapters": [
     {
       "index": 1,
-      "title": "尾張の風雲児、その誕生",
-      "chars": 2392
+      "title": "天下布武の涯てに蠢く影",
+      "chars": 1384
     },
     {
       "index": 2,
-      "title": "義元の西進、迫る脅威",
-      "chars": 1324
+      "title": "光秀の苦悩と野望の淵",
+      "chars": 2451
     },
     {
       "index": 3,
-      "title": "絶望の中の決断",
-      "chars": 2411
+      "title": "秀吉、漁夫の利か、仕組まれた策謀か",
+      "chars": 2596
     },
     {
       "index": 4,
-      "title": "桶狭間の奇跡、その裏側",
-      "chars": 2409
+      "title": "織田家内部の複雑な人間関係",
+      "chars": 1949
     },
     {
       "index": 5,
-      "title": "桶狭間が拓いた未来",
-      "chars": 1732
+      "title": "歴史の闇に消えた真実と侍の美学",
+      "chars": 2450
     }
   ],
-  "lastVoicePath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/001_voice.mp3",
-  "lastVoiceAt": "2026-05-14T02:37:42.841Z",
+  "lastVoicePath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/002_voice.mp3",
+  "lastVoiceAt": "2026-05-14T05:26:07.807Z",
   "lastImagePaths": [],
-  "lastImageGenAt": "2026-05-14T02:37:43.585Z",
-  "lastMetaPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/001_meta.json",
-  "lastThumbPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/001_thumb.png",
-  "lastVideoPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/001_video.mp4",
-  "lastAssPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/001_subs.ass",
-  "lastSubsCount": 627,
-  "lastCompileAt": "2026-05-14T02:42:11.421Z",
+  "lastImageGenAt": "2026-05-14T05:26:08.278Z",
+  "lastMetaPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/002_meta.json",
+  "lastThumbPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/002_thumb.png",
+  "lastVideoPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/002_video.mp4",
+  "lastAssPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/002_subs.ass",
+  "lastSubsCount": 625,
+  "lastCompileAt": "2026-05-14T05:30:42.056Z",
   "videoStatus": "ready",
   "lastUploadResult": {
     "status": "success",
-    "topicId": "001",
-    "videoId": "yNRRLLjZjRc",
-    "url": "https://www.youtube.com/watch?v=yNRRLLjZjRc"
+    "topicId": "002",
+    "videoId": "hXPM7p78-oQ",
+    "url": "https://www.youtube.com/watch?v=hXPM7p78-oQ"
   },
-  "lastUploadAt": "2026-05-14T02:42:16.470Z"
+  "lastUploadAt": "2026-05-14T05:30:46.347Z"
 }

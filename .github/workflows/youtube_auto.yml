@@ -2,6 +2,11 @@ name: YouTube Auto Cycle
 
 on:
   workflow_dispatch:
+    inputs:
+      upload:
+        description: 'Upload generated video to YouTube (default: false to avoid spam-flag risk)'
+        type: boolean
+        default: false
   schedule:
     # 1日2本配信
     # 23:00 UTC = 日本時間 08:00 (朝)
@@ -36,12 +41,48 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Run YouTube cycle
+      - name: Generate topics (auto-replenish)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: npm run youtube:topics
+
+      - name: Generate script
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: npm run youtube:script
+
+      - name: Generate voice
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
+        run: npm run youtube:voice
+
+      - name: Generate images
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
-          ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
+        run: npm run youtube:images
+
+      - name: Compile video
+        run: npm run youtube:compile
+
+      - name: Upload artifacts (video / thumb / state for inspection)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: youtube-output-${{ github.run_number }}
+          path: |
+            youtube/output/*.mp4
+            youtube/output/*_thumb.png
+            youtube/output/*_img_*.png
+            youtube/output/state.json
+            youtube/output/*_meta.json
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload to YouTube
+        if: github.event_name == 'schedule' || inputs.upload == true
+        env:
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
           YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
@@ -49,7 +90,7 @@ jobs:
           YOUTUBE_PLAYLIST_ALL_ID: PLDSFeBtTVyQ1A0BLUQpbv_JLdqEscfYJl
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-        run: npm run youtube:cycle
+        run: npm run youtube:upload
 
       - name: Commit & push state changes
         if: always()

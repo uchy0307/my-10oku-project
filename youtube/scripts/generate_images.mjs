@@ -29,6 +29,21 @@ const STATE_FILE = path.join(OUTPUT_DIR, 'state.json');
 const IMAGE_W = 1280;
 const IMAGE_H = 720;
 
+const SENGOKU_COMMONS_CATEGORIES = [
+  'Category:Battles_of_the_Sengoku_period',
+  'Category:Samurai_paintings',
+  'Category:Japanese_castles',
+  'Category:Japanese_armor',
+  'Category:Daimyo',
+  'Category:Japanese_swords',
+  'Category:Ukiyo-e',
+  'Category:Edo_period_paintings',
+  'Category:Sengoku_period_paintings',
+  'Category:Historic_sites_of_Japan',
+];
+function topicIndexHash(t){const s=String(t?.id||t?.title||'').toLowerCase();let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))&0xffffffff;return Math.abs(h);}
+function canonicalImageKey(u){if(!u)return '';try{const x=new URL(u);return x.hostname+x.pathname.replace('/thumb/','/').replace(/\/\d+px-[^/]+$/,'');}catch{return String(u||'');}}
+
 // カテゴリ別の Commons カテゴリ ヒント（章ごとに混ぜる）
 const COMMONS_CATEGORIES = {
   '合戦軸': ['Category:Battles_of_Japan', 'Category:Sengoku_period', 'Category:Samurai', 'Category:Japanese_castles', 'Category:Historic_sites_of_Japan', 'Category:Daimyo', 'Category:Bushido'],
@@ -140,7 +155,9 @@ async function main() {
   // dedup用の Set（5章すべてで共有）
   const usedUrls = new Set();
   const usedPages = new Set();
-  const categoryHints = COMMONS_CATEGORIES[topic.category] || [];
+  const categoryHints = [...(COMMONS_CATEGORIES[topic.category] || []), ...SENGOKU_COMMONS_CATEGORIES];
+  const usedKeys = new Set();
+  const topicHash = topicIndexHash(topic);
 
   const imagePaths = [];
   for (const ch of chapters) {
@@ -170,7 +187,7 @@ async function main() {
     try {
       let finalBuf;
       if (result && result.buffer) {
-        usedUrls.add(result.sourceUrl);
+        usedUrls.add(result.sourceUrl); usedKeys.add(canonicalImageKey(result.sourceUrl));
         if (result.pageTitle) usedPages.add(result.pageTitle);
         console.log(`[generate_images]   matched -> "${result.pageTitle}" -> ${result.sourceUrl}`);
         finalBuf = await processImage(result.buffer);
@@ -190,7 +207,7 @@ async function main() {
   state.lastImageGenAt = new Date().toISOString();
   state.lastImageSources = [...usedUrls];
   await fs.writeFile(STATE_FILE, JSON.stringify(state, null, 2), 'utf-8');
-  console.log(`[generate_images] DONE: ${imagePaths.length}/${chapters.length} images. unique sources=${usedUrls.size}`);
+  console.log(`[generate_images] DONE: ${imagePaths.length}/${chapters.length} images. unique sources=${usedUrls.size} canonical=${usedKeys.size}`);
 }
 
 main().catch((err) => {

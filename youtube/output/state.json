@@ -3,45 +3,42 @@
     "001",
     "002",
     "003",
-    "004"
+    "004",
+    "005"
   ],
-  "lastRun": "2026-05-14T08:40:15.770Z",
-  "currentTopic": {
-    "id": "005",
-    "title": "武田信玄 風林火山の哲学",
-    "category": "人物軸"
-  },
+  "lastRun": "2026-05-14T09:20:05.158Z",
+  "currentTopic": null,
   "lastScriptPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_script.txt",
-  "lastScriptChars": 10640,
+  "lastScriptChars": 8825,
   "lastScriptChapters": [
     {
       "index": 1,
-      "title": "甲斐の虎、覚醒前夜",
-      "chars": 1609
+      "title": "甲斐の虎、その咆哮",
+      "chars": 1684
     },
     {
       "index": 2,
-      "title": "「風林火山」の源流",
-      "chars": 2012
+      "title": "風林火山の源流",
+      "chars": 1875
     },
     {
       "index": 3,
-      "title": "智と勇の戦術、実践",
-      "chars": 3025
+      "title": "智と勇の戦略",
+      "chars": 2227
     },
     {
       "index": 4,
-      "title": "乱世の雄、その内なる葛藤",
-      "chars": 1466
+      "title": "乱世に刻む理想",
+      "chars": 1660
     },
     {
       "index": 5,
-      "title": "風林火山の後世への遺産",
-      "chars": 2440
+      "title": "甲斐の夢、永劫の響き",
+      "chars": 1302
     }
   ],
   "lastVoicePath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_voice.mp3",
-  "lastVoiceAt": "2026-05-14T08:41:14.496Z",
+  "lastVoiceAt": "2026-05-14T09:20:52.384Z",
   "lastImagePaths": [
     "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_img_1.png",
     "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_img_2.png",
@@ -49,19 +46,19 @@
     "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_img_4.png",
     "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_img_5.png"
   ],
-  "lastImageGenAt": "2026-05-14T08:59:21.475Z",
+  "lastImageGenAt": "2026-05-14T09:39:00.987Z",
   "lastMetaPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_meta.json",
   "lastThumbPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_thumb.png",
   "lastVideoPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_video.mp4",
   "lastAssPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_subs.ass",
-  "lastSubsCount": 640,
-  "lastCompileAt": "2026-05-14T09:03:23.907Z",
+  "lastSubsCount": 522,
+  "lastCompileAt": "2026-05-14T09:41:43.495Z",
   "videoStatus": "ready",
   "lastUploadResult": {
     "status": "success",
-    "topicId": "004",
-    "videoId": "SGCeujVdRIg",
-    "url": "https://www.youtube.com/watch?v=SGCeujVdRIg"
+    "topicId": "005",
+    "videoId": "dLOHK7U1vJc",
+    "url": "https://www.youtube.com/watch?v=dLOHK7U1vJc"
   },
-  "lastUploadAt": "2026-05-14T06:51:25.205Z"
+  "lastUploadAt": "2026-05-14T09:41:51.759Z"
 }

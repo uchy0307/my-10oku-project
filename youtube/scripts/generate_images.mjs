@@ -1,5 +1,5 @@
 // youtube/scripts/generate_images.mjs
-// Imagen 3 API で章ごとのシーン画像を生成（5枚 / 動画）
+// Gemini Image API (preview) で章ごとのシーン画像を生成（5枚 / 動画）
 //
 // input:
 //   state.json.currentTopic, state.lastScriptChapters
@@ -19,8 +19,8 @@ const OUTPUT_DIR = path.join(ROOT, 'output');
 const STATE_FILE = path.join(OUTPUT_DIR, 'state.json');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const IMAGE_MODEL = process.env.GEMINI_IMAGE_MODEL || 'imagen-3.0-generate-002';
-const IMAGE_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${IMAGE_MODEL}:predict`;
+const IMAGE_MODEL = process.env.GEMINI_IMAGE_MODEL || 'gemini-2.0-flash-preview-image-generation';
+const IMAGE_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${IMAGE_MODEL}:generateContent`;
 
 async function loadState() {
   const raw = await fs.readFile(STATE_FILE, 'utf-8');
@@ -48,8 +48,10 @@ async function generateImage(prompt, attempt = 1) {
   }
   const url = `${IMAGE_ENDPOINT}?key=${GEMINI_API_KEY}`;
   const body = {
-    instances: [{ prompt }],
-    parameters: { sampleCount: 1, aspectRatio: '16:9' },
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: {
+      responseModalities: ['TEXT', 'IMAGE'],
+    },
   };
   const res = await fetch(url, {
     method: 'POST',
@@ -67,7 +69,9 @@ async function generateImage(prompt, attempt = 1) {
     throw new Error(`Image API error ${res.status}: ${errText}`);
   }
   const json = await res.json();
-  const b64 = json?.predictions?.[0]?.bytesBase64Encoded;
+  const parts = json?.candidates?.[0]?.content?.parts || [];
+  const inlinePart = parts.find((p) => p.inlineData || p.inline_data);
+  const b64 = inlinePart?.inlineData?.data || inlinePart?.inline_data?.data;
   if (!b64) {
     throw new Error(`Image API returned no image data: ${JSON.stringify(json).slice(0, 500)}`);
   }
@@ -101,7 +105,7 @@ async function main() {
       const buf = await generateImage(prompt);
       await fs.writeFile(outPath, buf);
       imagePaths.push(outPath);
-      console.log(`[generate_images]   ${buf.length} bytes`);
+      console.log(`[generate_images] saved ${outPath} (${buf.length} bytes)`);
     } catch (e) {
       console.warn(`[generate_images]   FAILED chapter ${ch.index}: ${e.message}`);
     }

@@ -5,35 +5,39 @@
     "003",
     "004"
   ],
-  "lastRun": "2026-05-14T06:46:52.285Z",
-  "currentTopic": null,
-  "lastScriptPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/004_script.txt",
-  "lastScriptChars": 8654,
+  "lastRun": "2026-05-14T07:04:33.120Z",
+  "currentTopic": {
+    "id": "005",
+    "title": "武田信玄 風林火山の哲学",
+    "category": "人物軸"
+  },
+  "lastScriptPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_script.txt",
+  "lastScriptChars": 10266,
   "lastScriptChapters": [
     {
       "index": 1,
-      "title": "幼き日の苦難と試練",
-      "chars": 1514
+      "title": "風林火山、その魂の萌芽",
+      "chars": 1717
     },
     {
       "index": 2,
-      "title": "弱者の知恵と生存戦略",
-      "chars": 1772
+      "title": "侵略か、統治か？信玄の治国論",
+      "chars": 2838
     },
     {
       "index": 3,
-      "title": "信長との蜜月、そして試練",
-      "chars": 1584
+      "title": "疾きこと風の如く、侵攻の哲学",
+      "chars": 1779
     },
     {
       "index": 4,
-      "title": "豊臣秀吉との対峙と服従",
-      "chars": 2083
+      "title": "徐かなること林の如く、外交の深謀",
+      "chars": 1818
     },
     {
       "index": 5,
-      "title": "忍耐の果てに掴んだ天下",
-      "chars": 1610
+      "title": "動き難きこと山の如く、信玄の不動心",
+      "chars": 2004
     }
   ],
   "lastVoicePath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/004_voice.mp3",

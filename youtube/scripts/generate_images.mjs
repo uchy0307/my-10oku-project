@@ -71,9 +71,9 @@ function buildChapterQueries(topic, chapter) {
     const idx = (chapter?.index || 1) - 1;
     const personalAngles = [
       `${main}`,
-      `${main} 戦い`,
       `${main} 居城`,
-      `${main} 家臣`,
+      `${main} 合戦`,
+      `${main} 武具`,
       `${main} 墓`,
     ];
     queries.push(personalAngles[idx % personalAngles.length]);

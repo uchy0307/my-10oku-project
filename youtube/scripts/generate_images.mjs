@@ -1,6 +1,15 @@
 // youtube/scripts/generate_images.mjs
-// 章ごとの「実画像」をWikipedia/Wikimedia Commonsから取得（AI画像は使わない）
-// フォールバックでも実画像のみ。最終フォールバックは黒背景（compileがハードコード字幕で生かす）。
+// 章ごとに「異なる」実画像（Wikipedia / Wikimedia Commons）を取得して保存する。
+//
+// 厳守事項:
+//   - AI生成画像は一切使用しない（Pollinations / Imagen / DALL-E 等のコードは存在しない）
+//   - 取得元は Wikipedia / Commons の実在画像のみ
+//   - 5枚すべてが異なる sourceUrl になるよう dedup
+//   - 取れなかったら章タイトルテキストだけの黒背景プレースホルダー（AIフォールバックは禁止）
+//
+// 章ごとの戦略:
+//   chapter.index === 1 -> 主人公の肖像（topic主クエリ）
+//   chapter.index === 2-5 -> 章タイトルから抽出した固有名詞 → 関連史跡・合戦絵・別年代肖像 等
 //
 // input:  state.json.currentTopic, state.lastScriptChapters
 // output: youtube/output/<id>_img_1.png 〜 <id>_img_5.png (1280x720)
@@ -9,7 +18,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
-import { fetchWikiImage, buildCandidateQueries } from './fetch_portrait.mjs';
+import { fetchWikiImageMulti, buildCandidateQueries } from './fetch_portrait.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,48 +29,74 @@ const STATE_FILE = path.join(OUTPUT_DIR, 'state.json');
 const IMAGE_W = 1280;
 const IMAGE_H = 720;
 
+// カテゴリ別の Commons カテゴリ ヒント（章ごとに混ぜる）
+const COMMONS_CATEGORIES = {
+  '合戦軸': ['Category:Battles_of_Japan', 'Category:Sengoku_period', 'Category:Samurai'],
+  '人物軸': ['Category:Samurai', 'Category:Daimyo'],
+  '文化軸': ['Category:Edo_period_art', 'Category:Japanese_castles'],
+  '経済軸': ['Category:Edo_period', 'Category:Japanese_economic_history'],
+  '地理軸': ['Category:Japanese_castles', 'Category:Historic_sites_of_Japan'],
+};
+
 async function loadState() {
   const raw = await fs.readFile(STATE_FILE, 'utf-8');
   return JSON.parse(raw);
 }
 
-// 章ごとの検索候補クエリ
+// 章タイトルから検索クエリ候補を作る
 function buildChapterQueries(topic, chapter) {
   const queries = [];
-  if (chapter?.title) {
-    const cleaned = chapter.title.replace(/[「」『』【】]/g, '').trim();
-    if (cleaned.length >= 3) queries.push(cleaned);
-  }
-  queries.push(...buildCandidateQueries(topic.title || ''));
-  if (topic?.category) queries.push(topic.category);
-  return [...new Set(queries)].filter(Boolean);
-}
+  const main = buildCandidateQueries(topic.title || '')[0] || '';
+  const chTitle = (chapter?.title || '').replace(/[「」『』【】]/g, '').trim();
 
-async function fetchChapterImage(topic, chapter) {
-  const queries = buildChapterQueries(topic, chapter);
-  for (const q of queries) {
-    const r = await fetchWikiImage(q);
-    if (r && r.buffer) {
-      console.log(`[generate_images]   matched "${q}" -> ${r.sourceUrl}`);
-      return r.buffer;
+  // 章1は主人公中心
+  if (chapter?.index === 1 && main) {
+    queries.push(main);
+  }
+
+  // 章タイトル全体 / 漢字抜き出し
+  if (chTitle) {
+    queries.push(chTitle);
+    if (main) queries.push(`${main} ${chTitle}`);
+    const kanjiTerms = chTitle.match(/[一-龠]{2,}/g) || [];
+    for (const kt of kanjiTerms) {
+      queries.push(kt);
+      if (main && kt.length >= 2) queries.push(`${main} ${kt}`);
     }
   }
-  return null;
+
+  // 後方フォールバック
+  if (main) queries.push(`${main} 肖像`);
+  if (main) queries.push(`${main} 居城`);
+  queries.push(...buildCandidateQueries(topic.title || ''));
+
+  return [...new Set(queries)].filter((q) => q && q.length >= 2);
 }
 
-async function fallbackBlackImage() {
-  return sharp({
-    create: { width: IMAGE_W, height: IMAGE_H, channels: 3, background: { r: 14, g: 14, b: 14 } },
-  })
-    .png()
-    .toBuffer();
+// 章タイトル付きプレースホルダー画像（AIフォールバック不使用）
+async function placeholderImage(chapterTitle, chapterIndex) {
+  const W = IMAGE_W;
+  const H = IMAGE_H;
+  const text = (chapterTitle || `第${chapterIndex}章`).slice(0, 28);
+  const escape = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+  <rect width="${W}" height="${H}" fill="#1a1a1a"/>
+  <text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle"
+        font-family="Noto Sans CJK JP, Hiragino Sans, sans-serif"
+        font-size="56" font-weight="700" fill="#e7c66a"
+        stroke="#000" stroke-width="2" paint-order="stroke">${escape(text)}</text>
+  <text x="50%" y="90%" text-anchor="middle"
+        font-family="Noto Sans CJK JP, sans-serif"
+        font-size="24" fill="#888">― 第${chapterIndex}章 ―</text>
+</svg>`;
+  return sharp(Buffer.from(svg)).png().toBuffer();
 }
 
 async function processImage(rawBuf) {
-  // すべて 1280x720 cover で整形 + わずかに sepia / vignette を掛けて統一感を出す
   return sharp(rawBuf)
     .resize(IMAGE_W, IMAGE_H, { fit: 'cover', position: 'centre' })
-    .modulate({ saturation: 0.85 })
+    .modulate({ saturation: 0.9 })
     .png()
     .toBuffer();
 }
@@ -75,21 +110,43 @@ async function main() {
   }
   const chapters = state.lastScriptChapters || [];
   if (chapters.length === 0) {
-    console.warn('[generate_images] No chapters. Fallback to 5 generic chapter slots.');
+    console.warn('[generate_images] No chapters. Fallback to 5 generic.');
     for (let i = 1; i <= 5; i++) chapters.push({ index: i, title: `第${i}章` });
   }
+
+  // dedup用の Set（5章すべてで共有）
+  const usedUrls = new Set();
+  const usedPages = new Set();
+  const categoryHints = COMMONS_CATEGORIES[topic.category] || [];
 
   const imagePaths = [];
   for (const ch of chapters) {
     const outPath = path.join(OUTPUT_DIR, `${topic.id}_img_${ch.index}.png`);
     console.log(`[generate_images] Chapter ${ch.index} "${ch.title}" -> ${outPath}`);
+
+    const queries = buildChapterQueries(topic, ch);
+    let result = null;
+    for (const q of queries) {
+      result = await fetchWikiImageMulti(q, { excludeUrls: usedUrls, excludePages: usedPages });
+      if (result) break;
+    }
+    // commons category fallback per chapter (重複除外)
+    if (!result && categoryHints.length > 0) {
+      const cat = categoryHints[(ch.index - 1) % categoryHints.length];
+      result = await fetchWikiImageMulti('', { excludeUrls: usedUrls, excludePages: usedPages, commonsCategory: cat });
+    }
+
     try {
-      let raw = await fetchChapterImage(topic, ch);
-      if (!raw) {
-        console.warn(`[generate_images]   no wiki image, fallback black`);
-        raw = await fallbackBlackImage();
+      let finalBuf;
+      if (result && result.buffer) {
+        usedUrls.add(result.sourceUrl);
+        if (result.pageTitle) usedPages.add(result.pageTitle);
+        console.log(`[generate_images]   matched -> "${result.pageTitle}" -> ${result.sourceUrl}`);
+        finalBuf = await processImage(result.buffer);
+      } else {
+        console.warn(`[generate_images]   no wiki match for ch${ch.index}, using placeholder (NO AI fallback)`);
+        finalBuf = await placeholderImage(ch.title, ch.index);
       }
-      const finalBuf = await processImage(raw);
       await fs.writeFile(outPath, finalBuf);
       imagePaths.push(outPath);
       console.log(`[generate_images] saved ${outPath} (${finalBuf.length} bytes)`);
@@ -100,8 +157,9 @@ async function main() {
 
   state.lastImagePaths = imagePaths;
   state.lastImageGenAt = new Date().toISOString();
+  state.lastImageSources = [...usedUrls];
   await fs.writeFile(STATE_FILE, JSON.stringify(state, null, 2), 'utf-8');
-  console.log(`[generate_images] DONE: ${imagePaths.length}/${chapters.length} images`);
+  console.log(`[generate_images] DONE: ${imagePaths.length}/${chapters.length} images. unique sources=${usedUrls.size}`);
 }
 
 main().catch((err) => {

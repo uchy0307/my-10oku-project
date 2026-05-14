@@ -1,55 +1,56 @@
 {
   "processed": [
     "001",
-    "002"
+    "002",
+    "003"
   ],
-  "lastRun": "2026-05-14T05:25:10.892Z",
+  "lastRun": "2026-05-14T06:31:51.502Z",
   "currentTopic": null,
-  "lastScriptPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/002_script.txt",
-  "lastScriptChars": 10934,
+  "lastScriptPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/003_script.txt",
+  "lastScriptChars": 9256,
   "lastScriptChapters": [
     {
       "index": 1,
-      "title": "天下布武の涯てに蠢く影",
-      "chars": 1384
+      "title": "日の出前の野心",
+      "chars": 1794
     },
     {
       "index": 2,
-      "title": "光秀の苦悩と野望の淵",
-      "chars": 2451
+      "title": "織田信長との邂逅",
+      "chars": 1662
     },
     {
       "index": 3,
-      "title": "秀吉、漁夫の利か、仕組まれた策謀か",
-      "chars": 2596
+      "title": "天下統一への階段",
+      "chars": 2761
     },
     {
       "index": 4,
-      "title": "織田家内部の複雑な人間関係",
-      "chars": 1949
+      "title": "天下人への道",
+      "chars": 1691
     },
     {
       "index": 5,
-      "title": "歴史の闇に消えた真実と侍の美学",
-      "chars": 2450
+      "title": "栄枯盛衰、夢の果て",
+      "chars": 1272
     }
   ],
-  "lastVoicePath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/002_voice.mp3",
-  "lastVoiceAt": "2026-05-14T05:26:07.807Z",
+  "lastVoicePath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/003_voice.mp3",
+  "lastVoiceAt": "2026-05-14T06:32:55.226Z",
   "lastImagePaths": [],
-  "lastImageGenAt": "2026-05-14T05:26:08.278Z",
-  "lastMetaPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/002_meta.json",
-  "lastThumbPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/002_thumb.png",
-  "lastVideoPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/002_video.mp4",
-  "lastAssPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/002_subs.ass",
-  "lastSubsCount": 625,
-  "lastCompileAt": "2026-05-14T05:30:42.056Z",
+  "lastImageGenAt": "2026-05-14T06:32:55.948Z",
+  "lastMetaPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/003_meta.json",
+  "lastThumbPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/003_thumb.png",
+  "lastVideoPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/003_video.mp4",
+  "lastAssPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/003_subs.ass",
+  "lastSubsCount": 554,
+  "lastCompileAt": "2026-05-14T06:36:41.794Z",
   "videoStatus": "ready",
   "lastUploadResult": {
     "status": "success",
-    "topicId": "002",
-    "videoId": "hXPM7p78-oQ",
-    "url": "https://www.youtube.com/watch?v=hXPM7p78-oQ"
+    "topicId": "003",
+    "videoId": "XlNQ_0wQA8M",
+    "url": "https://www.youtube.com/watch?v=XlNQ_0wQA8M"
   },
-  "lastUploadAt": "2026-05-14T05:30:46.347Z"
+  "lastUploadAt": "2026-05-14T06:36:46.888Z"
 }

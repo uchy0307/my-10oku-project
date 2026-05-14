@@ -1,0 +1,61 @@
+name: Retro Thumbnails
+
+# 既存YouTube動画のサムネだけ後付けで差し替える専用ワークフロー。
+# workflow_dispatch のみ（cronなし）。手動操作専用。
+
+on:
+  workflow_dispatch:
+    inputs:
+      max:
+        description: 'Number of recent uploads to retro-thumbnail (default 4)'
+        type: string
+        default: '4'
+      interval_ms:
+        description: 'Sleep between videos (ms, default 30000)'
+        type: string
+        default: '30000'
+
+permissions:
+  contents: read
+
+jobs:
+  retro:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+      YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+      YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+      YOUTUBE_PLAYLIST_ALL_ID: PLDSFeBtTVyQ1A0BLUQpbv_JLdqEscfYJl
+      RETRO_MAX: ${{ inputs.max }}
+      RETRO_INTERVAL_MS: ${{ inputs.interval_ms }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install fonts (for SVG composite render)
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y fonts-noto-cjk
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Run retro thumbnails
+        run: node youtube/scripts/retro_thumbnails.mjs
+
+      - name: Upload retro artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: retro-thumbs-${{ github.run_number }}
+          path: |
+            youtube/output/retro_thumbs/*.png
+            youtube/output/retro_thumbs/summary.json
+          if-no-files-found: warn
+          retention-days: 7

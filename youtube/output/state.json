@@ -5,51 +5,57 @@
     "003",
     "004"
   ],
-  "lastRun": "2026-05-14T07:04:33.120Z",
+  "lastRun": "2026-05-14T08:40:15.770Z",
   "currentTopic": {
     "id": "005",
     "title": "武田信玄 風林火山の哲学",
     "category": "人物軸"
   },
   "lastScriptPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_script.txt",
-  "lastScriptChars": 10266,
+  "lastScriptChars": 10640,
   "lastScriptChapters": [
     {
       "index": 1,
-      "title": "風林火山、その魂の萌芽",
-      "chars": 1717
+      "title": "甲斐の虎、覚醒前夜",
+      "chars": 1609
     },
     {
       "index": 2,
-      "title": "侵略か、統治か？信玄の治国論",
-      "chars": 2838
+      "title": "「風林火山」の源流",
+      "chars": 2012
     },
     {
       "index": 3,
-      "title": "疾きこと風の如く、侵攻の哲学",
-      "chars": 1779
+      "title": "智と勇の戦術、実践",
+      "chars": 3025
     },
     {
       "index": 4,
-      "title": "徐かなること林の如く、外交の深謀",
-      "chars": 1818
+      "title": "乱世の雄、その内なる葛藤",
+      "chars": 1466
     },
     {
       "index": 5,
-      "title": "動き難きこと山の如く、信玄の不動心",
-      "chars": 2004
+      "title": "風林火山の後世への遺産",
+      "chars": 2440
     }
   ],
-  "lastVoicePath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/004_voice.mp3",
-  "lastVoiceAt": "2026-05-14T06:47:38.908Z",
-  "lastImagePaths": [],
-  "lastImageGenAt": "2026-05-14T06:47:39.493Z",
-  "lastMetaPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/004_meta.json",
-  "lastThumbPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/004_thumb.png",
-  "lastVideoPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/004_video.mp4",
-  "lastAssPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/004_subs.ass",
-  "lastSubsCount": 509,
-  "lastCompileAt": "2026-05-14T06:51:19.782Z",
+  "lastVoicePath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_voice.mp3",
+  "lastVoiceAt": "2026-05-14T08:41:14.496Z",
+  "lastImagePaths": [
+    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_img_1.png",
+    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_img_2.png",
+    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_img_3.png",
+    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_img_4.png",
+    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_img_5.png"
+  ],
+  "lastImageGenAt": "2026-05-14T08:59:21.475Z",
+  "lastMetaPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_meta.json",
+  "lastThumbPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_thumb.png",
+  "lastVideoPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_video.mp4",
+  "lastAssPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_subs.ass",
+  "lastSubsCount": 640,
+  "lastCompileAt": "2026-05-14T09:03:23.907Z",
   "videoStatus": "ready",
   "lastUploadResult": {
     "status": "success",

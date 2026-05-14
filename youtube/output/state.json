@@ -6,53 +6,57 @@
     "004",
     "005"
   ],
-  "lastRun": "2026-05-14T09:20:05.158Z",
-  "currentTopic": null,
-  "lastScriptPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_script.txt",
-  "lastScriptChars": 8825,
+  "lastRun": "2026-05-14T13:47:52.253Z",
+  "currentTopic": {
+    "id": "006",
+    "title": "上杉謙信 義に生きた軍神",
+    "category": "人物軸"
+  },
+  "lastScriptPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_script.txt",
+  "lastScriptChars": 7335,
   "lastScriptChapters": [
     {
       "index": 1,
-      "title": "甲斐の虎、その咆哮",
-      "chars": 1684
+      "title": "越後の虎、誕生の予兆",
+      "chars": 1279
     },
     {
       "index": 2,
-      "title": "風林火山の源流",
-      "chars": 1875
+      "title": "天下を揺るがす義の旗",
+      "chars": 2020
     },
     {
       "index": 3,
-      "title": "智と勇の戦略",
-      "chars": 2227
+      "title": "宿敵との魂の対峙",
+      "chars": 1192
     },
     {
       "index": 4,
-      "title": "乱世に刻む理想",
-      "chars": 1660
+      "title": "北陸への夢と越後守護の責務",
+      "chars": 1448
     },
     {
       "index": 5,
-      "title": "甲斐の夢、永劫の響き",
-      "chars": 1302
+      "title": "義の道の果て、そして伝説へ",
+      "chars": 1304
     }
   ],
-  "lastVoicePath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_voice.mp3",
-  "lastVoiceAt": "2026-05-14T09:20:52.384Z",
+  "lastVoicePath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_voice.mp3",
+  "lastVoiceAt": "2026-05-14T13:48:35.029Z",
   "lastImagePaths": [
-    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_img_1.png",
-    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_img_2.png",
-    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_img_3.png",
-    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_img_4.png",
-    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_img_5.png"
+    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_img_1.png",
+    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_img_2.png",
+    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_img_3.png",
+    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_img_4.png",
+    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_img_5.png"
   ],
-  "lastImageGenAt": "2026-05-14T09:39:00.987Z",
-  "lastMetaPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_meta.json",
-  "lastThumbPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_thumb.png",
-  "lastVideoPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_video.mp4",
-  "lastAssPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/005_subs.ass",
-  "lastSubsCount": 522,
-  "lastCompileAt": "2026-05-14T09:41:43.495Z",
+  "lastImageGenAt": "2026-05-14T13:48:40.653Z",
+  "lastMetaPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_meta.json",
+  "lastThumbPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_thumb.png",
+  "lastVideoPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_video.mp4",
+  "lastAssPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_subs.ass",
+  "lastSubsCount": 437,
+  "lastCompileAt": "2026-05-14T13:54:46.776Z",
   "videoStatus": "ready",
   "lastUploadResult": {
     "status": "success",

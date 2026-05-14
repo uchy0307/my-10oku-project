@@ -20,7 +20,7 @@ permissions:
 jobs:
   cycle:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 120
     env:
       # 全ステップ共通の鍵（generate_voice は Google TTS フォールバックで GOOGLE_API_KEY を使用するなど）
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -37,6 +37,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      - name: Add 8GB swap (ffmpeg compile safety net)
+        run: |
+          sudo fallocate -l 8G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          free -h
 
       - name: Install ffmpeg
         run: |

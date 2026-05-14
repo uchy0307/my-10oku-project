@@ -1,0 +1,54 @@
+{
+  "processed": [
+    "001"
+  ],
+  "lastRun": "2026-05-14T02:36:46.254Z",
+  "currentTopic": null,
+  "lastScriptPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/001_script.txt",
+  "lastScriptChars": 10354,
+  "lastScriptChapters": [
+    {
+      "index": 1,
+      "title": "尾張の風雲児、その誕生",
+      "chars": 2392
+    },
+    {
+      "index": 2,
+      "title": "義元の西進、迫る脅威",
+      "chars": 1324
+    },
+    {
+      "index": 3,
+      "title": "絶望の中の決断",
+      "chars": 2411
+    },
+    {
+      "index": 4,
+      "title": "桶狭間の奇跡、その裏側",
+      "chars": 2409
+    },
+    {
+      "index": 5,
+      "title": "桶狭間が拓いた未来",
+      "chars": 1732
+    }
+  ],
+  "lastVoicePath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/001_voice.mp3",
+  "lastVoiceAt": "2026-05-14T02:37:42.841Z",
+  "lastImagePaths": [],
+  "lastImageGenAt": "2026-05-14T02:37:43.585Z",
+  "lastMetaPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/001_meta.json",
+  "lastThumbPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/001_thumb.png",
+  "lastVideoPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/001_video.mp4",
+  "lastAssPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/001_subs.ass",
+  "lastSubsCount": 627,
+  "lastCompileAt": "2026-05-14T02:42:11.421Z",
+  "videoStatus": "ready",
+  "lastUploadResult": {
+    "status": "success",
+    "topicId": "001",
+    "videoId": "yNRRLLjZjRc",
+    "url": "https://www.youtube.com/watch?v=yNRRLLjZjRc"
+  },
+  "lastUploadAt": "2026-05-14T02:42:16.470Z"
+}

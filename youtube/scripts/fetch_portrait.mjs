@@ -17,6 +17,7 @@ const IMAGE_TIMEOUT = 30000;
 const UA = '10oku-project-bot/1.0 (Wikipedia/Commons image fetch)';
 
 async function fetchWithTimeout(url, ms, opts = {}) {
+    await new Promise((r) => setTimeout(r, 500));
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), ms);
   try {

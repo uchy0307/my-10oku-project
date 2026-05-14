@@ -1,23 +1,13 @@
 // youtube/scripts/compile_video.mjs
-// 動画コンパイル: 章ごとの画像切替 + 字幕焼き込み + 音声 → mp4
-//
-// 入力:
-//   - youtube/output/<id>_voice.mp3
-//   - youtube/output/<id>_script.txt
-//   - youtube/output/<id>_img_1.png 〜 <id>_img_N.png (generate_images.mjs)
-//   - state.json
-//
-// 出力:
-//   - youtube/output/<id>_thumb.png (1280x720)
-//   - youtube/output/<id>_video.mp4
-//   - youtube/output/<id>_meta.json
-//   - youtube/output/<id>_subs.ass (字幕焼き込み元)
+// 動画コンパイル: 章ごとの画像切替 + 字幕焼き込み + 音声 → mp4 (2-pass)
+// + サムネ: Wikipedia人物写真 + 黄色和紙風背景 + 赤＋黄縁太字タイトル + 動画長pill
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import sharp from 'sharp';
+import { fetchWikiImage, buildCandidateQueries } from './fetch_portrait.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,9 +26,7 @@ async function fileExists(p) {
   try { await fs.access(p); return true; } catch { return false; }
 }
 
-// ─────────────────────────────────────────────
-// 読み上げ用テキスト正規化（generate_voice.mjs と同じロジック）
-// ─────────────────────────────────────────────
+// ─── 読み上げ用テキスト正規化 ───
 function cleanScriptForSubs(text) {
   let t = text;
   t = t.replace(/\[[^\]\n]*\]/g, '');
@@ -54,35 +42,25 @@ function cleanScriptForSubs(text) {
   return t.trim();
 }
 
-// ─────────────────────────────────────────────
-// 字幕：句点・改行で文単位に分割
-// ─────────────────────────────────────────────
 function splitToSentences(text) {
-  // 行内では「。」「！」「？」で分割。短すぎる断片は次へ結合。
   const sentences = [];
   const paragraphs = text.split(/\n+/);
   for (const para of paragraphs) {
     if (!para.trim()) continue;
-    // 句読点で分割しつつデリミタ保持
     const parts = para.split(/(?<=[。！？])/).map((s) => s.trim()).filter(Boolean);
     let buf = '';
     for (const p of parts) {
       buf += p;
-      // 30字以上溜まったら確定
-      if (buf.length >= 28) {
-        sentences.push(buf);
-        buf = '';
-      }
+      if (buf.length >= 28) { sentences.push(buf); buf = ''; }
     }
     if (buf) sentences.push(buf);
   }
   return sentences;
 }
 
-// 文字数比でタイミングを割り振り、長すぎる文はさらに分割表示
 function buildSubtitleSegments(sentences, totalSec) {
   const totalChars = sentences.reduce((s, x) => s + x.length, 0) || 1;
-  const cps = totalChars / totalSec; // chars per sec
+  const cps = totalChars / totalSec;
   let cursor = 0;
   const segs = [];
   for (const sent of sentences) {
@@ -90,7 +68,6 @@ function buildSubtitleSegments(sentences, totalSec) {
     const start = cursor;
     const end = cursor + dur;
     cursor = end;
-    // 1セグメントが長すぎる(>5s)場合は分割
     if (dur > 5) {
       const chunks = Math.ceil(dur / 4);
       const chunkDur = dur / chunks;
@@ -98,11 +75,7 @@ function buildSubtitleSegments(sentences, totalSec) {
       for (let i = 0; i < chunks; i++) {
         const text = sent.slice(i * chunkLen, (i + 1) * chunkLen);
         if (!text) continue;
-        segs.push({
-          start: start + i * chunkDur,
-          end: start + (i + 1) * chunkDur,
-          text,
-        });
+        segs.push({ start: start + i * chunkDur, end: start + (i + 1) * chunkDur, text });
       }
     } else {
       segs.push({ start, end, text: sent });
@@ -121,7 +94,6 @@ function fmtAssTime(sec) {
 }
 
 function buildAss(segments) {
-  // ASS字幕フォーマット。下部中央・大きめ白文字＋黒縁取り
   const header = `[Script Info]
 ScriptType: v4.00+
 PlayResX: 1280
@@ -141,9 +113,6 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
   return header + events + '\n';
 }
 
-// ─────────────────────────────────────────────
-// 画像コンキャットリスト（章ごとに均等割り）
-// ─────────────────────────────────────────────
 async function buildImageConcatList(topicId, imagePaths, totalSec) {
   if (imagePaths.length === 0) return null;
   const perImage = totalSec / imagePaths.length;
@@ -152,84 +121,100 @@ async function buildImageConcatList(topicId, imagePaths, totalSec) {
     lines.push(`file '${p}'`);
     lines.push(`duration ${perImage.toFixed(3)}`);
   }
-  // ffmpeg concat requirement: last file repeated without duration
   lines.push(`file '${imagePaths[imagePaths.length - 1]}'`);
   const listPath = path.join(OUTPUT_DIR, `${topicId}_imgs.txt`);
   await fs.writeFile(listPath, lines.join('\n'), 'utf-8');
   return listPath;
 }
 
-// ─────────────────────────────────────────────
-// サムネ生成：第1章画像があれば使い、無ければ黒背景。タイトル文字オーバーレイ
-// ─────────────────────────────────────────────
-async function renderThumb(title, outPath, bgImagePath) {
+// ─── サムネ生成: 黄色和紙背景 + Wiki肖像 + 赤+黄縁タイトル ───
+async function renderThumb(topic, totalSec, outPath, portraitBuffer) {
   const W = 1280;
   const H = 720;
-  const len = title.length;
-  let fontSize = 88;
-  if (len > 14) fontSize = 72;
-  if (len > 22) fontSize = 58;
-  if (len > 34) fontSize = 44;
+  const LEFT_W = 576; // 45%
 
-  const half = Math.ceil(len / 2);
-  const breakPos = title.lastIndexOf(' ', half);
-  const line1 = breakPos > 0 ? title.slice(0, breakPos) : title;
-  const line2 = breakPos > 0 ? title.slice(breakPos + 1) : '';
+  const rawTitle = (topic.title || '').replace(/^[【「『][^】」』]*[】」』]\s*/g, '').trim();
+  // 主要部分: 半角・全角スペース/中黒/カンマで分割した先頭
+  const main = rawTitle.split(/[\s　,、・「」『』]/)[0] || rawTitle || '日本史';
+  const len = main.length;
+  const mid = Math.ceil(len / 2);
+  const line1 = main.slice(0, mid);
+  const line2 = main.slice(mid);
+  const maxLine = Math.max(line1.length, line2.length || 0);
+
+  // フォントサイズ自動調整。利用幅 1280-576-80 = 624px
+  let fontSize = 300;
+  if (maxLine === 2) fontSize = 300;
+  else if (maxLine === 3) fontSize = 220;
+  else if (maxLine === 4) fontSize = 170;
+  else if (maxLine >= 5) fontSize = 130;
+
+  const textCx = LEFT_W + (W - LEFT_W) / 2;
   const escape = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-  // 下半分にグラデの暗幕を敷いて文字を読みやすく
-  const overlaySvg = `<?xml version="1.0" encoding="UTF-8"?>
+  const dm = Math.floor(totalSec / 60);
+  const ds = Math.floor(totalSec % 60).toString().padStart(2, '0');
+  const durTxt = `${dm}:${ds}`;
+
+  // 背景SVG: 黄色和紙テクスチャ
+  const bgSvg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#000" stop-opacity="0.0"/>
-      <stop offset="0.4" stop-color="#000" stop-opacity="0.45"/>
-      <stop offset="1" stop-color="#000" stop-opacity="0.85"/>
+    <pattern id="paper" patternUnits="userSpaceOnUse" width="14" height="14">
+      <rect width="14" height="14" fill="#E8C547"/>
+      <circle cx="3" cy="3" r="0.6" fill="rgba(160,120,40,0.35)"/>
+      <circle cx="9" cy="7" r="0.4" fill="rgba(160,120,40,0.25)"/>
+      <circle cx="5" cy="11" r="0.5" fill="rgba(160,120,40,0.30)"/>
+    </pattern>
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F0D060"/>
+      <stop offset="1" stop-color="#D9A82B"/>
     </linearGradient>
   </defs>
-  <rect x="0" y="0" width="${W}" height="${H}" fill="url(#g)"/>
-  <text x="50%" y="${line2 ? '60%' : '70%'}" text-anchor="middle" dominant-baseline="middle"
-        font-family="Noto Sans CJK JP, Hiragino Sans, sans-serif"
-        font-size="${fontSize}" fill="#fff7e0" font-weight="900"
-        stroke="#000" stroke-width="3" paint-order="stroke">${escape(line1)}</text>
-  ${line2 ? `<text x="50%" y="78%" text-anchor="middle" dominant-baseline="middle"
-        font-family="Noto Sans CJK JP, Hiragino Sans, sans-serif"
-        font-size="${fontSize}" fill="#fff7e0" font-weight="900"
-        stroke="#000" stroke-width="3" paint-order="stroke">${escape(line2)}</text>` : ''}
-  <text x="50%" y="93%" text-anchor="middle"
-        font-family="Noto Sans CJK JP, Hiragino Sans, sans-serif"
-        font-size="30" fill="#e7c66a" font-style="italic"
-        stroke="#000" stroke-width="2" paint-order="stroke">― 侍の美学 ―</text>
+  <rect width="${W}" height="${H}" fill="url(#rim)"/>
+  <rect width="${W}" height="${H}" fill="url(#paper)" opacity="0.6"/>
 </svg>`;
 
-  if (bgImagePath && (await fileExists(bgImagePath))) {
-    // 背景画像にオーバーレイ合成
-    await sharp(bgImagePath)
-      .resize(W, H, { fit: 'cover', position: 'centre' })
-      .composite([{ input: Buffer.from(overlaySvg), top: 0, left: 0 }])
-      .png()
-      .toFile(outPath);
-  } else {
-    // 画像なしフォールバック: 黒背景
-    const bg = await sharp({
-      create: { width: W, height: H, channels: 3, background: { r: 10, g: 10, b: 10 } },
-    }).png().toBuffer();
-    await sharp(bg)
-      .composite([{ input: Buffer.from(overlaySvg), top: 0, left: 0 }])
-      .png()
-      .toFile(outPath);
+  // テキスト+pill SVG（左肖像領域は除外）
+  const textSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+  <text x="${textCx}" y="${line2 ? '32%' : '50%'}" text-anchor="middle" dominant-baseline="middle"
+        font-family="Noto Sans CJK JP, Hiragino Sans, sans-serif" font-weight="900"
+        font-size="${fontSize}" fill="#C8102E"
+        stroke="#FFF6A8" stroke-width="8" paint-order="stroke">${escape(line1)}</text>
+  ${line2 ? `<text x="${textCx}" y="68%" text-anchor="middle" dominant-baseline="middle"
+        font-family="Noto Sans CJK JP, Hiragino Sans, sans-serif" font-weight="900"
+        font-size="${fontSize}" fill="#C8102E"
+        stroke="#FFF6A8" stroke-width="8" paint-order="stroke">${escape(line2)}</text>` : ''}
+  <rect x="${W - 200}" y="${H - 76}" width="170" height="54" rx="27" fill="rgba(0,0,0,0.78)"/>
+  <text x="${W - 115}" y="${H - 36}" text-anchor="middle" dominant-baseline="middle"
+        font-family="Noto Sans CJK JP, sans-serif" font-size="34" font-weight="700" fill="#FFFFFF">${durTxt}</text>
+</svg>`;
+
+  const baseBg = await sharp(Buffer.from(bgSvg)).png().toBuffer();
+  const composites = [];
+
+  if (portraitBuffer) {
+    try {
+      const portrait = await sharp(portraitBuffer)
+        .resize(LEFT_W, H, { fit: 'cover', position: 'centre' })
+        .png()
+        .toBuffer();
+      composites.push({ input: portrait, top: 0, left: 0 });
+    } catch (e) {
+      console.warn(`[compile_video] portrait resize failed: ${e.message}`);
+    }
   }
+
+  composites.push({ input: Buffer.from(textSvg), top: 0, left: 0 });
+
+  await sharp(baseBg).composite(composites).png().toFile(outPath);
 }
 
-// ─────────────────────────────────────────────
-// ffprobe で音声長を取得
-// ─────────────────────────────────────────────
 function probeDuration(filePath) {
   return new Promise((resolve, reject) => {
-    const proc = spawn('ffprobe', [
-      '-v', 'error', '-show_entries', 'format=duration',
-      '-of', 'default=noprint_wrappers=1:nokey=1', filePath,
-    ]);
+    const proc = spawn('ffprobe', ['-v', 'error', '-show_entries', 'format=duration',
+      '-of', 'default=noprint_wrappers=1:nokey=1', filePath]);
     let out = '';
     proc.stdout.on('data', (d) => { out += d.toString(); });
     proc.on('error', reject);
@@ -240,9 +225,6 @@ function probeDuration(filePath) {
   });
 }
 
-// ─────────────────────────────────────────────
-// ffmpeg で動画生成（画像切替 + 字幕焼き込み + 音声）
-// ─────────────────────────────────────────────
 function runFfmpeg(args) {
   return new Promise((resolve, reject) => {
     console.log(`[compile_video] ffmpeg ${args.join(' ')}`);
@@ -255,14 +237,8 @@ function runFfmpeg(args) {
   });
 }
 
-// ─────────────────────────────────────────────
-// メタ生成
-// ─────────────────────────────────────────────
 function generateMeta(topic, scriptText) {
-  const cleanText = scriptText
-    .replace(/\[VISUAL:[^\]]*\]/g, '')
-    .replace(/\n+/g, ' ')
-    .trim();
+  const cleanText = scriptText.replace(/\[VISUAL:[^\]]*\]/g, '').replace(/\n+/g, ' ').trim();
   const opening = cleanText.slice(0, 200);
   const tags = ['日本史', '歴史', topic.category, '侍の美学', '武士道', 'ナレーション'];
   const titleWords = (topic.title || '').split(/[ 　]/).filter((w) => w.length >= 2);
@@ -279,9 +255,19 @@ function generateMeta(topic, scriptText) {
   };
 }
 
-// ─────────────────────────────────────────────
-// メイン
-// ─────────────────────────────────────────────
+async function fetchTopicPortrait(topic) {
+  const queries = buildCandidateQueries(topic.title);
+  for (const q of queries) {
+    const r = await fetchWikiImage(q);
+    if (r && r.buffer) {
+      console.log(`[compile_video] portrait matched "${q}" -> ${r.sourceUrl}`);
+      return r.buffer;
+    }
+  }
+  console.warn('[compile_video] no Wikipedia portrait found, thumbnail will use yellow bg + text only');
+  return null;
+}
+
 async function main() {
   const state = await loadState();
   const topic = state.currentTopic;
@@ -294,13 +280,13 @@ async function main() {
   const voicePath = path.join(OUTPUT_DIR, `${topic.id}_voice.mp3`);
   const thumbPath = path.join(OUTPUT_DIR, `${topic.id}_thumb.png`);
   const videoPath = path.join(OUTPUT_DIR, `${topic.id}_video.mp4`);
+  const silentPath = path.join(OUTPUT_DIR, `${topic.id}_silent.mp4`);
   const metaPath = path.join(OUTPUT_DIR, `${topic.id}_meta.json`);
   const assPath = path.join(OUTPUT_DIR, `${topic.id}_subs.ass`);
 
   if (!(await fileExists(scriptPath))) throw new Error(`Script missing: ${scriptPath}`);
   if (!(await fileExists(voicePath))) throw new Error(`Voice missing: ${voicePath}`);
 
-  // 画像探索（generate_images.mjs が生成）
   const imagePaths = [];
   for (let i = 1; i <= 10; i++) {
     const p = path.join(OUTPUT_DIR, `${topic.id}_img_${i}.png`);
@@ -308,11 +294,9 @@ async function main() {
   }
   console.log(`[compile_video] images: ${imagePaths.length}`);
 
-  // 音声長
   const totalSec = await probeDuration(voicePath);
   console.log(`[compile_video] voice duration: ${totalSec.toFixed(1)}s`);
 
-  // 字幕生成
   const scriptText = await fs.readFile(scriptPath, 'utf-8');
   const cleanText = cleanScriptForSubs(scriptText);
   const sentences = splitToSentences(cleanText);
@@ -321,55 +305,60 @@ async function main() {
   await fs.writeFile(assPath, assContent, 'utf-8');
   console.log(`[compile_video] subs: ${segments.length} cues -> ${assPath}`);
 
-  // メタ
   const meta = generateMeta(topic, scriptText);
   await fs.writeFile(metaPath, JSON.stringify(meta, null, 2), 'utf-8');
 
-  // サムネ (第1画像があれば背景に)
-  console.log(`[compile_video] thumb`);
-  await renderThumb(topic.title || meta.title, thumbPath, imagePaths[0] || null);
+  // ── サムネ: Wikipedia portrait + 黄色和紙背景 + 赤+黄縁タイトル ──
+  console.log(`[compile_video] fetching topic portrait from Wikipedia/Commons...`);
+  const portraitBuf = await fetchTopicPortrait(topic);
+  console.log(`[compile_video] rendering thumb: ${thumbPath}`);
+  await renderThumb(topic, totalSec, thumbPath, portraitBuf);
 
-  // ffmpeg コマンド構築
-  let ffmpegArgs;
+  // ── 2パス ffmpeg ──
+  // Pass1: 画像concat + 字幕焼き込み → 無音動画
   if (imagePaths.length >= 1) {
-    // 画像コンキャット + 音声 + 字幕（mov_text ソフトサブ）
-    // libass 焼き込みは buffer overrun でストールするため不使用
     const listPath = await buildImageConcatList(topic.id, imagePaths, totalSec);
-    ffmpegArgs = [
+    const pass1Args = [
       '-y',
       '-f', 'concat', '-safe', '0', '-i', listPath,
-      '-i', voicePath,
-      '-i', assPath,
-      '-map', '0:v', '-map', '1:a', '-map', '2:s',
-      '-vf', 'scale=1280:720:force_original_aspect_ratio=increase,crop=1280:720,fps=30',
+      '-vf', `scale=1280:720:force_original_aspect_ratio=increase,crop=1280:720,fps=30,subtitles=${assPath}`,
       '-c:v', 'libx264', '-preset', 'veryfast', '-pix_fmt', 'yuv420p',
       '-fps_mode', 'vfr',
-      '-c:a', 'aac', '-b:a', '192k',
-      '-c:s', 'mov_text',
       '-max_muxing_queue_size', '9999',
-      '-shortest',
-      videoPath,
+      '-t', String(totalSec),
+      silentPath,
     ];
+    console.log(`[compile_video] PASS1 silent video: ${silentPath}`);
+    await runFfmpeg(pass1Args);
   } else {
-    // フォールバック: 黒背景単色 + 字幕（ソフトサブ） + 音声
-    ffmpegArgs = [
+    // 画像なしフォールバック: 黒背景＋字幕
+    const pass1Args = [
       '-y',
       '-f', 'lavfi', '-t', String(totalSec), '-i', 'color=c=#0a0a0a:s=1280x720:r=30',
-      '-i', voicePath,
-      '-i', assPath,
-      '-map', '0:v', '-map', '1:a', '-map', '2:s',
+      '-vf', `subtitles=${assPath}`,
       '-c:v', 'libx264', '-preset', 'veryfast', '-pix_fmt', 'yuv420p',
       '-fps_mode', 'vfr',
-      '-c:a', 'aac', '-b:a', '192k',
-      '-c:s', 'mov_text',
       '-max_muxing_queue_size', '9999',
-      '-shortest',
-      videoPath,
+      silentPath,
     ];
+    console.log(`[compile_video] PASS1 fallback silent: ${silentPath}`);
+    await runFfmpeg(pass1Args);
   }
 
-  console.log(`[compile_video] video 生成: ${videoPath}`);
-  await runFfmpeg(ffmpegArgs);
+  // Pass2: 無音動画 + 音声 mux (-c:v copy で爆速)
+  const pass2Args = [
+    '-y',
+    '-i', silentPath,
+    '-i', voicePath,
+    '-c:v', 'copy',
+    '-c:a', 'aac', '-b:a', '192k',
+    '-shortest',
+    videoPath,
+  ];
+  console.log(`[compile_video] PASS2 mux audio: ${videoPath}`);
+  await runFfmpeg(pass2Args);
+
+  // silent.mp4 は中間生成物として残しておく（artifactsからdebug可能）
 
   state.lastMetaPath = metaPath;
   state.lastThumbPath = thumbPath;

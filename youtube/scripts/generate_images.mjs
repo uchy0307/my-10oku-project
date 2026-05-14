@@ -31,11 +31,11 @@ const IMAGE_H = 720;
 
 // カテゴリ別の Commons カテゴリ ヒント（章ごとに混ぜる）
 const COMMONS_CATEGORIES = {
-  '合戦軸': ['Category:Battles_of_Japan', 'Category:Sengoku_period', 'Category:Samurai'],
-  '人物軸': ['Category:Samurai', 'Category:Daimyo'],
-  '文化軸': ['Category:Edo_period_art', 'Category:Japanese_castles'],
-  '経済軸': ['Category:Edo_period', 'Category:Japanese_economic_history'],
-  '地理軸': ['Category:Japanese_castles', 'Category:Historic_sites_of_Japan'],
+  '合戦軸': ['Category:Battles_of_Japan', 'Category:Sengoku_period', 'Category:Samurai', 'Category:Japanese_castles', 'Category:Historic_sites_of_Japan', 'Category:Daimyo', 'Category:Bushido'],
+  '人物軸': ['Category:Samurai', 'Category:Daimyo', 'Category:Japanese_castles', 'Category:Sengoku_period', 'Category:Historic_sites_of_Japan', 'Category:Battles_of_Japan', 'Category:Bushido'],
+  '文化軸': ['Category:Edo_period_art', 'Category:Japanese_castles', 'Category:Samurai', 'Category:Japanese_traditional_culture', 'Category:Bushido', 'Category:Daimyo', 'Category:Historic_sites_of_Japan'],
+  '経済軸': ['Category:Edo_period', 'Category:Japanese_economic_history', 'Category:Japanese_castles', 'Category:Samurai', 'Category:Sengoku_period', 'Category:Historic_sites_of_Japan'],
+  '地理軸': ['Category:Japanese_castles', 'Category:Historic_sites_of_Japan', 'Category:Sengoku_period', 'Category:Samurai', 'Category:Daimyo', 'Category:Battles_of_Japan'],
 };
 
 async function loadState() {
@@ -153,10 +153,18 @@ async function main() {
       result = await fetchWikiImageMulti(q, { excludeUrls: usedUrls, excludePages: usedPages });
       if (result) break;
     }
-    // commons category fallback per chapter (重複除外)
+    // commons category fallback: 章ごとに違うカテゴリを優先順位付きで全部試す
     if (!result && categoryHints.length > 0) {
-      const cat = categoryHints[(ch.index - 1) % categoryHints.length];
-      result = await fetchWikiImageMulti('', { excludeUrls: usedUrls, excludePages: usedPages, commonsCategory: cat });
+      // chapter index に応じて開始カテゴリをずらす
+      const startIdx = (ch.index - 1) % categoryHints.length;
+      for (let i = 0; i < categoryHints.length; i++) {
+        const cat = categoryHints[(startIdx + i) % categoryHints.length];
+        result = await fetchWikiImageMulti('', { excludeUrls: usedUrls, excludePages: usedPages, commonsCategory: cat });
+        if (result) {
+          console.log(`[generate_images]   commons category match: ${cat}`);
+          break;
+        }
+      }
     }
 
     try {

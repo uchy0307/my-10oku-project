@@ -1,0 +1,68 @@
+{
+  "processed": [
+    "001",
+    "002",
+    "003",
+    "004",
+    "005"
+  ],
+  "lastRun": "2026-05-14T13:47:52.253Z",
+  "currentTopic": {
+    "id": "006",
+    "title": "上杉謙信 義に生きた軍神",
+    "category": "人物軸"
+  },
+  "lastScriptPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_script.txt",
+  "lastScriptChars": 7335,
+  "lastScriptChapters": [
+    {
+      "index": 1,
+      "title": "越後の虎、誕生の予兆",
+      "chars": 1279
+    },
+    {
+      "index": 2,
+      "title": "天下を揺るがす義の旗",
+      "chars": 2020
+    },
+    {
+      "index": 3,
+      "title": "宿敵との魂の対峙",
+      "chars": 1192
+    },
+    {
+      "index": 4,
+      "title": "北陸への夢と越後守護の責務",
+      "chars": 1448
+    },
+    {
+      "index": 5,
+      "title": "義の道の果て、そして伝説へ",
+      "chars": 1304
+    }
+  ],
+  "lastVoicePath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_voice.mp3",
+  "lastVoiceAt": "2026-05-14T13:48:35.029Z",
+  "lastImagePaths": [
+    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_img_1.png",
+    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_img_2.png",
+    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_img_3.png",
+    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_img_4.png",
+    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_img_5.png"
+  ],
+  "lastImageGenAt": "2026-05-14T13:48:40.653Z",
+  "lastMetaPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_meta.json",
+  "lastThumbPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_thumb.png",
+  "lastVideoPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_video.mp4",
+  "lastAssPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_subs.ass",
+  "lastSubsCount": 437,
+  "lastCompileAt": "2026-05-14T13:54:46.776Z",
+  "videoStatus": "ready",
+  "lastUploadResult": {
+    "status": "success",
+    "topicId": "005",
+    "videoId": "dLOHK7U1vJc",
+    "url": "https://www.youtube.com/watch?v=dLOHK7U1vJc"
+  },
+  "lastUploadAt": "2026-05-14T09:41:51.759Z"
+}

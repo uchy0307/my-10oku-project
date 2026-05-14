@@ -26,7 +26,7 @@ const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models
 
 const GENERATE_THRESHOLD = parseInt(process.env.TOPIC_THRESHOLD || '10', 10);
 const BATCH_SIZE = parseInt(process.env.TOPIC_BATCH || '50', 10);
-const CATEGORIES = ['人物軸', '合戦軸', '文化軸', '経済軸', '地理軸'];
+const CATEGORIES = ['人物軸', '合戦軸', '文化軸', '経済軸', '地理軸', '風俗軸'];
 
 async function loadTopics() {
   try {
@@ -62,12 +62,13 @@ function buildPrompt(existingTitles, count, categories) {
 これから30分尺ナレーション動画のテーマを${count}本一気に提案する。
 
 【チャンネル軸（厳守）】
-- 対象時代: 戦国・安土桃山・江戸初期・幕末（平安以前や近現代は不可）
-- 対象ジャンル: 既存テーマと同じ「人物軸・合戦軸・文化軸・経済軸・地理軸」のみ
+- 対象時代: 戦国・安土桃山・江戸・幕末・明治初期（平安以前は不可）
+- 対象ジャンル: 既存テーマと同じ「人物軸・合戦軸・文化軸・経済軸・地理軸・風俗軸」のみ
 - それ以外の時代やジャンル拡張は厳禁
 - 視聴者は40代以上の歴史好き男女
 - 「侍の美学」「凛とした断言」「人物の覚悟」「合戦の真実」を切り口にする
 - 教育より物語性重視。重厚なナレーションで30分視聴を保つ題材
+- 風俗軸の場合：庶民生活・遊郭・刑罰・性風俗・貧民・芸能等の人間ドラマを切り口にする。ただしYouTubeコミュニティガイドライン抵触の過度な性的・暴力的表現は避け、社会制度・経済・心理の角度から描くこと
 
 【既存テーマ（${existingTitles.length}本・全て重複禁止）】
 ${existingTitles.map((t, i) => `${i + 1}. ${t}`).join('\n')}

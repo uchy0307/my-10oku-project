@@ -1,5 +1,5 @@
 // youtube/scripts/generate_images.mjs
-// Gemini Image API で章ごとのシーン画像を生成（5枚 / 動画）
+// Imagen 3 API で章ごとのシーン画像を生成（5枚 / 動画）
 //
 // input:
 //   state.json.currentTopic, state.lastScriptChapters
@@ -10,6 +10,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import fetch from 'node-fetch';
+import sharp from 'sharp';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,8 +19,8 @@ const OUTPUT_DIR = path.join(ROOT, 'output');
 const STATE_FILE = path.join(OUTPUT_DIR, 'state.json');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const IMAGE_MODEL = process.env.GEMINI_IMAGE_MODEL || 'gemini-2.5-flash-image-preview';
-const IMAGE_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${IMAGE_MODEL}:generateContent`;
+const IMAGE_MODEL = process.env.GEMINI_IMAGE_MODEL || 'imagen-3.0-generate-002';
+const IMAGE_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${IMAGE_MODEL}:predict`;
 
 async function loadState() {
   const raw = await fs.readFile(STATE_FILE, 'utf-8');
@@ -47,10 +48,8 @@ async function generateImage(prompt, attempt = 1) {
   }
   const url = `${IMAGE_ENDPOINT}?key=${GEMINI_API_KEY}`;
   const body = {
-    contents: [{ parts: [{ text: prompt }] }],
-    generationConfig: {
-      responseModalities: ['IMAGE'],
-    },
+    instances: [{ prompt }],
+    parameters: { sampleCount: 1, aspectRatio: '16:9' },
   };
   const res = await fetch(url, {
     method: 'POST',
@@ -68,14 +67,14 @@ async function generateImage(prompt, attempt = 1) {
     throw new Error(`Image API error ${res.status}: ${errText}`);
   }
   const json = await res.json();
-  const parts = json?.candidates?.[0]?.content?.parts || [];
-  for (const p of parts) {
-    const inline = p.inline_data || p.inlineData;
-    if (inline?.data) {
-      return Buffer.from(inline.data, 'base64');
-    }
+  const b64 = json?.predictions?.[0]?.bytesBase64Encoded;
+  if (!b64) {
+    throw new Error(`Image API returned no image data: ${JSON.stringify(json).slice(0, 500)}`);
   }
-  throw new Error(`Image API returned no image data: ${JSON.stringify(json).slice(0, 500)}`);
+  const rawBuf = Buffer.from(b64, 'base64');
+  // resize to 1280x720 (16:9) to prevent OOM in downstream compile
+  const resized = await sharp(rawBuf).resize(1280, 720, { fit: 'cover' }).png().toBuffer();
+  return resized;
 }
 
 async function main() {

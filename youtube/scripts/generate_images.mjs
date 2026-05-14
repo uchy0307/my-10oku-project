@@ -61,14 +61,37 @@ function buildChapterQueries(topic, chapter) {
     const kanjiTerms = chTitle.match(/[一-龠]{2,}/g) || [];
     for (const kt of kanjiTerms) {
       queries.push(kt);
+      queries.push(`${kt}の戦い`);
       if (main && kt.length >= 2) queries.push(`${main} ${kt}`);
     }
   }
 
-  // 後方フォールバック
-  if (main) queries.push(`${main} 肖像`);
-  if (main) queries.push(`${main} 居城`);
-  queries.push(...buildCandidateQueries(topic.title || ''));
+  // 主人公派生クエリ（章ごとに別パターンを優先）
+  if (main) {
+    const idx = (chapter?.index || 1) - 1;
+    const personalAngles = [
+      `${main}`,
+      `${main} 戦い`,
+      `${main} 居城`,
+      `${main} 家臣`,
+      `${main} 墓`,
+    ];
+    queries.push(personalAngles[idx % personalAngles.length]);
+  }
+
+  // 戦国時代の広いフォールバック（章ごとに違うものを優先）
+  const broadFallbacks = [
+    '戦国時代',
+    '戦国大名',
+    '川中島の戦い',
+    '日本の城',
+    '戦国武将',
+    '関ヶ原の戦い',
+    '武家',
+  ];
+  const fbIdx = ((chapter?.index || 1) - 1) % broadFallbacks.length;
+  queries.push(broadFallbacks[fbIdx]);
+  queries.push(...broadFallbacks);
 
   return [...new Set(queries)].filter((q) => q && q.length >= 2);
 }

@@ -332,27 +332,37 @@ async function main() {
   // ffmpeg コマンド構築
   let ffmpegArgs;
   if (imagePaths.length >= 1) {
-    // 画像コンキャット + 音声 + 字幕
+    // 画像コンキャット + 音声 + 字幕（mov_text ソフトサブ）
+    // libass 焼き込みは buffer overrun でストールするため不使用
     const listPath = await buildImageConcatList(topic.id, imagePaths, totalSec);
     ffmpegArgs = [
       '-y',
       '-f', 'concat', '-safe', '0', '-i', listPath,
       '-i', voicePath,
-      '-vf', `scale=1280:720:force_original_aspect_ratio=increase,crop=1280:720,fps=30,subtitles=${assPath}`,
+      '-i', assPath,
+      '-map', '0:v', '-map', '1:a', '-map', '2:s',
+      '-vf', 'scale=1280:720:force_original_aspect_ratio=increase,crop=1280:720,fps=30',
       '-c:v', 'libx264', '-preset', 'veryfast', '-pix_fmt', 'yuv420p',
+      '-fps_mode', 'vfr',
       '-c:a', 'aac', '-b:a', '192k',
+      '-c:s', 'mov_text',
+      '-max_muxing_queue_size', '9999',
       '-shortest',
       videoPath,
     ];
   } else {
-    // フォールバック: 黒背景単色 + 字幕 + 音声
+    // フォールバック: 黒背景単色 + 字幕（ソフトサブ） + 音声
     ffmpegArgs = [
       '-y',
       '-f', 'lavfi', '-t', String(totalSec), '-i', 'color=c=#0a0a0a:s=1280x720:r=30',
       '-i', voicePath,
-      '-vf', `subtitles=${assPath}`,
+      '-i', assPath,
+      '-map', '0:v', '-map', '1:a', '-map', '2:s',
       '-c:v', 'libx264', '-preset', 'veryfast', '-pix_fmt', 'yuv420p',
+      '-fps_mode', 'vfr',
       '-c:a', 'aac', '-b:a', '192k',
+      '-c:s', 'mov_text',
+      '-max_muxing_queue_size', '9999',
       '-shortest',
       videoPath,
     ];

@@ -321,7 +321,7 @@ async function main() {
     const pass1Args = [
       '-y',
       '-f', 'concat', '-safe', '0', '-i', listPath,
-      '-vf', `scale=1280:720:force_original_aspect_ratio=increase,crop=1280:720,fps=30,subtitles=${assPath}`,
+      '-vf', `scale=1280:720:force_original_aspect_ratio=increase,crop=1280:720,fps=10,subtitles=${assPath}`,
       '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '26', '-pix_fmt', 'yuv420p', '-threads', '1',
       '-fps_mode', 'vfr',
       '-max_muxing_queue_size', '9999',

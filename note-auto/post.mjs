@@ -97,6 +97,64 @@ function parseStorageState() {
 // ---------- core ----------
 
 /** 下書きページに遷移して本文を置換し、保存 or 公開する */
+/** Word 添付 + 100円有料設定 */
+async function applyPriceAndAttachment(page, id) {
+  const num = String(id).padStart(3, '0');
+  const attachDir = join(__dirname, 'attachments', `app${num}`);
+  // ----- (1) Word 添付 -----
+  try {
+    if (existsSync(attachDir)) {
+      const files = (await readdir(attachDir)).filter(f => f.toLowerCase().endsWith('.docx')).map(f => join(attachDir, f));
+      if (files.length > 0) {
+        console.log(`[INFO] #${num} attaching ${files.length} docx file(s)`);
+        const fileBtn = page.locator('button:has-text("ファイル"), [aria-label*="ファイル"], [data-testid*="file"]').first();
+        await fileBtn.click({ timeout: 8000 }).catch(() => {});
+        await sleep(500);
+        const fileInput = page.locator('input[type="file"]').first();
+        await fileInput.setInputFiles(files).catch(e => console.warn(`[WARN] setInputFiles failed: ${e.message}`));
+        await sleep(2500);
+      } else {
+        console.log(`[WARN] #${num} no docx files in ${attachDir}`);
+      }
+    } else {
+      console.log(`[WARN] #${num} attach dir not found: ${attachDir}`);
+    }
+  } catch (e) {
+    console.warn(`[WARN] attach error #${num}: ${e.message}`);
+  }
+
+  // ----- (2) 有料エリア境界線 + 100円 -----
+  try {
+    const body = page.locator('div.ProseMirror[contenteditable="true"]').first();
+    await body.click({ position: { x: 100, y: 30 } }).catch(() => {});
+    await page.keyboard.press('Control+End').catch(() => {});
+    await sleep(300);
+    const boundaryBtn = page.locator('button:has-text("有料エリア境界線"), button:has-text("有料エリア"), [aria-label*="有料エリア"]').first();
+    await boundaryBtn.click({ timeout: 5000 }).catch(async () => {
+      await page.keyboard.type('/有料', { delay: 30 });
+      await sleep(400);
+      await page.keyboard.press('Enter').catch(() => {});
+    });
+    await sleep(1500);
+    const pubSettings = page.locator(SELECTORS.publishSettingsButton).first();
+    await pubSettings.click({ timeout: 5000 }).catch(() => {});
+    await sleep(1500);
+    const priceInput = page.locator('input[type="number"]:visible, input[name*="price"]:visible, input[placeholder*="価格"]:visible, input[aria-label*="価格"]:visible').first();
+    await priceInput.click({ timeout: 5000 }).catch(() => {});
+    await page.keyboard.press('Control+A').catch(() => {});
+    await page.keyboard.press('Delete').catch(() => {});
+    await priceInput.fill('100').catch(async () => {
+      await priceInput.type('100', { delay: 30 }).catch(() => {});
+    });
+    await sleep(800);
+    console.log(`[INFO] #${num} price set to 100`);
+    await page.keyboard.press('Escape').catch(() => {});
+    await sleep(500);
+  } catch (e) {
+    console.warn(`[WARN] price-setting error #${num}: ${e.message}`);
+  }
+}
+
 async function editDraft(page, item) {
   if (!item.draftId) {
     throw new Error(`item ${item.id} に draftId がありません。`);
@@ -154,6 +212,10 @@ async function editDraft(page, item) {
     }
   }
   await randDelay(2000, 4000);
+
+  // ===== 100円有料設定 + Word添付 =====
+  await applyPriceAndAttachment(page, item.id);
+  await randDelay(800, 1500);
 
   // 保存 or 公開
   if (item.publish) {

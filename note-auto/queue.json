@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "synced_at": "2026-05-15T01:14:47.356Z",
+  "synced_at": "2026-05-15T02:18:54.963Z",
   "items": [
     {
       "id": "001",
@@ -161,10 +161,10 @@
       "draftId": "158979405",
       "title": "【AI対話アプリ】⚙️ 200の問い #015 「集中力プロファイラー」",
       "publish": false,
-      "status": "error: page.waitForSelector: Timeout 20000ms exceeded.\nCall log:\n  - waiting for locator('.ProseMirror') to be visible\n",
+      "status": "error: page.waitForSelector: Timeout 60000ms exceeded.\nCall log:\n  - waiting for locator('.ProseMirror[contenteditable=\"true\"], [role=\"textbox\"][contenteditable=\"true\"]') to be visible\n",
       "scheduled_at": null,
       "posted_at": null,
-      "error": "page.waitForSelector: Timeout 20000ms exceeded.\nCall log:\n  - waiting for locator('.ProseMirror') to be visible\n",
+      "error": "page.waitForSelector: Timeout 60000ms exceeded.\nCall log:\n  - waiting for locator('.ProseMirror[contenteditable=\"true\"], [role=\"textbox\"][contenteditable=\"true\"]') to be visible\n",
       "_hasLocalBody": true
     },
     {

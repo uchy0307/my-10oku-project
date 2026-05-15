@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "synced_at": "2026-05-15T11:32:53.357Z",
+  "synced_at": "2026-05-15T17:28:05.635Z",
   "items": [
     {
       "id": "001",
@@ -183,11 +183,13 @@
       "draftId": "nb26e6f7f69db",
       "title": "【AI対話アプリ】🛡️ 200の問い #017 「インポスター症候群対策」",
       "publish": false,
-      "status": "pending",
+      "status": "draft_saved",
       "scheduled_at": null,
-      "posted_at": null,
+      "posted_at": "2026-05-15T17:42:04.398Z",
       "error": null,
-      "_hasLocalBody": true
+      "_hasLocalBody": true,
+      "attached": 0,
+      "priceSet": false
     },
     {
       "id": "018",

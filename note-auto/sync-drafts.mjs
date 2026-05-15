@@ -5,7 +5,7 @@
 //
 // 取得方法（2026-05 editor.note.com 移行後）:
 //   一覧 URL : https://note.com/notes?status={draft|published}&page=N
-//   各 SPA ページの Nuxt store `window.__NUXT__.state.noteList` から
+//   各 SPA ページの Nuxt store `(await(async()=>{try{const u=new URL(location.href);const s=u.searchParams.get('status')||'draft';const p=u.searchParams.get('page')||'1';const r=await fetch('/api/v2/note_list/contents?status='+s+'&page='+p,{credentials:'include',headers:{accept:'application/json'}});if(!r.ok)return null;const j=await r.json();return {notes:(j.data&&j.data.notes)||[],page:{pageCount:null,totalCount:(j.data&&j.data.totalCount)||null,isLastPage:!!(j.data&&j.data.isLastPage)}};}catch(e){return null;}})())` から
 //   ノート配列を読む。各ノートの `key` フィールドが editor.note.com で
 //   使われる hash 形式の note_key（"n" + hex）。
 //
@@ -65,7 +65,7 @@ async function loadLocalBody(num) {
 
 /**
  * 一覧ページを page= ベースでページネーション巡回し、全件を返す。
- * DOM ではなく Nuxt store (`window.__NUXT__.state.noteList`) から
+ * DOM ではなく Nuxt store (`(await(async()=>{try{const u=new URL(location.href);const s=u.searchParams.get('status')||'draft';const p=u.searchParams.get('page')||'1';const r=await fetch('/api/v2/note_list/contents?status='+s+'&page='+p,{credentials:'include',headers:{accept:'application/json'}});if(!r.ok)return null;const j=await r.json();return {notes:(j.data&&j.data.notes)||[],page:{pageCount:null,totalCount:(j.data&&j.data.totalCount)||null,isLastPage:!!(j.data&&j.data.isLastPage)}};}catch(e){return null;}})())`) から
  * 取得することで、hash 形式の note_key (`n` + hex) を確実に拾える。
  */
 async function scrapeListing(page, status) {
@@ -84,7 +84,7 @@ async function scrapeListing(page, status) {
     // Nuxt 初期化を待つ
     try {
       await page.waitForFunction(
-        () => !!(window.__NUXT__ && window.__NUXT__.state && window.__NUXT__.state.noteList),
+        async () => !!(window.__NUXT__ && window.__NUXT__.state && (await(async()=>{try{const u=new URL(location.href);const s=u.searchParams.get('status')||'draft';const p=u.searchParams.get('page')||'1';const r=await fetch('/api/v2/note_list/contents?status='+s+'&page='+p,{credentials:'include',headers:{accept:'application/json'}});if(!r.ok)return null;const j=await r.json();return {notes:(j.data&&j.data.notes)||[],page:{pageCount:null,totalCount:(j.data&&j.data.totalCount)||null,isLastPage:!!(j.data&&j.data.isLastPage)}};}catch(e){return null;}})())),
         { timeout: 20000 },
       );
     } catch {
@@ -94,8 +94,8 @@ async function scrapeListing(page, status) {
 
     await sleep(800);
 
-    const payload = await page.evaluate(() => {
-      const nl = window.__NUXT__.state.noteList;
+    const payload = await page.evaluate(async () => {
+      const nl = (await(async()=>{try{const u=new URL(location.href);const s=u.searchParams.get('status')||'draft';const p=u.searchParams.get('page')||'1';const r=await fetch('/api/v2/note_list/contents?status='+s+'&page='+p,{credentials:'include',headers:{accept:'application/json'}});if(!r.ok)return null;const j=await r.json();return {notes:(j.data&&j.data.notes)||[],page:{pageCount:null,totalCount:(j.data&&j.data.totalCount)||null,isLastPage:!!(j.data&&j.data.isLastPage)}};}catch(e){return null;}})());
       const notes = (nl && nl.notes) || [];
       const pageInfo = (nl && nl.page) || {};
       const out = notes.map((n) => {

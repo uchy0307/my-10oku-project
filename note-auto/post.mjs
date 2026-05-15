@@ -46,13 +46,13 @@ async function resolveBody(item) {
   );
 }
 
-// note.com DOMセレクタ（変更時はここを更新）
+// note.com DOMセレクタ（editor.note.com 移行後・2026-05 更新）
 const SELECTORS = {
-  bodyEditor: '.ProseMirror',
+  bodyEditor: '.ProseMirror[contenteditable="true"], [role="textbox"][contenteditable="true"]',
   titleInput: 'textarea[placeholder*="タイトル"]',
   saveDraftButton: 'button:has-text("下書き保存")',
-  publishSettingsButton: 'button:has-text("公開設定")',
-  publishButton: 'button:has-text("公開")',
+  publishSettingsButton: 'button:has-text("公開に進む"), button:has-text("公開設定")',
+  publishButton: 'button:has-text("公開する"), button:has-text("公開に進む")',
   publishConfirmButton: 'button:has-text("公開する")',
 };
 
@@ -102,10 +102,11 @@ async function editDraft(page, item) {
     throw new Error(`item ${item.id} に draftId がありません。`);
   }
   const resolvedBody = await resolveBody(item);
-  const draftUrl = `https://note.com/notes/${item.draftId}/edit`;
+  // 2026-05: note.com → editor.note.com サブドメインへ移行済み
+  const draftUrl = `https://editor.note.com/notes/${item.draftId}/edit/`;
   console.log(`[INFO] open draft: ${draftUrl}`);
   await page.goto(draftUrl, { waitUntil: 'domcontentloaded' });
-  await randDelay(3000, 5000);
+  await randDelay(5000, 8000);
 
   // タイトル更新（指定時のみ）
   if (item.title && item.title.trim()) {
@@ -129,7 +130,8 @@ async function editDraft(page, item) {
   }
 
   // 本文置換: .ProseMirror をクリック→全選択→削除→流し込み
-  await page.waitForSelector(SELECTORS.bodyEditor, { timeout: 20000 });
+  // editor.note.com への移行後はレンダリングが遅いので 60s に延長
+  await page.waitForSelector(SELECTORS.bodyEditor, { timeout: 60000 });
   const body = page.locator(SELECTORS.bodyEditor).first();
   await body.click();
   await randDelay(500, 1000);
@@ -155,7 +157,7 @@ async function editDraft(page, item) {
 
   // 保存 or 公開
   if (item.publish) {
-    // 「公開設定」→「公開」確認
+    // 「公開に進む」→「公開する」確認
     const pubBtn = page.locator(SELECTORS.publishSettingsButton).first();
     if (await pubBtn.count()) {
       await pubBtn.click();

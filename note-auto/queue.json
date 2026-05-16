@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "synced_at": "2026-05-16T08:16:38.562Z",
+  "synced_at": "2026-05-16T14:43:21.674Z",
   "items": [
     {
       "id": "001",
@@ -198,13 +198,7 @@
       "scheduled_at": null,
       "posted_at": "2026-05-16T08:21:15.608Z",
       "error": null,
-      "_hasLocalBody": true,
-      "attached": 3,
-      "priceSet": true,
-      "boundarySet": true,
-      "paidEnabled": true,
-      "published": true,
-      "anonStatus": 200
+      "_hasLocalBody": true
     },
     {
       "id": "019",
@@ -233,11 +227,17 @@
       "draftId": "n785997cb90b3",
       "title": "【AI対話アプリ】💡 200の問い #021 「起業アイデア壁打ち」",
       "publish": true,
-      "status": "pending",
+      "status": "published",
       "scheduled_at": null,
-      "posted_at": null,
+      "posted_at": "2026-05-16T14:55:19.552Z",
       "error": null,
-      "_hasLocalBody": true
+      "_hasLocalBody": true,
+      "attached": 3,
+      "priceSet": true,
+      "boundarySet": true,
+      "paidEnabled": true,
+      "published": true,
+      "anonStatus": 200
     },
     {
       "id": "022",

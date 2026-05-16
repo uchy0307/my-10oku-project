@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "synced_at": "2026-05-16T04:27:58.345Z",
+  "synced_at": "2026-05-16T05:24:53.415Z",
   "items": [
     {
       "id": "001",
@@ -161,12 +161,15 @@
       "draftId": "n848deaa6139d",
       "title": "【AI対話アプリ】⚙️ 200の問い #015 「集中力プロファイラー」",
       "publish": false,
-      "status": "pending",
+      "status": "draft_saved",
       "scheduled_at": null,
+      "posted_at": "2026-05-16T05:30:20.513Z",
+      "error": null,
       "_hasLocalBody": true,
       "attached": 3,
-      "priceSet": false,
-      "boundarySet": true
+      "priceSet": true,
+      "boundarySet": false,
+      "paidEnabled": true
     },
     {
       "id": "016",

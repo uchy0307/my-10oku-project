@@ -1,0 +1,87 @@
+name: new-youtube auto pipeline
+
+# 1日3本投稿 (samurai cron と衝突しない時刻)
+# UTC 22:00 = JST 07:00 / UTC 04:00 = JST 13:00 / UTC 10:00 = JST 19:00
+on:
+  schedule:
+    - cron: "0 22 * * *"
+    - cron: "0 4 * * *"
+    - cron: "0 10 * * *"
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: "任意のトピック (空欄なら topics.json から自動取得)"
+        required: false
+      no_upload:
+        description: "アップロードをスキップ (true/false)"
+        required: false
+        default: "false"
+
+jobs:
+  generate-and-upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: new-youtube
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: System deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-noto-cjk imagemagick
+
+      - name: ImageMagick policy fix (moviepy TextClip)
+        run: |
+          sudo sed -i 's|<policy domain="path" rights="none" pattern="@\*"/>|<policy domain="path" rights="read\|write" pattern="@*"/>|' /etc/ImageMagick-6/policy.xml || true
+
+      - name: Pip install
+        run: pip install -r requirements.txt
+
+      - name: Run pipeline
+        env:
+          # --- 台本・素材生成 ---
+          GEMINI_API_KEY:        ${{ secrets.GEMINI_API_KEY }}
+          ELEVENLABS_API_KEY:    ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_VOICE_ID:   ${{ secrets.ELEVENLABS_VOICE_ID }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/new-youtube/gcp_sa.json
+          # --- 新YouTubeチャンネル専用 (samurai と分離) ---
+          NEW_YOUTUBE_CLIENT_ID:     ${{ secrets.NEW_YOUTUBE_CLIENT_ID }}
+          NEW_YOUTUBE_CLIENT_SECRET: ${{ secrets.NEW_YOUTUBE_CLIENT_SECRET }}
+          NEW_YOUTUBE_REFRESH_TOKEN: ${{ secrets.NEW_YOUTUBE_REFRESH_TOKEN }}
+          NEW_YOUTUBE_PLAYLIST_ID:   ${{ secrets.NEW_YOUTUBE_PLAYLIST_ID }}
+        run: |
+          if [ -n "${{ secrets.GCP_SA_JSON_B64 }}" ]; then
+            echo "${{ secrets.GCP_SA_JSON_B64 }}" | base64 -d > gcp_sa.json
+          fi
+          ARGS=""
+          if [ -n "${{ github.event.inputs.topic }}" ]; then
+            ARGS="$ARGS --topic \"${{ github.event.inputs.topic }}\""
+          fi
+          if [ "${{ github.event.inputs.no_upload }}" = "true" ]; then
+            ARGS="$ARGS --no-upload"
+          fi
+          eval python scripts/run_pipeline.py $ARGS
+
+      - name: Commit updated state
+        if: github.event_name == 'schedule'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add new-youtube/inputs/state.json new-youtube/inputs/script_*.json || true
+          git commit -m "auto: new-youtube pipeline run $(date -u +%Y%m%dT%H%M%SZ)" || echo "no changes"
+          git push || true
+
+      - name: Upload artifacts (failure debug)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-debug
+          path: |
+            new-youtube/outputs/**
+            new-youtube/inputs/script_*.json

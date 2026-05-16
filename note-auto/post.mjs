@@ -1,20 +1,16 @@
 // note-auto/post.mjs
 // ───────────────────────────────────────────────────────────────
-// note.com 下書き編集型自動投稿（B案・新方針）
+// note.com 下書き編集型自動投稿（B案・新方針 / v3）
 //
 // 完全自動ログインは bot 検知で失敗しやすいため、Playwright の storageState
 // に保存された認証済みセッションを再利用する。queue.json で指定された
 // `draftId` の下書きを開いて、本文を流し込み、下書き保存 or 公開する。
 //
-// 2026-05-16 改修:
-//   - articles/note_${id}.md の本文から "47歳" 文言を除去
-//   - 末尾にアプリリンク + アクセスコード (access_codes.json) を挿入
-//   - note-auto/attachments/app${id}/ 内 docx 3本を input[type=file] で添付
-//   - 公開時のみ価格 100円 設定（有料エリア） ※ publish:false の下書きでは未実行
-//
-// env:
-//   NOTE_STORAGE_STATE   storageState JSON 文字列（GitHub Secrets で管理）
-//   NOTE_HEADLESS        "false" 指定で headed 実行（デフォルト true）
+// 2026-05-16 v3 改修:
+//   - 添付docx: "+"メニュー → 「ファイル」ボタン click → input[type=file] 出現後 setInputFiles
+//   - 有料境界線: 🔑アクセスコード H2 直前にカーソル設定 → "+"メニュー → 「有料エリア指定」
+//   - 価格 100円: 公開設定パネルへ遷移 → 多段セレクタ盲打ち → React-safe value setter
+//   - 47歳除去 / アプリリンク / アクセスコード は preprocess-articles.mjs 側で対応済
 // ───────────────────────────────────────────────────────────────
 
 import { chromium } from 'playwright';
@@ -30,7 +26,7 @@ const ATTACHMENTS_DIR = join(__dirname, 'attachments');
 const ACCESS_CODES_PATH = join(__dirname, 'access_codes.json');
 
 const PRICE_YEN = 100;
-const URL_PATTERN = 'https://toi-suite.vercel.app/page/'; // + id
+const URL_PATTERN = 'https://toi-suite.vercel.app/page/';
 
 let ACCESS_CODES = {};
 try {
@@ -41,54 +37,34 @@ try {
   console.warn('[WARN] access_codes.json 読み込み失敗:', err.message);
 }
 
-// ---------- body preprocessing ----------
+// ---------- body preprocessing (保守互換: preprocess-articles.mjs 未走時の補助) ----------
 
-/**
- * 47歳除去 + アプリリンク挿入。
- *   - "47歳の私" → "私"
- *   - "47歳が"   → "私が"
- *   - 文中の "47歳" / "#47歳" を削除
- *   - 末尾に「アプリにアクセス」セクションを追加
- */
 function preprocessBody(body, articleId) {
   let out = body;
-  // 47歳 除去（破壊的に置換しすぎないよう順序重視）
   out = out.replace(/47歳の/g, '');
   out = out.replace(/47歳が/g, '私が');
   out = out.replace(/47歳に/g, '');
   out = out.replace(/47歳/g, '');
   out = out.replace(/[#＃]\s?47歳\s*/g, '');
-  // 連続空白の整理（行内のみ。改行は維持）
   out = out
     .split('\n')
     .map((line) => line.replace(/[ \t]{2,}/g, ' ').replace(/^ +| +$/g, ''))
     .join('\n');
-  // 連続空行は2行までに抑える
-  out = out.replace(/\n{3,}/g, '\n\n');
+  out = out.replace(/\n{4,}/g, '\n\n\n');
 
-  // 末尾のアプリリンクセクション
   const code = ACCESS_CODES[articleId];
   if (code) {
     const link = `${URL_PATTERN}${articleId}`;
-    const block =
-      `\n\n---\n\n## 📱 アプリにアクセス\n\n` +
-      `下記URLからWebアプリを利用できます。\n\n` +
-      `${link}\n\n` +
-      `アクセスコード: \`${code}\`\n`;
-    // 既に同じ block がある場合は追加しない（idempotency）
     if (!out.includes(link)) {
-      out += block;
+      out +=
+        `\n\n\n\n---\n\n▼アプリで深く問う\n\n` +
+        `${link}\n\n` +
+        `アクセスコード: ${code}\n`;
     }
   }
   return out;
 }
 
-/**
- * queue.json item から body を解決する。
- *   1. item.body があればそれを使う (旧互換)
- *   2. articles/note_${item.id}.md を読み込む (新方式)
- * その後、preprocessBody() を適用する。
- */
 async function resolveBody(item) {
   let raw;
   if (item.body && typeof item.body === 'string' && item.body.trim().length > 0) {
@@ -96,16 +72,13 @@ async function resolveBody(item) {
   } else {
     const fp = join(ARTICLES_DIR, `note_${item.id}.md`);
     if (!existsSync(fp)) {
-      throw new Error(
-        `本文が見つかりません: item.body も articles/note_${item.id}.md も存在しません。`,
-      );
+      throw new Error(`本文が見つかりません: item.body も articles/note_${item.id}.md も存在しません。`);
     }
     raw = await readFile(fp, 'utf-8');
   }
   return preprocessBody(raw, item.id);
 }
 
-/** 添付対象 docx 3本のローカルパスを返す */
 async function resolveAttachments(id) {
   const dir = join(ATTACHMENTS_DIR, `app${id}`);
   if (!existsSync(dir)) {
@@ -116,19 +89,19 @@ async function resolveAttachments(id) {
   return entries.filter((f) => f.toLowerCase().endsWith('.docx')).map((f) => join(dir, f));
 }
 
-// note.com DOMセレクタ（変更時はここを更新）
+// ---------- DOMセレクタ ----------
+
 const SELECTORS = {
   bodyEditor: '.ProseMirror',
   titleInput: 'textarea[placeholder*="タイトル"]',
   saveDraftButton: 'button:has-text("下書き保存")',
-  publishSettingsButton: 'button:has-text("公開設定")',
+  publishStepButton: 'button:has-text("公開に進む")',
   publishButton: 'button:has-text("公開")',
   publishConfirmButton: 'button:has-text("公開する")',
-  // 添付・有料関連 (推定セレクタ、note.com UI変更時は要見直し)
+  plusMenuOpen: '[aria-label="メニューを開く"]',
+  filePickerButton: 'button:has-text("ファイル")',
+  paidBoundaryButton: 'button:has-text("有料エリア指定")',
   fileInput: 'input[type="file"]',
-  attachMenuOpen: 'button[aria-label*="ファイル"], button:has-text("ファイル")',
-  paidBoundaryButton: 'button:has-text("ここから先は有料エリア"), button:has-text("有料エリア"), button[aria-label*="有料"]',
-  priceInput: 'input[type="number"][name*="price"], input[placeholder*="価格"], input[aria-label*="価格"]',
 };
 
 // ---------- helpers ----------
@@ -158,9 +131,7 @@ async function saveQueue(queue) {
 function parseStorageState() {
   const raw = process.env.NOTE_STORAGE_STATE;
   if (!raw) {
-    throw new Error(
-      'NOTE_STORAGE_STATE が未設定です。note-auto/capture-session.mjs で取得し、Secret に登録してください。',
-    );
+    throw new Error('NOTE_STORAGE_STATE が未設定です。');
   }
   try {
     return JSON.parse(raw);
@@ -169,55 +140,170 @@ function parseStorageState() {
   }
 }
 
-/** ファイル添付。input[type=file] に直接 setInputFiles でアップロード */
+/** ProseMirror内のH2「🔑 アクセスコード」直前にカーソル設定 */
+async function placeCursorBeforeAccessCode(page) {
+  const ok = await page.evaluate(() => {
+    const pm = document.querySelector('.ProseMirror');
+    if (!pm) return { ok: false, reason: 'no_prosemirror' };
+    const items = [...pm.querySelectorAll('h1,h2,h3,p')];
+    const target = items.find((el) => /🔑/.test(el.textContent || ''));
+    if (!target) return { ok: false, reason: 'no_marker' };
+    // 直前のDOM位置にRange/Selection設定
+    const range = document.createRange();
+    range.setStartBefore(target);
+    range.collapse(true);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    target.scrollIntoView({ block: 'center' });
+    return { ok: true };
+  });
+  return !!ok?.ok;
+}
+
+/** 🔑直前に有料境界線を挿入 */
+async function insertPaidBoundary(page) {
+  try {
+    const placed = await placeCursorBeforeAccessCode(page);
+    if (!placed) {
+      console.warn('[WARN] 🔑マーカー未発見 → 境界線スキップ');
+      return false;
+    }
+    await sleep(500);
+    const plus = page.locator(SELECTORS.plusMenuOpen).first();
+    if (!(await plus.count())) {
+      console.warn('[WARN] "+"メニュー未発見 → 境界線スキップ');
+      return false;
+    }
+    await plus.click();
+    await sleep(1200);
+    const paid = page.locator(SELECTORS.paidBoundaryButton).first();
+    if (!(await paid.count())) {
+      console.warn('[WARN] 「有料エリア指定」ボタン未発見');
+      await page.keyboard.press('Escape').catch(() => {});
+      return false;
+    }
+    await paid.click();
+    await sleep(1500);
+    console.log('[INFO] 有料境界線 挿入完了 (🔑 アクセスコード 直前)');
+    return true;
+  } catch (err) {
+    console.warn('[WARN] insertPaidBoundary エラー:', err.message);
+    return false;
+  }
+}
+
+/** ファイル添付。"+"メニュー → 「ファイル」 → input[type=file] setInputFiles */
 async function attachFiles(page, filePaths) {
   if (filePaths.length === 0) return 0;
-  // hidden な input[type=file] でも setInputFiles は動く
-  const inputs = await page.locator(SELECTORS.fileInput).all();
-  if (inputs.length === 0) {
-    console.warn('[WARN] input[type=file] が見つかりません。添付スキップ。');
-    return 0;
+  let attached = 0;
+  // 末尾にカーソルを移動（添付は本文末尾）
+  await page.evaluate(() => {
+    const pm = document.querySelector('.ProseMirror');
+    if (!pm) return;
+    const last = pm.lastElementChild;
+    if (!last) return;
+    const range = document.createRange();
+    range.selectNodeContents(last);
+    range.collapse(false);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    last.scrollIntoView({ block: 'center' });
+  });
+  await sleep(500);
+
+  for (const fp of filePaths) {
+    try {
+      const plus = page.locator(SELECTORS.plusMenuOpen).first();
+      if (!(await plus.count())) {
+        console.warn('[WARN] "+"メニュー消失');
+        break;
+      }
+      await plus.click();
+      await sleep(800);
+      const fileBtn = page.locator(SELECTORS.filePickerButton).first();
+      if (!(await fileBtn.count())) {
+        console.warn('[WARN] 「ファイル」ボタン未発見');
+        await page.keyboard.press('Escape').catch(() => {});
+        continue;
+      }
+      // 「ファイル」ボタンclickで input[type=file] が露出する想定
+      const [fileChooser] = await Promise.all([
+        page.waitForEvent('filechooser', { timeout: 5000 }).catch(() => null),
+        fileBtn.click(),
+      ]);
+      if (fileChooser) {
+        await fileChooser.setFiles(fp);
+      } else {
+        // filechooserイベント取れない場合は input を直接探す
+        const inp = page.locator(SELECTORS.fileInput).first();
+        if (await inp.count()) {
+          await inp.setInputFiles(fp);
+        } else {
+          console.warn(`[WARN] input[type=file] 出現せず: ${fp}`);
+          continue;
+        }
+      }
+      await sleep(4000); // アップロード待ち
+      attached++;
+      console.log(`[INFO] 添付 ${attached}/${filePaths.length}: ${fp.split(/[\\/]/).pop()}`);
+    } catch (err) {
+      console.warn(`[WARN] 添付エラー: ${err.message}`);
+    }
   }
-  // 通常 multiple 属性付きの input が1つあるはず。最初の input に全部送る。
-  try {
-    await inputs[0].setInputFiles(filePaths);
-    await randDelay(3000, 6000); // アップロード完了待ち
-    console.log(`[INFO] 添付完了: ${filePaths.length} files`);
-    return filePaths.length;
-  } catch (err) {
-    console.warn('[WARN] setInputFiles 失敗:', err.message);
-    return 0;
-  }
+  return attached;
 }
 
 /** 価格 100円 設定。publish=true 時のみ呼ぶ。 */
 async function setPrice(page, yen) {
   try {
-    // 公開設定パネルを開く
-    const pubSettings = page.locator(SELECTORS.publishSettingsButton).first();
-    if (await pubSettings.count()) {
-      await pubSettings.click();
-      await randDelay(1500, 3000);
-    }
-    // 有料エリア境界線の設定（任意・複数候補トライ）
-    const paidBtn = page.locator(SELECTORS.paidBoundaryButton).first();
-    if (await paidBtn.count()) {
-      await paidBtn.click();
-      await randDelay(1000, 2500);
-    }
-    const priceField = page.locator(SELECTORS.priceInput).first();
-    if (await priceField.count()) {
-      await priceField.click();
-      await page.keyboard.press('Control+A');
-      await page.keyboard.press('Delete');
-      await priceField.type(String(yen), { delay: 60 });
-      await randDelay(800, 1500);
-      console.log(`[INFO] 価格 ${yen}円 設定`);
-      return true;
+    // 公開設定/公開に進む を押す
+    const pubBtn = page.locator(SELECTORS.publishStepButton).first();
+    if (await pubBtn.count()) {
+      await pubBtn.click();
+      await randDelay(2000, 3500);
     } else {
-      console.warn('[WARN] 価格入力欄が見つかりません。価格設定スキップ。');
-      return false;
+      console.warn('[WARN] 「公開に進む」ボタン未発見');
     }
+    // 「有料」「販売」関連トグル試行
+    for (const txt of ['有料記事', '販売', '有料エリア']) {
+      const t = page.locator(`button:has-text("${txt}"), label:has-text("${txt}")`).first();
+      if ((await t.count()) > 0) {
+        await t.click().catch(() => {});
+        await sleep(700);
+      }
+    }
+    // 価格input 多段フォールバック (Reactの内部setter経由でセット)
+    const set = await page.evaluate((yen) => {
+      const candidates = [
+        'input[name="price"]',
+        'input[placeholder*="価格"]',
+        'input[type="number"][min="100"]',
+        '[data-testid*="price"] input',
+        'input[aria-label*="価格"]',
+        'input[type="number"]:not([readonly])',
+      ];
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+      for (const sel of candidates) {
+        const els = document.querySelectorAll(sel);
+        for (const el of els) {
+          if (el.offsetParent === null) continue;
+          setter.call(el, String(yen));
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+          el.dispatchEvent(new Event('blur', { bubbles: true }));
+          return { ok: true, selector: sel, value: el.value };
+        }
+      }
+      return { ok: false };
+    }, yen);
+    if (set.ok) {
+      console.log(`[INFO] 価格 ${yen}円 設定 (sel=${set.selector})`);
+      return true;
+    }
+    console.warn('[WARN] 価格input 未発見 → スキップ');
+    return false;
   } catch (err) {
     console.warn('[WARN] setPrice エラー:', err.message);
     return false;
@@ -226,7 +312,6 @@ async function setPrice(page, yen) {
 
 // ---------- core ----------
 
-/** 下書きページに遷移して本文を置換し、保存 or 公開する */
 async function editDraft(page, item) {
   if (!item.draftId) {
     throw new Error(`item ${item.id} に draftId がありません。`);
@@ -259,7 +344,7 @@ async function editDraft(page, item) {
     }
   }
 
-  // 本文置換: .ProseMirror をクリック→全選択→削除→流し込み
+  // 本文置換
   await page.waitForSelector(SELECTORS.bodyEditor, { timeout: 20000 });
   const body = page.locator(SELECTORS.bodyEditor).first();
   await body.click();
@@ -283,21 +368,25 @@ async function editDraft(page, item) {
   }
   await randDelay(2000, 4000);
 
-  // ファイル添付 (docx 3本)
+  // 有料境界線 挿入 (🔑 アクセスコード 直前)
+  let boundarySet = false;
+  if (item.publish) {
+    boundarySet = await insertPaidBoundary(page);
+  }
+
+  // 添付docx
   let attachedCount = 0;
   if (attachPaths.length > 0) {
     attachedCount = await attachFiles(page, attachPaths);
   }
 
-  // 価格設定 (publish=true 時のみ実行。下書き保存時はスキップ)
+  // 価格 (publish=true時のみ)
   let priceSet = false;
   if (item.publish) {
     priceSet = await setPrice(page, PRICE_YEN);
   }
 
-  // 保存 or 公開
   if (item.publish) {
-    // 既に setPrice で公開設定パネルを開いているはず
     const pubBtn = page.locator(SELECTORS.publishButton).first();
     if (await pubBtn.count()) {
       await pubBtn.click();
@@ -308,11 +397,11 @@ async function editDraft(page, item) {
       await confirm.click();
       await randDelay(3000, 5000);
     }
-    return { result: 'published', attached: attachedCount, priceSet };
+    return { result: 'published', attached: attachedCount, priceSet, boundarySet };
   } else {
     await page.locator(SELECTORS.saveDraftButton).first().click();
     await randDelay(3000, 5000);
-    return { result: 'draft_saved', attached: attachedCount, priceSet };
+    return { result: 'draft_saved', attached: attachedCount, priceSet, boundarySet };
   }
 }
 
@@ -325,10 +414,10 @@ async function main() {
   const pendings = allPendings.filter((i) => i.draftId && i.draftId.trim() !== '');
   const skipped = allPendings.length - pendings.length;
   if (skipped > 0) {
-    console.warn(`[WARN] draftId 未設定の pending を ${skipped} 件スキップ（sync-drafts未マッチ）`);
+    console.warn(`[WARN] draftId 未設定の pending を ${skipped} 件スキップ`);
   }
   if (pendings.length === 0) {
-    console.log('[INFO] 投稿対象（pending + draftId付き）はありません。終了します。');
+    console.log('[INFO] 投稿対象なし。終了します。');
     return;
   }
   const targets = pendings.slice(0, max);
@@ -355,12 +444,13 @@ async function main() {
       try {
         console.log(`[INFO] 編集開始: id=${item.id} draftId=${item.draftId} title="${item.title}"`);
         const ret = await editDraft(page, item);
-        item.status = ret.result; // 'draft_saved' or 'published'
+        item.status = ret.result;
         item.posted_at = new Date().toISOString();
         item.error = null;
         item.attached = ret.attached;
         item.priceSet = ret.priceSet;
-        console.log(`[OK] ${ret.result}: id=${item.id} attached=${ret.attached} priceSet=${ret.priceSet}`);
+        item.boundarySet = ret.boundarySet;
+        console.log(`[OK] ${ret.result}: id=${item.id} attached=${ret.attached} priceSet=${ret.priceSet} boundarySet=${ret.boundarySet}`);
         await saveQueue(queue);
         await randDelay(15000, 30000);
       } catch (err) {

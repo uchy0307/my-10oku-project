@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "synced_at": "2026-05-16T08:08:14.155Z",
+  "synced_at": "2026-05-16T08:16:38.562Z",
   "items": [
     {
       "id": "001",
@@ -187,6 +187,17 @@
       "scheduled_at": null,
       "posted_at": "2026-05-16T08:13:53.607Z",
       "error": null,
+      "_hasLocalBody": true
+    },
+    {
+      "id": "018",
+      "draftId": "n5ceb50c8ad32",
+      "title": "【AI対話アプリ】🚪 200の問い #018 「コンフォートゾーン脱出」",
+      "publish": true,
+      "status": "published",
+      "scheduled_at": null,
+      "posted_at": "2026-05-16T08:21:15.608Z",
+      "error": null,
       "_hasLocalBody": true,
       "attached": 3,
       "priceSet": true,
@@ -194,17 +205,6 @@
       "paidEnabled": true,
       "published": true,
       "anonStatus": 200
-    },
-    {
-      "id": "018",
-      "draftId": "n5ceb50c8ad32",
-      "title": "【AI対話アプリ】🚪 200の問い #018 「コンフォートゾーン脱出」",
-      "publish": true,
-      "status": "pending",
-      "scheduled_at": null,
-      "posted_at": null,
-      "error": null,
-      "_hasLocalBody": true
     },
     {
       "id": "019",

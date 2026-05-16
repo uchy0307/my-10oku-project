@@ -6,45 +6,42 @@
     "004",
     "005",
     "006",
-    "007"
+    "007",
+    "008"
   ],
-  "lastRun": "2026-05-16T09:54:25.332Z",
-  "currentTopic": {
-    "id": "008",
-    "title": "明智光秀 謀反人の本心",
-    "category": "人物軸"
-  },
+  "lastRun": "2026-05-16T11:57:54.471Z",
+  "currentTopic": null,
   "lastScriptPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_script.txt",
-  "lastScriptChars": 21783,
+  "lastScriptChars": 23122,
   "lastScriptChapters": [
     {
       "index": 1,
-      "title": "本能寺炎上、逆臣の烙印",
-      "chars": 3391
+      "title": "逆臣か、義士か。その男の名は光秀",
+      "chars": 3819
     },
     {
       "index": 2,
-      "title": "謎の前半生、麒麟を待つ日々",
-      "chars": 4479
+      "title": "謎に包まれた前半生と確かな才覚",
+      "chars": 4965
     },
     {
       "index": 3,
-      "title": "信長の右腕、栄華への階",
-      "chars": 4839
+      "title": "信長が見出した光、二人の蜜月時代",
+      "chars": 4505
     },
     {
       "index": 4,
-      "title": "理想の乖離、心に差す影",
-      "chars": 4440
+      "title": "忍び寄る不和、心に灯る疑念の炎",
+      "chars": 4128
     },
     {
       "index": 5,
-      "title": "是非に及ばず、魂の決断",
-      "chars": 4539
+      "title": "時は今、天が下しる。本能寺への道",
+      "chars": 5589
     }
   ],
   "lastVoicePath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_voice.mp3",
-  "lastVoiceAt": "2026-05-16T09:56:31.841Z",
+  "lastVoiceAt": "2026-05-16T12:00:05.031Z",
   "lastImagePaths": [
     "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_img_1.png",
     "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_img_2.png",
@@ -52,21 +49,21 @@
     "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_img_4.png",
     "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_img_5.png"
   ],
-  "lastImageGenAt": "2026-05-16T09:58:17.809Z",
+  "lastImageGenAt": "2026-05-16T12:01:47.737Z",
   "lastMetaPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_meta.json",
   "lastThumbPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_thumb.png",
   "lastVideoPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_video.mp4",
   "lastAssPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_subs.ass",
-  "lastSubsCount": 1371,
-  "lastCompileAt": "2026-05-16T10:05:08.499Z",
+  "lastSubsCount": 1473,
+  "lastCompileAt": "2026-05-16T12:09:02.925Z",
   "videoStatus": "ready",
   "lastUploadResult": {
     "status": "success",
-    "topicId": "007",
-    "videoId": "jHkkHBV4QN0",
-    "url": "https://www.youtube.com/watch?v=jHkkHBV4QN0"
+    "topicId": "008",
+    "videoId": "HtcdgPGQz74",
+    "url": "https://www.youtube.com/watch?v=HtcdgPGQz74"
   },
-  "lastUploadAt": "2026-05-16T07:55:09.555Z",
+  "lastUploadAt": "2026-05-16T12:09:17.795Z",
   "lastImageSources": [
     "https://upload.wikimedia.org/wikipedia/commons/c/c3/Akechi_Mitsuhide8.jpg",
     "https://upload.wikimedia.org/wikipedia/commons/d/da/Akechi_Mituharu.jpg",

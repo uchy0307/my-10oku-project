@@ -9,6 +9,18 @@ NG      : 制服/学生/性的示唆 系プロンプトは validate で reject
 キャッシュ: SHA256(full_prompt) → cache/images/<key>.jpg
 """
 from __future__ import annotations
+import sys as _flush_sys
+try:
+    _flush_sys.stdout.reconfigure(line_buffering=True)
+except Exception:
+    pass
+import builtins as _flush_b
+_flush_b._orig_print = _flush_b.print
+def _flush_print(*a, **k):
+    k.setdefault("flush", True)
+    return _flush_b._orig_print(*a, **k)
+_flush_b.print = _flush_print
+
 import hashlib
 import time
 from pathlib import Path

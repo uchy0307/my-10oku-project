@@ -19,7 +19,7 @@ const STATE_FILE = path.join(OUTPUT_DIR, 'state.json');
 // VPN扱いするためFree Tier無効化される問題を回避。
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
 const GOOGLE_TTS_VOICE = process.env.GOOGLE_TTS_VOICE || 'ja-JP-Neural2-B'; // 女性・落ち着いた声（30代）
-const GOOGLE_TTS_SPEAKING_RATE = parseFloat(process.env.GOOGLE_TTS_SPEAKING_RATE || '1.0');
+const GOOGLE_TTS_SPEAKING_RATE = parseFloat(process.env.GOOGLE_TTS_SPEAKING_RATE || '0.95');
 const GOOGLE_TTS_PITCH = parseFloat(process.env.GOOGLE_TTS_PITCH || '0.0'); // 標準ピッチ (30代女性向け)
 
 // ─── 旧TTS: ElevenLabs (fallback) ─────────────

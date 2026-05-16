@@ -222,9 +222,9 @@
       "draftId": "n1ea90e00ad92",
       "title": "【AI対話アプリ】✉️ 200の問い #020 「10年後の自分からの手紙」",
       "publish": true,
-      "status": "pending",
+      "status": "published",
       "scheduled_at": null,
-      "posted_at": null,
+      "posted_at": "2026-05-16T08:40:33.506Z",
       "error": null,
       "_hasLocalBody": true
     },

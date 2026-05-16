@@ -8,53 +8,57 @@
     "006",
     "007"
   ],
-  "lastRun": "2026-05-16T07:51:30.962Z",
-  "currentTopic": null,
-  "lastScriptPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_script.txt",
-  "lastScriptChars": 11124,
+  "lastRun": "2026-05-16T09:25:48.825Z",
+  "currentTopic": {
+    "id": "008",
+    "title": "明智光秀 謀反人の本心",
+    "category": "人物軸"
+  },
+  "lastScriptPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_script.txt",
+  "lastScriptChars": 23249,
   "lastScriptChapters": [
     {
       "index": 1,
-      "title": "幼き独眼竜、覚醒の刻",
-      "chars": 1883
+      "title": "逆臣か、義士か。光秀という謎",
+      "chars": 4458
     },
     {
       "index": 2,
-      "title": "血風の奥州、乱世を翔る",
-      "chars": 2054
+      "title": "流浪の果てに見出した主君",
+      "chars": 4573
     },
     {
       "index": 3,
-      "title": "秀吉の前に膝を屈す英断",
-      "chars": 2540
+      "title": "麒麟と呼ばれた男の忠義",
+      "chars": 3927
     },
     {
       "index": 4,
-      "title": "覇権の夢、江戸を駆け抜ける",
-      "chars": 2998
+      "title": "天魔と歩んだ栄光と亀裂",
+      "chars": 4710
     },
     {
       "index": 5,
-      "title": "独眼竜の残した美学",
-      "chars": 1557
+      "title": "敵は本能寺にあり、決断の真意",
+      "chars": 5481
     }
   ],
-  "lastVoicePath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_voice.mp3",
-  "lastVoiceAt": "2026-05-16T07:52:33.775Z",
+  "lastVoicePath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_voice.mp3",
+  "lastVoiceAt": "2026-05-16T09:27:54.552Z",
   "lastImagePaths": [
-    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_img_1.png",
-    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_img_2.png",
-    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_img_3.png",
-    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_img_4.png",
-    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_img_5.png"
+    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_img_1.png",
+    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_img_2.png",
+    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_img_3.png",
+    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_img_4.png",
+    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_img_5.png"
   ],
-  "lastImageGenAt": "2026-05-16T07:53:29.843Z",
-  "lastMetaPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_meta.json",
-  "lastThumbPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_thumb.png",
-  "lastVideoPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_video.mp4",
-  "lastAssPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_subs.ass",
-  "lastSubsCount": 703,
-  "lastCompileAt": "2026-05-16T07:55:01.324Z",
+  "lastImageGenAt": "2026-05-16T09:29:54.306Z",
+  "lastMetaPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_meta.json",
+  "lastThumbPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_thumb.png",
+  "lastVideoPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_video.mp4",
+  "lastAssPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_subs.ass",
+  "lastSubsCount": 1444,
+  "lastCompileAt": "2026-05-16T09:33:42.095Z",
   "videoStatus": "ready",
   "lastUploadResult": {
     "status": "success",
@@ -64,10 +68,9 @@
   },
   "lastUploadAt": "2026-05-16T07:55:09.555Z",
   "lastImageSources": [
-    "https://upload.wikimedia.org/wikipedia/commons/1/19/MASAMUNE777.PNG",
-    "https://upload.wikimedia.org/wikipedia/commons/e/e6/Idate_Masamune.JPG?utm_source=ja.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
-    "https://upload.wikimedia.org/wikipedia/commons/0/09/Toyotomi_Hideyoshi_c1598_Kodai-ji_Temple.png",
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Arthur_Mees_Flags_of_A_Free_Empire_1910_Cornell_CUL_PJM_1167_01_%28Reddit_source%29.jpg/3840px-Arthur_Mees_Flags_of_A_Free_Empire_1910_Cornell_CUL_PJM_1167_01_%28Reddit_source%29.jpg",
-    "https://upload.wikimedia.org/wikipedia/commons/7/78/Date_Masamune02.jpg"
+    "https://upload.wikimedia.org/wikipedia/commons/c/c3/Akechi_Mitsuhide8.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/d/da/Akechi_Mituharu.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/d/d5/Akechi_Mitsutada.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/8/8d/Trace_of_Akechi_Castle-A.JPG"
   ]
 }

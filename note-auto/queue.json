@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "synced_at": "2026-05-16T06:13:12.698Z",
+  "synced_at": "2026-05-16T07:58:36.969Z",
   "items": [
     {
       "id": "001",
@@ -165,23 +165,24 @@
       "scheduled_at": null,
       "posted_at": "2026-05-16T06:17:34.225Z",
       "error": null,
-      "_hasLocalBody": true,
-      "attached": 0,
-      "priceSet": true,
-      "boundarySet": false,
-      "paidEnabled": true,
-      "savedToServer": true
+      "_hasLocalBody": true
     },
     {
       "id": "016",
       "draftId": "nac9ea7eeadaf",
       "title": "【AI対話アプリ】🌋 200の問い #016 「怒りのトリガー分析」",
       "publish": true,
-      "status": "pending",
+      "status": "published",
       "scheduled_at": null,
-      "posted_at": null,
+      "posted_at": "2026-05-16T08:04:14.086Z",
       "error": null,
-      "_hasLocalBody": true
+      "_hasLocalBody": true,
+      "attached": 3,
+      "priceSet": true,
+      "boundarySet": true,
+      "paidEnabled": true,
+      "published": true,
+      "anonStatus": 200
     },
     {
       "id": "017",

@@ -47,6 +47,7 @@ jobs:
         env:
           # --- 台本・素材生成 ---
           GEMINI_API_KEY:        ${{ secrets.GEMINI_API_KEY }}
+          PYTHONUNBUFFERED:      "1"
           ELEVENLABS_API_KEY:    ${{ secrets.ELEVENLABS_API_KEY }}
           ELEVENLABS_VOICE_ID:   ${{ secrets.ELEVENLABS_VOICE_ID }}
           GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/new-youtube/gcp_sa.json
@@ -66,7 +67,7 @@ jobs:
           if [ "${{ github.event.inputs.no_upload }}" = "true" ]; then
             ARGS="$ARGS --no-upload"
           fi
-          eval python scripts/run_pipeline.py $ARGS
+          eval python -u scripts/run_pipeline.py $ARGS
 
       - name: Commit updated state
         if: github.event_name == 'schedule'

@@ -15,6 +15,18 @@ Step 1: 台本JSON読込・検証
 NG単語が含まれていたら ValueError で即 raise（自動置換しない）。
 """
 from __future__ import annotations
+import sys as _flush_sys
+try:
+    _flush_sys.stdout.reconfigure(line_buffering=True)
+except Exception:
+    pass
+import builtins as _flush_b
+_flush_b._orig_print = _flush_b.print
+def _flush_print(*a, **k):
+    k.setdefault("flush", True)
+    return _flush_b._orig_print(*a, **k)
+_flush_b.print = _flush_print
+
 import json
 from pathlib import Path
 

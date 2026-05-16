@@ -1,0 +1,7 @@
+outputs/
+cache/
+assets/*.mp3
+gcp_sa.json
+__pycache__/
+*.pyc
+.env

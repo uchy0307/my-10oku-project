@@ -19,10 +19,10 @@ on:
         description: 'true で 0-15分ランダム遅延をスキップ'
         required: false
         default: 'false'
-  schedule:
+  # schedule:  # disabled while debugging paid-article setup (re-enable after v7 verified)
     # 1日2回（UTC基準）。実行時刻はworkflow内で更にランダム遅延を挟む。
-    - cron: '50 22 * * *'  # 07:50 JST
-    - cron: '50 10 * * *'  # 19:50 JST
+    # - cron: '50 22 * * *'  # 07:50 JST
+    # - cron: '50 10 * * *'  # 19:50 JST
 
 permissions:
   contents: write

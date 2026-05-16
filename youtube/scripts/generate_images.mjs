@@ -241,8 +241,18 @@ async function main() {
         console.log(`[generate_images]   matched -> "${result.pageTitle}" -> ${result.sourceUrl}`);
         finalBuf = await processImage(result.buffer);
       } else {
-        console.warn(`[generate_images]   no wiki match for ch${ch.index}, using placeholder (NO AI fallback)`);
-        finalBuf = await placeholderImage(ch.title, ch.index);
+        // 最終フォールバック: 主人公本体のWikipedia肖像を再利用許可で取得（placeholder撲滅）
+        let reuseResult = null;
+        if (main) {
+          reuseResult = await fetchWikiImageMulti(main, { excludeUrls: new Set(), excludePages: new Set() });
+        }
+        if (reuseResult && reuseResult.buffer) {
+          console.log(`[generate_images]   reused main portrait "${reuseResult.pageTitle}" -> ${reuseResult.sourceUrl} for ch${ch.index}`);
+          finalBuf = await processImage(reuseResult.buffer);
+        } else {
+          console.warn(`[generate_images]   no wiki match for ch${ch.index}, using placeholder (NO AI fallback)`);
+          finalBuf = await placeholderImage(ch.title, ch.index);
+        }
       }
       await fs.writeFile(outPath, finalBuf);
       imagePaths.push(outPath);

@@ -1,0 +1,8 @@
+pydub>=0.25.1
+moviepy>=1.0.3
+requests>=2.31.0
+Pillow>=10.0.0
+numpy>=1.24.0
+imageio-ffmpeg>=0.4.9
+google-cloud-texttospeech>=2.16.0
+# ElevenLabs は REST 直叩きなので追加 SDK 不要 (requests のみ)

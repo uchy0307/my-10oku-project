@@ -5,45 +5,42 @@
     "003",
     "004",
     "005",
-    "006"
+    "006",
+    "007"
   ],
-  "lastRun": "2026-05-16T07:43:43.774Z",
-  "currentTopic": {
-    "id": "007",
-    "title": "伊達政宗 独眼竜の野望",
-    "category": "人物軸"
-  },
+  "lastRun": "2026-05-16T07:51:30.962Z",
+  "currentTopic": null,
   "lastScriptPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_script.txt",
-  "lastScriptChars": 11064,
+  "lastScriptChars": 11124,
   "lastScriptChapters": [
     {
       "index": 1,
-      "title": "隻眼の若武者、伊達家を継ぐ",
-      "chars": 1396
+      "title": "幼き独眼竜、覚醒の刻",
+      "chars": 1883
     },
     {
       "index": 2,
-      "title": "摺上原、奥州統一への序章",
-      "chars": 3262
+      "title": "血風の奥州、乱世を翔る",
+      "chars": 2054
     },
     {
       "index": 3,
-      "title": "小田原参陣、豊臣との駆け引き",
-      "chars": 1701
+      "title": "秀吉の前に膝を屈す英断",
+      "chars": 2540
     },
     {
       "index": 4,
-      "title": "文禄・慶長の役、海を渡る野望",
-      "chars": 2360
+      "title": "覇権の夢、江戸を駆け抜ける",
+      "chars": 2998
     },
     {
       "index": 5,
-      "title": "徳川家康との絆、天下への布石",
-      "chars": 2240
+      "title": "独眼竜の残した美学",
+      "chars": 1557
     }
   ],
   "lastVoicePath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_voice.mp3",
-  "lastVoiceAt": "2026-05-16T07:44:45.012Z",
+  "lastVoiceAt": "2026-05-16T07:52:33.775Z",
   "lastImagePaths": [
     "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_img_1.png",
     "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_img_2.png",
@@ -51,26 +48,26 @@
     "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_img_4.png",
     "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_img_5.png"
   ],
-  "lastImageGenAt": "2026-05-16T07:45:15.311Z",
+  "lastImageGenAt": "2026-05-16T07:53:29.843Z",
   "lastMetaPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_meta.json",
   "lastThumbPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_thumb.png",
   "lastVideoPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_video.mp4",
   "lastAssPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_subs.ass",
-  "lastSubsCount": 687,
-  "lastCompileAt": "2026-05-16T07:48:24.947Z",
+  "lastSubsCount": 703,
+  "lastCompileAt": "2026-05-16T07:55:01.324Z",
   "videoStatus": "ready",
   "lastUploadResult": {
     "status": "success",
-    "topicId": "006",
-    "videoId": "e-3bHqRlxZs",
-    "url": "https://www.youtube.com/watch?v=e-3bHqRlxZs"
+    "topicId": "007",
+    "videoId": "jHkkHBV4QN0",
+    "url": "https://www.youtube.com/watch?v=jHkkHBV4QN0"
   },
-  "lastUploadAt": "2026-05-15T00:05:53.720Z",
+  "lastUploadAt": "2026-05-16T07:55:09.555Z",
   "lastImageSources": [
     "https://upload.wikimedia.org/wikipedia/commons/1/19/MASAMUNE777.PNG",
-    "https://upload.wikimedia.org/wikipedia/commons/7/74/Japan_Tohoku_South_topographic_map.webp",
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Hachimanyama_deep_Horigiri_moat.jpg/3840px-Hachimanyama_deep_Horigiri_moat.jpg?utm_source=ja.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
-    "https://upload.wikimedia.org/wikipedia/commons/e/ec/Siege-of-Busanjin-1592.jpg",
-    "https://upload.wikimedia.org/wikipedia/commons/5/5e/Tokugawa_Ieyasu_kao.jpg"
+    "https://upload.wikimedia.org/wikipedia/commons/e/e6/Idate_Masamune.JPG?utm_source=ja.wikipedia.org&utm_campaign=api&utm_content=thumbnail_unscaled",
+    "https://upload.wikimedia.org/wikipedia/commons/0/09/Toyotomi_Hideyoshi_c1598_Kodai-ji_Temple.png",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Arthur_Mees_Flags_of_A_Free_Empire_1910_Cornell_CUL_PJM_1167_01_%28Reddit_source%29.jpg/3840px-Arthur_Mees_Flags_of_A_Free_Empire_1910_Cornell_CUL_PJM_1167_01_%28Reddit_source%29.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/7/78/Date_Masamune02.jpg"
   ]
 }

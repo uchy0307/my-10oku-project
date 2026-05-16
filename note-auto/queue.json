@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "synced_at": "2026-05-16T05:24:53.415Z",
+  "synced_at": "2026-05-16T05:48:21.872Z",
   "items": [
     {
       "id": "001",
@@ -161,13 +161,11 @@
       "draftId": "n848deaa6139d",
       "title": "【AI対話アプリ】⚙️ 200の問い #015 「集中力プロファイラー」",
       "publish": false,
-      "status": "pending",
+      "status": "error: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"下書き保存\")').first()\n",
       "scheduled_at": null,
-      "_hasLocalBody": true,
-      "attached": 3,
-      "priceSet": true,
-      "boundarySet": false,
-      "paidEnabled": true
+      "posted_at": null,
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"下書き保存\")').first()\n",
+      "_hasLocalBody": true
     },
     {
       "id": "016",

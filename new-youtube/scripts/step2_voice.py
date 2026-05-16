@@ -1,96 +1,101 @@
+#!/usr/bin/env -S python3 -u
 """
-Step 2: ナレーション音声生成
+Step 2: narration voice generation
+Provider : Google Cloud Text-to-Speech REST API (direct, GOOGLE_API_KEY auth)
+Voice    : ja-JP-Neural2-B (same as samurai pipeline)
 
-Primary  : ElevenLabs Multilingual v2 (日本語女性ボイス)
-Fallback : Google Cloud TTS Neural2-B (samurai と同設定)
-
-設計:
-- 章ごとに synth → 中間 mp3 を chapters/ に保存（再実行時キャッシュ）
-- 全章を pydub で結合し voice.mp3 を出力
-- 各章の duration (秒) を返す → Step 4 で使う
+Notes:
+- Per-chapter synth -> mp3 cached under work_dir/chapters/
+- Concatenated via pydub -> work_dir/voice.mp3
+- Returns (voice.mp3 path, [chapter_duration_sec, ...])
 """
 from __future__ import annotations
 import os
+import sys
+import json
+import base64
+import urllib.request
+import urllib.error
 from pathlib import Path
 from pydub import AudioSegment
 
-ELEVENLABS_KEY = os.getenv("ELEVENLABS_API_KEY")
-ELEVENLABS_VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "21m00Tcm4TlvDq8ikWAM")
-GCP_VOICE = "ja-JP-Neural2-B"  # samurai と同等
+try:
+    sys.stdout.reconfigure(line_buffering=True)
+except Exception:
+    pass
+
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+GCP_VOICE = "ja-JP-Neural2-B"
+TTS_URL = "https://texttospeech.googleapis.com/v1/text:synthesize"
 
 
-def _tts_elevenlabs(text: str, out_path: Path) -> None:
-    import requests
-    url = f"https://api.elevenlabs.io/v1/text-to-speech/{ELEVENLABS_VOICE_ID}"
-    headers = {"xi-api-key": ELEVENLABS_KEY, "Content-Type": "application/json"}
+def _tts_google(text: str, out_path: Path) -> None:
+    if not GOOGLE_API_KEY:
+        raise RuntimeError("GOOGLE_API_KEY env var is not set")
     body = {
-        "text": text,
-        "model_id": "eleven_multilingual_v2",
-        "voice_settings": {"stability": 0.5, "similarity_boost": 0.75},
+        "input": {"text": text},
+        "voice": {
+            "languageCode": "ja-JP",
+            "name": GCP_VOICE,
+            "ssmlGender": "FEMALE",
+        },
+        "audioConfig": {"audioEncoding": "MP3", "speakingRate": 1.0},
     }
-    r = requests.post(url, json=body, headers=headers, timeout=180)
-    r.raise_for_status()
-    out_path.write_bytes(r.content)
-
-
-def _tts_gcp(text: str, out_path: Path) -> None:
-    from google.cloud import texttospeech as tts
-    client = tts.TextToSpeechClient()
-    inp = tts.SynthesisInput(text=text)
-    voice = tts.VoiceSelectionParams(
-        language_code="ja-JP",
-        name=GCP_VOICE,
-        ssml_gender=tts.SsmlVoiceGender.FEMALE,
+    data = json.dumps(body).encode("utf-8")
+    req = urllib.request.Request(
+        TTS_URL + "?key=" + GOOGLE_API_KEY,
+        data=data,
+        headers={"Content-Type": "application/json"},
+        method="POST",
     )
-    cfg = tts.AudioConfig(audio_encoding=tts.AudioEncoding.MP3, speaking_rate=1.0)
-    res = client.synthesize_speech(input=inp, voice=voice, audio_config=cfg)
-    out_path.write_bytes(res.audio_content)
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            payload = json.loads(r.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        body_txt = e.read().decode("utf-8", "replace")
+        raise RuntimeError("TTS HTTP " + str(e.code) + ": " + body_txt)
+    audio_b64 = payload.get("audioContent")
+    if not audio_b64:
+        raise RuntimeError("TTS missing audioContent: " + json.dumps(payload)[:200])
+    out_path.write_bytes(base64.b64decode(audio_b64))
 
 
 def synth_chapter(text: str, out_path: Path) -> None:
-    """章単位 TTS。ElevenLabs 優先・失敗時 GCP fallback。"""
-    if ELEVENLABS_KEY:
-        try:
-            _tts_elevenlabs(text, out_path)
-            return
-        except Exception as e:
-            print(f"[WARN] ElevenLabs failed ({e}); fallback to GCP")
-    _tts_gcp(text, out_path)
+    _tts_google(text, out_path)
 
 
-def generate_voice(script: dict, work_dir: Path) -> tuple[Path, list[float]]:
-    """
-    Returns: (voice.mp3 path, [chapter_duration_sec, ...])
-    streaming: chapter mp3 -> AudioSegment 結合 -> export
-    """
+def generate_voice(script: dict, work_dir: Path):
     work_dir.mkdir(parents=True, exist_ok=True)
     chap_dir = work_dir / "chapters"
     chap_dir.mkdir(exist_ok=True)
 
-    durations: list[float] = []
+    durations = []
     combined = AudioSegment.silent(duration=0)
-    pause = AudioSegment.silent(duration=600)  # 章間ポーズ 0.6s
+    pause = AudioSegment.silent(duration=600)
 
     for ch in script["chapters"]:
-        cp = chap_dir / f"ch{ch['id']:02d}.mp3"
+        cp = chap_dir / ("ch%02d.mp3" % ch["id"])
         if not cp.exists() or cp.stat().st_size < 1000:
+            print("[step2] synth ch%02d (%d chars)" % (ch["id"], len(ch["narration"])), flush=True)
             synth_chapter(ch["narration"], cp)
+        else:
+            print("[step2] cache ch%02d (%d bytes)" % (ch["id"], cp.stat().st_size), flush=True)
         seg = AudioSegment.from_file(cp, format="mp3")
         durations.append(len(seg) / 1000.0)
         combined += seg + pause
 
     out = work_dir / "voice.mp3"
     combined.export(out, format="mp3", bitrate="128k")
+    print("[step2] voice.mp3 written: " + str(out), flush=True)
     return out, durations
 
 
 if __name__ == "__main__":
-    import sys
     sys.path.insert(0, str(Path(__file__).parent))
     from step1_load import read_script
 
     script = read_script(sys.argv[1] if len(sys.argv) > 1 else "inputs/script_001.json")
     out, durs = generate_voice(script, Path("outputs/voice_work"))
-    print(f"voice : {out}")
-    print(f"durs  : {[round(d, 1) for d in durs]}")
-    print(f"total : {round(sum(durs), 1)}s")
+    print("voice : " + str(out), flush=True)
+    print("durs  : " + str([round(d, 1) for d in durs]), flush=True)
+    print("total : " + str(round(sum(durs), 1)) + "s", flush=True)

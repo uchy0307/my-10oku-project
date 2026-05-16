@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "synced_at": "2026-05-16T14:43:21.674Z",
+  "synced_at": "2026-05-16T16:41:38.865Z",
   "items": [
     {
       "id": "001",
@@ -231,6 +231,17 @@
       "scheduled_at": null,
       "posted_at": "2026-05-16T14:55:19.552Z",
       "error": null,
+      "_hasLocalBody": true
+    },
+    {
+      "id": "022",
+      "draftId": "n6949e521faad",
+      "title": "【AI対話アプリ】🔀 200の問い #022 「キャリア分岐点相談」",
+      "publish": true,
+      "status": "published",
+      "scheduled_at": null,
+      "posted_at": "2026-05-16T16:56:27.561Z",
+      "error": null,
       "_hasLocalBody": true,
       "attached": 3,
       "priceSet": true,
@@ -238,17 +249,6 @@
       "paidEnabled": true,
       "published": true,
       "anonStatus": 200
-    },
-    {
-      "id": "022",
-      "draftId": "n6949e521faad",
-      "title": "【AI対話アプリ】🔀 200の問い #022 「キャリア分岐点相談」",
-      "publish": true,
-      "status": "pending",
-      "scheduled_at": null,
-      "posted_at": null,
-      "error": null,
-      "_hasLocalBody": true
     },
     {
       "id": "023",

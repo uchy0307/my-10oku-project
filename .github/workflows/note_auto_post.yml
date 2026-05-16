@@ -3,10 +3,6 @@ name: note Auto Post (B-plan / slow & safe)
 # ⚠️ note.com の規約上、自動投稿はグレーゾーン。
 # 本workflowは「1日2本以下・ランダム遅延・人間操作シミュレート」で
 # BAN回避を試みる。利用者責任で運用すること。
-#
-# 新方針: 完全自動ログインは bot 検知で失敗しやすいため、
-# NOTE_STORAGE_STATE （Playwright storageState JSON）に保存された
-# 認証済セッションを再利用して下書きを編集・保存する。
 
 on:
   workflow_dispatch:
@@ -15,11 +11,17 @@ on:
         description: '1回の起動で投稿する最大件数'
         required: false
         default: '1'
+      test_paid:
+        description: 'true で publish:false でも 有料境界線/価格 を試行（NOTE_TEST_PAID）'
+        required: false
+        default: 'false'
+      skip_delay:
+        description: 'true で 0-15分ランダム遅延をスキップ'
+        required: false
+        default: 'false'
   schedule:
     # 1日2回（UTC基準）。実行時刻はworkflow内で更にランダム遅延を挟む。
-    # 03:17 UTC = 日本時間 12:17
     - cron: '17 3 * * *'
-    # 11:43 UTC = 日本時間 20:43
     - cron: '43 11 * * *'
 
 permissions:
@@ -56,6 +58,7 @@ jobs:
           node note-auto/sync-drafts.mjs
 
       - name: Random pre-delay (0-15 min)
+        if: ${{ github.event.inputs.skip_delay != 'true' }}
         run: |
           DELAY=$((RANDOM % 900))
           echo "Sleeping $DELAY seconds before posting (human-like scatter)..."
@@ -65,6 +68,7 @@ jobs:
         id: post
         env:
           NOTE_STORAGE_STATE: ${{ secrets.NOTE_STORAGE_STATE }}
+          NOTE_TEST_PAID: ${{ github.event.inputs.test_paid }}
         run: |
           MAX_INPUT="${{ github.event.inputs.max }}"
           MAX="${MAX_INPUT:-1}"

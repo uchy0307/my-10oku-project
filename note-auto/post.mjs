@@ -1,15 +1,17 @@
 // note-auto/post.mjs
 // ───────────────────────────────────────────────────────────────
-// note.com 下書き編集型自動投稿（B案・新方針 / v3）
+// note.com 下書き編集型自動投稿（B案・新方針 / v4）
 //
 // 完全自動ログインは bot 検知で失敗しやすいため、Playwright の storageState
 // に保存された認証済みセッションを再利用する。queue.json で指定された
 // `draftId` の下書きを開いて、本文を流し込み、下書き保存 or 公開する。
 //
-// 2026-05-16 v3 改修:
+// 2026-05-16 v4 改修:
+//   - NOTE_TEST_PAID=true 時、publish:false でも 有料境界線/価格 を試行
+//   - 但し「公開に進む」「公開する」ボタンは絶対押さない（draft保存のみ）
 //   - 添付docx: "+"メニュー → 「ファイル」ボタン click → input[type=file] 出現後 setInputFiles
 //   - 有料境界線: 🔑アクセスコード H2 直前にカーソル設定 → "+"メニュー → 「有料エリア指定」
-//   - 価格 100円: 公開設定パネルへ遷移 → 多段セレクタ盲打ち → React-safe value setter
+//   - 価格 100円: 編集画面に price input が出ていれば多段セレクタ盲打ち（無ければスキップ）
 //   - 47歳除去 / アプリリンク / アクセスコード は preprocess-articles.mjs 側で対応済
 // ───────────────────────────────────────────────────────────────
 
@@ -27,6 +29,7 @@ const ACCESS_CODES_PATH = join(__dirname, 'access_codes.json');
 
 const PRICE_YEN = 100;
 const URL_PATTERN = 'https://toi-suite.vercel.app/page/';
+const FORCE_PAID = process.env.NOTE_TEST_PAID === 'true';
 
 let ACCESS_CODES = {};
 try {
@@ -148,7 +151,6 @@ async function placeCursorBeforeAccessCode(page) {
     const items = [...pm.querySelectorAll('h1,h2,h3,p')];
     const target = items.find((el) => /🔑/.test(el.textContent || ''));
     if (!target) return { ok: false, reason: 'no_marker' };
-    // 直前のDOM位置にRange/Selection設定
     const range = document.createRange();
     range.setStartBefore(target);
     range.collapse(true);
@@ -197,7 +199,7 @@ async function insertPaidBoundary(page) {
 async function attachFiles(page, filePaths) {
   if (filePaths.length === 0) return 0;
   let attached = 0;
-  // 末尾にカーソルを移動（添付は本文末尾）
+  // 末尾にカーソルを移動
   await page.evaluate(() => {
     const pm = document.querySelector('.ProseMirror');
     if (!pm) return;
@@ -228,7 +230,6 @@ async function attachFiles(page, filePaths) {
         await page.keyboard.press('Escape').catch(() => {});
         continue;
       }
-      // 「ファイル」ボタンclickで input[type=file] が露出する想定
       const [fileChooser] = await Promise.all([
         page.waitForEvent('filechooser', { timeout: 5000 }).catch(() => null),
         fileBtn.click(),
@@ -236,7 +237,6 @@ async function attachFiles(page, filePaths) {
       if (fileChooser) {
         await fileChooser.setFiles(fp);
       } else {
-        // filechooserイベント取れない場合は input を直接探す
         const inp = page.locator(SELECTORS.fileInput).first();
         if (await inp.count()) {
           await inp.setInputFiles(fp);
@@ -245,7 +245,7 @@ async function attachFiles(page, filePaths) {
           continue;
         }
       }
-      await sleep(4000); // アップロード待ち
+      await sleep(4000);
       attached++;
       console.log(`[INFO] 添付 ${attached}/${filePaths.length}: ${fp.split(/[\\/]/).pop()}`);
     } catch (err) {
@@ -255,26 +255,30 @@ async function attachFiles(page, filePaths) {
   return attached;
 }
 
-/** 価格 100円 設定。publish=true 時のみ呼ぶ。 */
-async function setPrice(page, yen) {
+/** 価格 100円 設定。
+ *  - allowNavigate=true (=item.publish=true) の場合のみ「公開に進む」を押して publish settings 画面で設定。
+ *  - allowNavigate=false (TEST_PAID時) は現在の edit ページで input を盲打ち探索のみ。
+ */
+async function setPrice(page, yen, allowNavigate) {
   try {
-    // 公開設定/公開に進む を押す
-    const pubBtn = page.locator(SELECTORS.publishStepButton).first();
-    if (await pubBtn.count()) {
-      await pubBtn.click();
-      await randDelay(2000, 3500);
-    } else {
-      console.warn('[WARN] 「公開に進む」ボタン未発見');
-    }
-    // 「有料」「販売」関連トグル試行
-    for (const txt of ['有料記事', '販売', '有料エリア']) {
-      const t = page.locator(`button:has-text("${txt}"), label:has-text("${txt}")`).first();
-      if ((await t.count()) > 0) {
-        await t.click().catch(() => {});
-        await sleep(700);
+    if (allowNavigate) {
+      const pubBtn = page.locator(SELECTORS.publishStepButton).first();
+      if (await pubBtn.count()) {
+        await pubBtn.click();
+        await randDelay(2000, 3500);
+      } else {
+        console.warn('[WARN] 「公開に進む」ボタン未発見');
       }
+      for (const txt of ['有料記事', '販売', '有料エリア']) {
+        const t = page.locator(`button:has-text("${txt}"), label:has-text("${txt}")`).first();
+        if ((await t.count()) > 0) {
+          await t.click().catch(() => {});
+          await sleep(700);
+        }
+      }
+    } else {
+      console.log('[INFO] setPrice: TEST_PAIDモード - 「公開に進む」はスキップ、edit上でblind試行');
     }
-    // 価格input 多段フォールバック (Reactの内部setter経由でセット)
     const set = await page.evaluate((yen) => {
       const candidates = [
         'input[name="price"]',
@@ -302,7 +306,7 @@ async function setPrice(page, yen) {
       console.log(`[INFO] 価格 ${yen}円 設定 (sel=${set.selector})`);
       return true;
     }
-    console.warn('[WARN] 価格input 未発見 → スキップ');
+    console.warn('[WARN] 価格input 未発見 → スキップ' + (allowNavigate ? '' : ' (TEST_PAID: 公開設定画面に遷移しないため通常NG)'));
     return false;
   } catch (err) {
     console.warn('[WARN] setPrice エラー:', err.message);
@@ -321,6 +325,7 @@ async function editDraft(page, item) {
   const draftUrl = `https://note.com/notes/${item.draftId}/edit`;
   console.log(`[INFO] open draft: ${draftUrl}`);
   console.log(`[INFO] attachments: ${attachPaths.length} files`);
+  console.log(`[INFO] mode: publish=${!!item.publish} FORCE_PAID=${FORCE_PAID}`);
   await page.goto(draftUrl, { waitUntil: 'domcontentloaded' });
   await randDelay(3000, 5000);
 
@@ -368,9 +373,11 @@ async function editDraft(page, item) {
   }
   await randDelay(2000, 4000);
 
+  const runPaid = !!item.publish || FORCE_PAID;
+
   // 有料境界線 挿入 (🔑 アクセスコード 直前)
   let boundarySet = false;
-  if (item.publish) {
+  if (runPaid) {
     boundarySet = await insertPaidBoundary(page);
   }
 
@@ -380,13 +387,14 @@ async function editDraft(page, item) {
     attachedCount = await attachFiles(page, attachPaths);
   }
 
-  // 価格 (publish=true時のみ)
+  // 価格 (publish=true で「公開に進む」遷移許可、TEST_PAIDは編集画面で盲打ちのみ)
   let priceSet = false;
-  if (item.publish) {
-    priceSet = await setPrice(page, PRICE_YEN);
+  if (runPaid) {
+    priceSet = await setPrice(page, PRICE_YEN, !!item.publish);
   }
 
   if (item.publish) {
+    // 本番公開モード
     const pubBtn = page.locator(SELECTORS.publishButton).first();
     if (await pubBtn.count()) {
       await pubBtn.click();
@@ -399,6 +407,7 @@ async function editDraft(page, item) {
     }
     return { result: 'published', attached: attachedCount, priceSet, boundarySet };
   } else {
+    // draft保存（TEST_PAID時もここに来る）
     await page.locator(SELECTORS.saveDraftButton).first().click();
     await randDelay(3000, 5000);
     return { result: 'draft_saved', attached: attachedCount, priceSet, boundarySet };
@@ -408,6 +417,7 @@ async function editDraft(page, item) {
 async function main() {
   const { max } = parseArgs();
   const storageState = parseStorageState();
+  console.log(`[INFO] FORCE_PAID(NOTE_TEST_PAID)=${FORCE_PAID}`);
 
   const queue = await loadQueue();
   const allPendings = (queue.items || []).filter((i) => i.status === 'pending');

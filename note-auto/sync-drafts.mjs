@@ -271,7 +271,7 @@ async function main() {
       id: num,
       draftId,
       title,
-      publish: false,
+      publish: prev?.publish ?? false,
       status,
       scheduled_at: prev?.scheduled_at || null,
       posted_at: prev?.posted_at || null,

@@ -8,6 +8,18 @@ Usage:
   python scripts/run_pipeline.py --no-upload    # Step 5 をスキップ
 """
 from __future__ import annotations
+import sys as _flush_sys
+try:
+    _flush_sys.stdout.reconfigure(line_buffering=True)
+except Exception:
+    pass
+import builtins as _flush_b
+_flush_b._orig_print = _flush_b.print
+def _flush_print(*a, **k):
+    k.setdefault("flush", True)
+    return _flush_b._orig_print(*a, **k)
+_flush_b.print = _flush_print
+
 import argparse
 import os
 import sys

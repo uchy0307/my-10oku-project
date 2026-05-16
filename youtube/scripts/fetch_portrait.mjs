@@ -3,10 +3,10 @@
 // AI画像は一切扱わない。
 //
 // 公開関数:
-//   fetchWikiImage(query, opts)            -> { buffer, sourceUrl, pageTitle } | null
-//   fetchWikiImageMulti(query, opts)       -> { buffer, sourceUrl, pageTitle } | null (excludeUrls / excludePages 対応)
-//   listWikiPageCandidates(query, opts)    -> [{title, url}]  opensearch 結果
-//   buildCandidateQueries(topicTitle)      -> [string]
+//   fetchWikiImage(query, opts)         -> { buffer, sourceUrl, pageTitle } | null
+//   fetchWikiImageMulti(query, opts)    -> { buffer, sourceUrl, pageTitle } | null (excludeUrls / excludePages 対応)
+//   listWikiPageCandidates(query, opts) -> [{title, url}]  opensearch 結果
+//   buildCandidateQueries(topicTitle)   -> [string]
 //
 // すべての取得元は Wikipedia / Commons の実在画像のみ。
 
@@ -14,17 +14,41 @@ import fetch from 'node-fetch';
 
 const SEARCH_TIMEOUT = 15000;
 const IMAGE_TIMEOUT = 30000;
-const UA = '10oku-project-bot/1.0 (Wikipedia/Commons image fetch)';
+const UA = 'SamuraiChannelBot/1.0 (https://github.com/uchy0307/my-10oku-project)';
+const RETRY_DELAYS = [15000, 30000, 60000];
 
 async function fetchWithTimeout(url, ms, opts = {}) {
-    await new Promise((r) => setTimeout(r, 500));
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), ms);
-  try {
-    let r = await fetch(url, { ...opts, signal: controller.signal }); for (let n = 0; n < 2 && r && r.status === 429; n++) { const w = 2000 * (n + 1); console.warn('[fetch_portrait] 429 retry ' + (n+1) + '/2 after ' + w + 'ms'); await new Promise(rr => setTimeout(rr, w)); r = await fetch(url, { ...opts, signal: controller.signal }); } return r;
-  } finally {
-    clearTimeout(id);
+  await new Promise((r) => setTimeout(r, 500));
+  const baseHeaders = { 'User-Agent': UA, ...(opts.headers || {}) };
+  let lastRes = null;
+  let lastErr = null;
+  for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt++) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), ms);
+    try {
+      const r = await fetch(url, { ...opts, headers: baseHeaders, signal: controller.signal });
+      clearTimeout(id);
+      lastRes = r;
+      if (r.status === 429 && attempt < RETRY_DELAYS.length) {
+        const w = RETRY_DELAYS[attempt];
+        console.warn('[fetch_portrait] 429 retry ' + (attempt + 1) + '/' + RETRY_DELAYS.length + ' after ' + w + 'ms');
+        await new Promise((rr) => setTimeout(rr, w));
+        continue;
+      }
+      return r;
+    } catch (e) {
+      clearTimeout(id);
+      lastErr = e;
+      if (attempt < RETRY_DELAYS.length) {
+        const w = RETRY_DELAYS[attempt];
+        console.warn('[fetch_portrait] error retry ' + (attempt + 1) + '/' + RETRY_DELAYS.length + ' after ' + w + 'ms: ' + e.message);
+        await new Promise((rr) => setTimeout(rr, w));
+        continue;
+      }
+    }
   }
+  if (lastRes) return lastRes;
+  throw lastErr || new Error('fetchWithTimeout: exhausted retries');
 }
 
 async function searchWikiTitle(query, lang) {
@@ -119,8 +143,8 @@ export async function fetchWikiImage(query, opts = {}) {
 }
 
 // 新API: 重複除外可能。複数候補を順に試して最初の取れたものを返す。
-// opts.excludeUrls : Set<string> ... 既に使った imageUrl
-// opts.excludePages: Set<string> ... 既に使った pageTitle
+// opts.excludeUrls   : Set<string> ... 既に使った imageUrl
+// opts.excludePages  : Set<string> ... 既に使った pageTitle
 // opts.commonsCategory: 試したい Commons カテゴリ名 (例: 'Category:Battles_of_the_Sengoku_period')
 export async function fetchWikiImageMulti(query, opts = {}) {
   const lang = opts.lang || 'ja';
@@ -205,7 +229,7 @@ export function buildCandidateQueries(topicTitle) {
   if (!topicTitle) return [];
   const candidates = [];
   const cleaned = topicTitle.replace(/^[【「『][^】」』]*[】」』]\s*/g, '').trim();
-  const head = cleaned.split(/[\s　,、・「」]/)[0];
+  const head = cleaned.split(/[\s ,、・「」]/)[0];
   if (head && head.length >= 2) candidates.push(head);
   if (cleaned !== head) candidates.push(cleaned);
   candidates.push(topicTitle);

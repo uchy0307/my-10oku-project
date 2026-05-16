@@ -7,53 +7,57 @@
     "005",
     "006"
   ],
-  "lastRun": "2026-05-15T00:01:38.756Z",
-  "currentTopic": null,
-  "lastScriptPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_script.txt",
-  "lastScriptChars": 9054,
+  "lastRun": "2026-05-16T07:43:43.774Z",
+  "currentTopic": {
+    "id": "007",
+    "title": "伊達政宗 独眼竜の野望",
+    "category": "人物軸"
+  },
+  "lastScriptPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_script.txt",
+  "lastScriptChars": 11064,
   "lastScriptChapters": [
     {
       "index": 1,
-      "title": "越後の虎、その黎明",
-      "chars": 1356
+      "title": "隻眼の若武者、伊達家を継ぐ",
+      "chars": 1396
     },
     {
       "index": 2,
-      "title": "義の旗印、天下に翻る",
-      "chars": 2791
+      "title": "摺上原、奥州統一への序章",
+      "chars": 3262
     },
     {
       "index": 3,
-      "title": "川中島の龍虎、五度の激突",
-      "chars": 1895
+      "title": "小田原参陣、豊臣との駆け引き",
+      "chars": 1701
     },
     {
       "index": 4,
-      "title": "北陸から京へ、義の進軍",
-      "chars": 1757
+      "title": "文禄・慶長の役、海を渡る野望",
+      "chars": 2360
     },
     {
       "index": 5,
-      "title": "義将の最期、残された夢",
-      "chars": 1164
+      "title": "徳川家康との絆、天下への布石",
+      "chars": 2240
     }
   ],
-  "lastVoicePath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_voice.mp3",
-  "lastVoiceAt": "2026-05-15T00:02:37.855Z",
+  "lastVoicePath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_voice.mp3",
+  "lastVoiceAt": "2026-05-16T07:44:45.012Z",
   "lastImagePaths": [
-    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_img_1.png",
-    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_img_2.png",
-    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_img_3.png",
-    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_img_4.png",
-    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_img_5.png"
+    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_img_1.png",
+    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_img_2.png",
+    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_img_3.png",
+    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_img_4.png",
+    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_img_5.png"
   ],
-  "lastImageGenAt": "2026-05-15T00:03:43.643Z",
-  "lastMetaPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_meta.json",
-  "lastThumbPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_thumb.png",
-  "lastVideoPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_video.mp4",
-  "lastAssPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/006_subs.ass",
-  "lastSubsCount": 546,
-  "lastCompileAt": "2026-05-15T00:05:46.062Z",
+  "lastImageGenAt": "2026-05-16T07:45:15.311Z",
+  "lastMetaPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_meta.json",
+  "lastThumbPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_thumb.png",
+  "lastVideoPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_video.mp4",
+  "lastAssPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/007_subs.ass",
+  "lastSubsCount": 687,
+  "lastCompileAt": "2026-05-16T07:48:24.947Z",
   "videoStatus": "ready",
   "lastUploadResult": {
     "status": "success",
@@ -63,9 +67,10 @@
   },
   "lastUploadAt": "2026-05-15T00:05:53.720Z",
   "lastImageSources": [
-    "https://upload.wikimedia.org/wikipedia/commons/8/88/Uesugi_Kenshin_Portrait_from_Uesugi_Shrine.png",
-    "https://upload.wikimedia.org/wikipedia/commons/c/c4/Onikojima_Yatar%C5%8D.jpg",
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/Circle_of_fifths_deluxe_4.svg/langja-960px-Circle_of_fifths_deluxe_4.svg.png?utm_source=ja.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
-    "https://upload.wikimedia.org/wikipedia/commons/b/b3/Japan_Hokuriku_Region1_large.png"
+    "https://upload.wikimedia.org/wikipedia/commons/1/19/MASAMUNE777.PNG",
+    "https://upload.wikimedia.org/wikipedia/commons/7/74/Japan_Tohoku_South_topographic_map.webp",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Hachimanyama_deep_Horigiri_moat.jpg/3840px-Hachimanyama_deep_Horigiri_moat.jpg?utm_source=ja.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+    "https://upload.wikimedia.org/wikipedia/commons/e/ec/Siege-of-Busanjin-1592.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/5/5e/Tokugawa_Ieyasu_kao.jpg"
   ]
 }

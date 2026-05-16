@@ -19,6 +19,10 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
+// 章本文の最低文字数（これを下回ったら章単位で再生成）
+const CHAPTER_MIN_CHARS = 5000;
+const CHAPTER_MAX_RETRIES = 2;
+
 // ─── プロンプト群 ───
 const OUTLINE_PROMPT = (title, category) => `あなたは「侍の美学」を体現する歴史ナレーション作家。
 以下のテーマで30分のYouTube動画台本の「章立てアウトライン」を作成せよ。
@@ -57,7 +61,7 @@ ${outline}
 ${prevSummary ? `【前章までの要約】\n${prevSummary}\n` : ''}
 
 【絶対要件】
-1. 文字数: 日本語で6000〜8000字（句読点・改行含む）
+1. 文字数: 日本語で6000〜8000字（句読点・改行含む）。5000字未満は不合格。
 2. 純粋なナレーション本文のみ。マークダウン記号（**, ##, *, _, バッククォート）禁止
 3. 「ナレーション:」「ナレーター:」「BGM:」「SE:」「VISUAL:」「テロップ:」等のラベル禁止
 4. ハッシュタグ（#）禁止
@@ -158,9 +162,9 @@ async function callGemini(prompt, attempt = 1) {
     }
     throw new Error(`Gemini returned empty content (finishReason=${finishReason})`);
   }
-  // 200文字以下は事実上失敗とみなしリトライ
-  if (text.length < 1000 && attempt < 2) {
-    console.warn(`[generate_script] suspiciously short response (${text.length} chars). Retrying...`);
+  // 4000字未満は事実上失敗とみなしリトライ（旧閾値1000は緩すぎて短い章を見逃す）
+  if (text.length < 4000 && attempt < 2) {
+    console.warn(`[generate_script] suspiciously short response (${text.length} chars, need >=4000). Retrying...`);
     return callGemini(prompt, attempt + 1);
   }
   return text;
@@ -220,9 +224,19 @@ async function main() {
     const idx = i + 1;
     const ch = chapters[i];
     console.log(`[generate_script] Step ${idx + 1}/${chapters.length + 1}: chapter ${idx} "${ch.title}"`);
-    const body = await callGemini(
+    let body = await callGemini(
       CHAPTER_PROMPT(topic.title, topic.category, outlineText, idx, ch.title, ch.brief, prevSummary),
     );
+    // 章本文が5000字未満なら章単位で最大2回再生成（30分長尺維持）
+    for (let retry = 0; retry < CHAPTER_MAX_RETRIES && body.length < CHAPTER_MIN_CHARS; retry++) {
+      console.warn(`[generate_script] chapter ${idx} body too short (${body.length} chars < ${CHAPTER_MIN_CHARS}). Regenerating (retry ${retry + 1}/${CHAPTER_MAX_RETRIES})`);
+      body = await callGemini(
+        CHAPTER_PROMPT(topic.title, topic.category, outlineText, idx, ch.title, ch.brief, prevSummary),
+      );
+    }
+    if (body.length < CHAPTER_MIN_CHARS) {
+      console.warn(`[generate_script] chapter ${idx} STILL short after retries (${body.length} chars). Proceeding with best effort.`);
+    }
     sections.push({ index: idx, title: ch.title, body });
     // 次章へ渡す要約は冒頭300字でOK
     prevSummary += `第${idx}章「${ch.title}」概要: ${body.slice(0, 300).replace(/\n/g, ' ')}\n`;

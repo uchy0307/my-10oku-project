@@ -118,8 +118,8 @@ async function callGemini(prompt, attempt = 1) {
     generationConfig: {
       temperature: 0.85,
       // gemini-2.5-flash は thinkingMode が default で有効。thinking が
-      // maxOutputTokens を食い潰すので、thinkingBudget=0 で無効化する。
-      thinkingConfig: { thinkingBudget: 0 },
+      // maxOutputTokens を食い潰すので、thinkingBudget=2048 に固定（pro は thinking 必須）。
+      thinkingConfig: { thinkingBudget: 2048 },
       maxOutputTokens: 65536,
       responseMimeType: 'text/plain',
     },

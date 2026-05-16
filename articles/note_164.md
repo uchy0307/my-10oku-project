@@ -125,7 +125,6 @@ happyhappy
 
 #AI対話 #高齢者 #思い出 #200の問い #世代間コミュニケーション
 
-<!-- AUTO_APP_LINK_BLOCK -->
 ---
 
 

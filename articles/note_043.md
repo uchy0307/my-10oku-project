@@ -116,7 +116,6 @@ AIに『相手が沈黙している時、急いで言葉を埋めるのではな
 
 happyhappy
 
-<!-- AUTO_APP_LINK_BLOCK -->
 ---
 
 

@@ -125,7 +125,6 @@ happyhappy
 
 #AI対話 #社会貢献 #寄付 #満足度 #200の問い
 
-<!-- AUTO_APP_LINK_BLOCK -->
 ---
 
 

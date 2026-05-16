@@ -114,7 +114,6 @@ AIに『交渉が成功した場合・部分合意の場合・決裂した場合
 
 happyhappy
 
-<!-- AUTO_APP_LINK_BLOCK -->
 ---
 
 

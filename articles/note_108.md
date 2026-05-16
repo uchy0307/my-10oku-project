@@ -141,7 +141,6 @@ AIに『月末に来月の自分への手紙を書くテンプレート』を頼
 
 happyhappy
 
-<!-- AUTO_APP_LINK_BLOCK -->
 ---
 
 

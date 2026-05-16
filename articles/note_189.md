@@ -125,7 +125,6 @@ happyhappy
 
 #お寺 #言葉 #癒し #掲示板 #200の問い
 
-<!-- AUTO_APP_LINK_BLOCK -->
 ---
 
 

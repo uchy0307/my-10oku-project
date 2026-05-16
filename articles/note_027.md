@@ -113,7 +113,6 @@ AIに「あなたのサービスは『複数のターゲット層』に売るこ
 
 happyhappy
 
-<!-- AUTO_APP_LINK_BLOCK -->
 ---
 
 

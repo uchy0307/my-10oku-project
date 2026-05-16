@@ -120,7 +120,6 @@ happyhappy
 
 #AI対話 #カフェ #メニュー開発 #200の問い #ストーリーテリング
 
-<!-- AUTO_APP_LINK_BLOCK -->
 ---
 
 

@@ -104,7 +104,6 @@ happyhappy
 
 #政治 #演説 #有権者 #政策 #200の問い
 
-<!-- AUTO_APP_LINK_BLOCK -->
 ---
 
 

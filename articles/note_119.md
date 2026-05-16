@@ -125,7 +125,6 @@ happyhappy
 
 #AI対話 #工芸 #職人 #こだわり #200の問い
 
-<!-- AUTO_APP_LINK_BLOCK -->
 ---
 
 

@@ -123,7 +123,6 @@ AIに『この商談中、私自身の感情はどう動いたか』を毎回記
 
 happyhappy
 
-<!-- AUTO_APP_LINK_BLOCK -->
 ---
 
 

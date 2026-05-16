@@ -115,7 +115,6 @@ AIに「プレゼン後に『あなたが『うまくいった点』『改善す
 
 happyhappy
 
-<!-- AUTO_APP_LINK_BLOCK -->
 ---
 
 

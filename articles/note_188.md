@@ -125,7 +125,6 @@ happyhappy
 
 #イベント #進行 #MC #現場対応 #200の問い
 
-<!-- AUTO_APP_LINK_BLOCK -->
 ---
 
 

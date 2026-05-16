@@ -1,15 +1,15 @@
 """
-Step 0: Gemini API で台本JSON自動生成
+Step 0: Gemini API ã§å°æ¬JSONèªåçæ
 
-入力 : topics.json のテーマ一覧 (or --topic 引数)
-出力 : inputs/script_NNN.json (Step 1 のスキーマに準拠)
+å¥å : topics.json ã®ãã¼ãä¸è¦§ (or --topic å¼æ°)
+åºå : inputs/script_NNN.json (Step 1 ã®ã¹ã­ã¼ãã«æºæ )
 
-設計方針 (前回スコープ承認の延長):
-- 性表現・性的示唆・euphemism 置換は実装しない（安全機構回避設計はやらない）
-- Geminiプロンプトには「性表現・性的示唆を一切含まない」を明示
-- 未成年・制服連想は全面禁止
-- 出力 JSON は **そのまま** Step 1 の read_script() に通す → NG単語が混入していたら ValueError で停止
-  （Gemini出力を信用せず必ず Step 1 で再検証）
+è¨­è¨æ¹é (ååã¹ã³ã¼ãæ¿èªã®å»¶é·):
+- æ§è¡¨ç¾ã»æ§çç¤ºåã»euphemism ç½®æã¯å®è£ããªãï¼å®å¨æ©æ§åé¿è¨­è¨ã¯ãããªãï¼
+- Geminiãã­ã³ããã«ã¯ãæ§è¡¨ç¾ã»æ§çç¤ºåãä¸åå«ã¾ãªãããæç¤º
+- æªæå¹´ã»å¶æé£æ³ã¯å¨é¢ç¦æ­¢
+- åºå JSON ã¯ **ãã®ã¾ã¾** Step 1 ã® read_script() ã«éã â NGåèªãæ··å¥ãã¦ããã ValueError ã§åæ­¢
+  ï¼Geminiåºåãä¿¡ç¨ããå¿ã Step 1 ã§åæ¤è¨¼ï¼
 """
 from __future__ import annotations
 import json
@@ -21,51 +21,51 @@ from pathlib import Path
 import requests
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-pro-latest")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 GEMINI_URL = (
     f"https://generativelanguage.googleapis.com/v1beta/models/"
     f"{GEMINI_MODEL}:generateContent"
 )
 
-SYSTEM_PROMPT = """あなたは大人向けYouTubeチャンネルのディレクターです。
-30代-40代女性 (OL / キャリア / 主婦) を主な視聴者層とする、健全な大人向け
-ライフスタイル・コミュニケーション・心理学チャンネル用の台本を生成します。
+SYSTEM_PROMPT = """ããªãã¯å¤§äººåãYouTubeãã£ã³ãã«ã®ãã£ã¬ã¯ã¿ã¼ã§ãã
+30ä»£-40ä»£å¥³æ§ (OL / ã­ã£ãªã¢ / ä¸»å©¦) ãä¸»ãªè¦è´èå±¤ã¨ãããå¥å¨ãªå¤§äººåã
+ã©ã¤ãã¹ã¿ã¤ã«ã»ã³ãã¥ãã±ã¼ã·ã§ã³ã»å¿çå­¦ãã£ã³ãã«ç¨ã®å°æ¬ãçæãã¾ãã
 
-【厳守ルール】
-- テーマ範囲: 大人の恋愛心理学 (健全な恋愛アドバイス) / 男女のコミュニケーション差 /
-  脳科学的な雑学 / 仕事と恋愛の両立 / 大人の自己投資 / 人間関係改善 /
-  大人の品格・所作・ライフスタイル
-- 性表現・性的示唆・性器・性行為・身体描写は **一切含めない**
-- 「色気を匂わせる」「肌の温度」など示唆的言い換えも **使わない**
-  (安全機構回避設計はしない。健全な語彙のみで書く)
-- 学生・未成年・制服・セーラー・JK 等の連想表現は **全面禁止**
-- 視聴者を不安にさせる煶り (「絶対に〇〇」「最悪」など過度な表現) は控える
-- 出典の捏造禁止。一般的に流通している心理学・脳科学知見の範囲で書く
+ãå³å®ã«ã¼ã«ã
+- ãã¼ãç¯å²: å¤§äººã®ææå¿çå­¦ (å¥å¨ãªææã¢ããã¤ã¹) / ç·å¥³ã®ã³ãã¥ãã±ã¼ã·ã§ã³å·® /
+  è³ç§å­¦çãªéå­¦ / ä»äºã¨ææã®ä¸¡ç« / å¤§äººã®èªå·±æè³ / äººéé¢ä¿æ¹å /
+  å¤§äººã®åæ ¼ã»æä½ã»ã©ã¤ãã¹ã¿ã¤ã«
+- æ§è¡¨ç¾ã»æ§çç¤ºåã»æ§å¨ã»æ§è¡çºã»èº«ä½æåã¯ **ä¸åå«ããªã**
+- ãè²æ°ãåãããããèã®æ¸©åº¦ããªã©ç¤ºåçè¨ãæãã **ä½¿ããªã**
+  (å®å¨æ©æ§åé¿è¨­è¨ã¯ããªããå¥å¨ãªèªå½ã®ã¿ã§æ¸ã)
+- å­¦çã»æªæå¹´ã»å¶æã»ã»ã¼ã©ã¼ã»JK ç­ã®é£æ³è¡¨ç¾ã¯ **å¨é¢ç¦æ­¢**
+- è¦è´èãä¸å®ã«ãããç¶ã (ãçµ¶å¯¾ã«ããããææªããªã©éåº¦ãªè¡¨ç¾) ã¯æ§ãã
+- åºå¸ã®æé ç¦æ­¢ãä¸è¬çã«æµéãã¦ããå¿çå­¦ã»è³ç§å­¦ç¥è¦ã®ç¯å²ã§æ¸ã
 
-【出力形式】以下の JSON のみ。前後の説明文や code fence は不要。
+ãåºåå½¢å¼ãä»¥ä¸ã® JSON ã®ã¿ãåå¾ã®èª¬ææã code fence ã¯ä¸è¦ã
 {
-  "title": "string (40字以内)",
-  "description": "string (200字程度)",
+  "title": "string (40å­ä»¥å)",
+  "description": "string (200å­ç¨åº¦)",
   "topic": "string",
   "tags": ["..."],
   "bgm": "calm_lounge.mp3",
   "chapters": [
-    { "id": 1, "heading": "string", "narration": "600-1000字の本文",
+    { "id": 1, "heading": "string", "narration": "600-1000å­ã®æ¬æ",
       "image_prompts": ["scene description in English"] },
-    ... 計8章
+    ... è¨8ç« 
   ]
 }
 
-【image_prompts ルール】
-- 各章2-3個。下記テンプレート末尾の {scene} 部分のみ書く (英語短文)。
-  シーン候補: office desk / cafe interior / hotel lobby / city night view /
+ãimage_prompts ã«ã¼ã«ã
+- åç« 2-3åãä¸è¨ãã³ãã¬ã¼ãæ«å°¾ã® {scene} é¨åã®ã¿æ¸ã (è±èªç­æ)ã
+  ã·ã¼ã³åè£: office desk / cafe interior / hotel lobby / city night view /
   rainy window / sunrise window / wine glass / reading book / morning routine /
   walking street / home office
-- 禁止語: bedroom, lingerie, school, uniform, schoolgirl, student, nude,
+- ç¦æ­¢èª: bedroom, lingerie, school, uniform, schoolgirl, student, nude,
   naked, topless, nipple, breast, sultry, bedroom eyes, parted lips,
   body-conscious, fitted body, tight knit
-- 人物は常に「professional Japanese woman in her 30s」想定で書くため、
-  scene 側にキャラ服装描写を含めなくてよい。
+- äººç©ã¯å¸¸ã«ãprofessional Japanese woman in her 30sãæ³å®ã§æ¸ãããã
+  scene å´ã«ã­ã£ã©æè£æåãå«ããªãã¦ããã
 """
 
 
@@ -107,14 +107,14 @@ def _strip_codefence(s: str) -> str:
 
 
 def generate_script(topic: str, out_dir: Path) -> Path:
-    """topic を元に台本生成。out_dir/script_NNN.json で連番保存。"""
+    """topic ãåã«å°æ¬çæãout_dir/script_NNN.json ã§é£çªä¿å­ã"""
     out_dir.mkdir(parents=True, exist_ok=True)
-    user = f"今回のテーマ: 「{topic}」\n上記スキーマに従い JSON のみ出力してください。"
+    user = f"ä»åã®ãã¼ã: ã{topic}ã\nä¸è¨ã¹ã­ã¼ãã«å¾ã JSON ã®ã¿åºåãã¦ãã ããã"
     raw = call_gemini(user)
     raw = _strip_codefence(raw)
     obj = json.loads(raw)
 
-    # 連番採番
+    # é£çªæ¡çª
     existing = sorted(out_dir.glob("script_*.json"))
     n = 1
     if existing:
@@ -125,7 +125,7 @@ def generate_script(topic: str, out_dir: Path) -> Path:
     with open(out, "w", encoding="utf-8") as f:
         json.dump(obj, f, ensure_ascii=False, indent=2)
 
-    # Step 1 で必ず再検証 (NG混入なら ValueError)
+    # Step 1 ã§å¿ãåæ¤è¨¼ (NGæ··å¥ãªã ValueError)
     sys.path.insert(0, str(Path(__file__).parent))
     from step1_load import read_script
     read_script(out)
@@ -134,9 +134,9 @@ def generate_script(topic: str, out_dir: Path) -> Path:
 
 
 def pick_topic(topics_path: Path, mode: str = "next") -> str:
-    """topics.json から1件取り出す。
-    mode=next : state.json の index を進める
-    mode=random : 乱択
+    """topics.json ãã1ä»¶åãåºãã
+    mode=next : state.json ã® index ãé²ãã
+    mode=random : ä¹±æ
     """
     topics = json.loads(topics_path.read_text(encoding="utf-8"))
     if not topics:
@@ -160,7 +160,7 @@ def pick_topic(topics_path: Path, mode: str = "next") -> str:
 if __name__ == "__main__":
     import argparse
     ap = argparse.ArgumentParser()
-    ap.add_argument("--topic", help="直接トピックを指定")
+    ap.add_argument("--topic", help="ç´æ¥ãããã¯ãæå®")
     ap.add_argument("--topics-file", default="inputs/topics.json")
     ap.add_argument("--mode", choices=["next", "random"], default="next")
     ap.add_argument("--out-dir", default="inputs")

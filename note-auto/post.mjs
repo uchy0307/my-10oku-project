@@ -1,18 +1,16 @@
 // note-auto/post.mjs
 // ───────────────────────────────────────────────────────────────
-// note.com 下書き編集型自動投稿（B案・新方針 / v4）
+// note.com 下書き編集型自動投稿（B案・新方針 / v5）
 //
-// 完全自動ログインは bot 検知で失敗しやすいため、Playwright の storageState
-// に保存された認証済みセッションを再利用する。queue.json で指定された
-// `draftId` の下書きを開いて、本文を流し込み、下書き保存 or 公開する。
-//
-// 2026-05-16 v4 改修:
-//   - NOTE_TEST_PAID=true 時、publish:false でも 有料境界線/価格 を試行
-//   - 但し「公開に進む」「公開する」ボタンは絶対押さない（draft保存のみ）
-//   - 添付docx: "+"メニュー → 「ファイル」ボタン click → input[type=file] 出現後 setInputFiles
-//   - 有料境界線: 🔑アクセスコード H2 直前にカーソル設定 → "+"メニュー → 「有料エリア指定」
-//   - 価格 100円: 編集画面に price input が出ていれば多段セレクタ盲打ち（無ければスキップ）
-//   - 47歳除去 / アプリリンク / アクセスコード は preprocess-articles.mjs 側で対応済
+// 2026-05-16 v5 改修:
+//   - 有料記事化フロー実装:
+//     1) /publish/ ページに直接URL遷移（「公開に進む」ボタンは押さない）
+//     2) input[name="is_paid"] の「有料」radio を React-safe setter で ON
+//     3) 価格 input[placeholder="300"] を 100 にセット
+//     4) /edit/ ページに直接URL遷移で戻る
+//     5) ProseMirror 内 🔑直前にカーソル → "+"メニュー → 「有料エリア指定」
+//   - 公開（publish=true）時のみ最終「公開する」ボタンクリック
+//   - FORCE_PAID (NOTE_TEST_PAID=true) で publish:false 時も上記フロー全実行
 // ───────────────────────────────────────────────────────────────
 
 import { chromium } from 'playwright';
@@ -40,8 +38,6 @@ try {
   console.warn('[WARN] access_codes.json 読み込み失敗:', err.message);
 }
 
-// ---------- body preprocessing (保守互換: preprocess-articles.mjs 未走時の補助) ----------
-
 function preprocessBody(body, articleId) {
   let out = body;
   out = out.replace(/47歳の/g, '');
@@ -54,7 +50,6 @@ function preprocessBody(body, articleId) {
     .map((line) => line.replace(/[ \t]{2,}/g, ' ').replace(/^ +| +$/g, ''))
     .join('\n');
   out = out.replace(/\n{4,}/g, '\n\n\n');
-
   const code = ACCESS_CODES[articleId];
   if (code) {
     const link = `${URL_PATTERN}${articleId}`;
@@ -92,22 +87,16 @@ async function resolveAttachments(id) {
   return entries.filter((f) => f.toLowerCase().endsWith('.docx')).map((f) => join(dir, f));
 }
 
-// ---------- DOMセレクタ ----------
-
 const SELECTORS = {
   bodyEditor: '.ProseMirror',
   titleInput: 'textarea[placeholder*="タイトル"]',
   saveDraftButton: 'button:has-text("下書き保存")',
-  publishStepButton: 'button:has-text("公開に進む")',
-  publishButton: 'button:has-text("公開")',
-  publishConfirmButton: 'button:has-text("公開する")',
+  publishButton: 'button:has-text("公開する")',
   plusMenuOpen: '[aria-label="メニューを開く"]',
   filePickerButton: 'button:has-text("ファイル")',
   paidBoundaryButton: 'button:has-text("有料エリア指定")',
   fileInput: 'input[type="file"]',
 };
-
-// ---------- helpers ----------
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const randDelay = (min = 3000, max = 7000) =>
@@ -133,13 +122,77 @@ async function saveQueue(queue) {
 
 function parseStorageState() {
   const raw = process.env.NOTE_STORAGE_STATE;
-  if (!raw) {
-    throw new Error('NOTE_STORAGE_STATE が未設定です。');
-  }
+  if (!raw) throw new Error('NOTE_STORAGE_STATE が未設定です。');
+  try { return JSON.parse(raw); }
+  catch (err) { throw new Error(`NOTE_STORAGE_STATE が JSON として不正です: ${err.message}`); }
+}
+
+/** /publish/ に直接URL遷移して 有料記事化 radio ON + 価格設定。
+ *  - 「公開に進む」ボタンは押さない（URL navigation）
+ *  - 「公開する」ボタンも絶対押さない
+ *  - 設定後 /edit/ に戻る（クリックではなく URL navigation）
+ */
+async function configurePaidSettings(page, draftId, yen) {
   try {
-    return JSON.parse(raw);
+    const publishUrl = `https://editor.note.com/notes/${draftId}/publish/`;
+    console.log(`[INFO] publish settings へ直接遷移: ${publishUrl}`);
+    await page.goto(publishUrl, { waitUntil: 'domcontentloaded' });
+    await randDelay(3000, 4500);
+
+    const result = await page.evaluate((yen) => {
+      const setterVal = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+
+      // 1. 有料 radio (input[name="is_paid"] 2番目)
+      const radios = [...document.querySelectorAll('input[type="radio"][name="is_paid"]')];
+      let paidRadioState = 'no_radios';
+      if (radios.length >= 2) {
+        const paidRadio = radios[1];
+        if (paidRadio.checked) {
+          paidRadioState = 'already_checked';
+        } else {
+          paidRadio.click();
+          paidRadio.dispatchEvent(new Event('change', { bubbles: true }));
+          paidRadioState = paidRadio.checked ? 'just_checked' : 'click_failed';
+        }
+      }
+
+      // 2. 価格 input
+      let priceState = { ok: false };
+      const priceSelectors = [
+        'input[type="text"][placeholder="300"]',
+        'input[type="number"][placeholder*="0"]',
+        'input[type="text"][class*="sc-85966dc5"]',
+        'input[type="text"]:not([readonly])',
+      ];
+      for (const sel of priceSelectors) {
+        const els = document.querySelectorAll(sel);
+        for (const el of els) {
+          if (el.offsetParent === null) continue;
+          const ph = el.placeholder || '';
+          // numeric placeholder (e.g., "300") のみ採用
+          if (!/^\d+$/.test(ph)) continue;
+          setterVal.call(el, String(yen));
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+          el.dispatchEvent(new Event('blur', { bubbles: true }));
+          priceState = { ok: true, selector: sel, value: el.value };
+          break;
+        }
+        if (priceState.ok) break;
+      }
+      return { paidRadioState, priceState };
+    }, yen);
+
+    console.log('[INFO] publish settings:', JSON.stringify(result));
+    await sleep(3000); // React auto-save 待ち
+    return {
+      paidEnabled: ['already_checked', 'just_checked'].includes(result.paidRadioState),
+      priceSet: result.priceState.ok,
+      detail: result,
+    };
   } catch (err) {
-    throw new Error(`NOTE_STORAGE_STATE が JSON として不正です: ${err.message}`);
+    console.warn('[WARN] configurePaidSettings エラー:', err.message);
+    return { paidEnabled: false, priceSet: false, err: err.message };
   }
 }
 
@@ -163,7 +216,6 @@ async function placeCursorBeforeAccessCode(page) {
   return !!ok?.ok;
 }
 
-/** 🔑直前に有料境界線を挿入 */
 async function insertPaidBoundary(page) {
   try {
     const placed = await placeCursorBeforeAccessCode(page);
@@ -186,20 +238,23 @@ async function insertPaidBoundary(page) {
       return false;
     }
     await paid.click();
-    await sleep(1500);
-    console.log('[INFO] 有料境界線 挿入完了 (🔑 アクセスコード 直前)');
-    return true;
+    await sleep(1800);
+    // Verify boundary inserted
+    const verified = await page.evaluate(() => {
+      const strongs = [...document.querySelectorAll('.ProseMirror strong')];
+      return strongs.some(s => /有料エリア/.test(s.textContent || ''));
+    });
+    console.log(`[INFO] 有料境界線 挿入完了 verified=${verified}`);
+    return verified;
   } catch (err) {
     console.warn('[WARN] insertPaidBoundary エラー:', err.message);
     return false;
   }
 }
 
-/** ファイル添付。"+"メニュー → 「ファイル」 → input[type=file] setInputFiles */
 async function attachFiles(page, filePaths) {
   if (filePaths.length === 0) return 0;
   let attached = 0;
-  // 末尾にカーソルを移動
   await page.evaluate(() => {
     const pm = document.querySelector('.ProseMirror');
     if (!pm) return;
@@ -255,81 +310,30 @@ async function attachFiles(page, filePaths) {
   return attached;
 }
 
-/** 価格 100円 設定。
- *  - allowNavigate=true (=item.publish=true) の場合のみ「公開に進む」を押して publish settings 画面で設定。
- *  - allowNavigate=false (TEST_PAID時) は現在の edit ページで input を盲打ち探索のみ。
- */
-async function setPrice(page, yen, allowNavigate) {
-  try {
-    if (allowNavigate) {
-      const pubBtn = page.locator(SELECTORS.publishStepButton).first();
-      if (await pubBtn.count()) {
-        await pubBtn.click();
-        await randDelay(2000, 3500);
-      } else {
-        console.warn('[WARN] 「公開に進む」ボタン未発見');
-      }
-      for (const txt of ['有料記事', '販売', '有料エリア']) {
-        const t = page.locator(`button:has-text("${txt}"), label:has-text("${txt}")`).first();
-        if ((await t.count()) > 0) {
-          await t.click().catch(() => {});
-          await sleep(700);
-        }
-      }
-    } else {
-      console.log('[INFO] setPrice: TEST_PAIDモード - 「公開に進む」はスキップ、edit上でblind試行');
-    }
-    const set = await page.evaluate((yen) => {
-      const candidates = [
-        'input[name="price"]',
-        'input[placeholder*="価格"]',
-        'input[type="number"][min="100"]',
-        '[data-testid*="price"] input',
-        'input[aria-label*="価格"]',
-        'input[type="number"]:not([readonly])',
-      ];
-      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-      for (const sel of candidates) {
-        const els = document.querySelectorAll(sel);
-        for (const el of els) {
-          if (el.offsetParent === null) continue;
-          setter.call(el, String(yen));
-          el.dispatchEvent(new Event('input', { bubbles: true }));
-          el.dispatchEvent(new Event('change', { bubbles: true }));
-          el.dispatchEvent(new Event('blur', { bubbles: true }));
-          return { ok: true, selector: sel, value: el.value };
-        }
-      }
-      return { ok: false };
-    }, yen);
-    if (set.ok) {
-      console.log(`[INFO] 価格 ${yen}円 設定 (sel=${set.selector})`);
-      return true;
-    }
-    console.warn('[WARN] 価格input 未発見 → スキップ' + (allowNavigate ? '' : ' (TEST_PAID: 公開設定画面に遷移しないため通常NG)'));
-    return false;
-  } catch (err) {
-    console.warn('[WARN] setPrice エラー:', err.message);
-    return false;
-  }
-}
-
-// ---------- core ----------
-
 async function editDraft(page, item) {
   if (!item.draftId) {
     throw new Error(`item ${item.id} に draftId がありません。`);
   }
   const resolvedBody = await resolveBody(item);
   const attachPaths = await resolveAttachments(item.id);
+  const runPaid = !!item.publish || FORCE_PAID;
+  console.log(`[INFO] id=${item.id} draftId=${item.draftId} publish=${!!item.publish} FORCE_PAID=${FORCE_PAID} runPaid=${runPaid} attach=${attachPaths.length}`);
+
+  // ─── Step 1: 有料記事化 + 価格設定（/publish/ への直接URL遷移、ボタンクリックなし）
+  let paidEnabled = false;
+  let priceSet = false;
+  if (runPaid) {
+    const cfg = await configurePaidSettings(page, item.draftId, PRICE_YEN);
+    paidEnabled = cfg.paidEnabled;
+    priceSet = cfg.priceSet;
+  }
+
+  // ─── Step 2: /edit/ に直接URL遷移
   const draftUrl = `https://note.com/notes/${item.draftId}/edit`;
-  console.log(`[INFO] open draft: ${draftUrl}`);
-  console.log(`[INFO] attachments: ${attachPaths.length} files`);
-  console.log(`[INFO] mode: publish=${!!item.publish} FORCE_PAID=${FORCE_PAID}`);
   await page.goto(draftUrl, { waitUntil: 'domcontentloaded' });
   await randDelay(3000, 5000);
 
-  // タイトル更新（指定時のみ）
+  // ─── Step 3: タイトル更新（指定時のみ）
   if (item.title && item.title.trim()) {
     try {
       const titleEl = page.locator(SELECTORS.titleInput).first();
@@ -349,7 +353,7 @@ async function editDraft(page, item) {
     }
   }
 
-  // 本文置換
+  // ─── Step 4: 本文置換
   await page.waitForSelector(SELECTORS.bodyEditor, { timeout: 20000 });
   const body = page.locator(SELECTORS.bodyEditor).first();
   await body.click();
@@ -373,44 +377,32 @@ async function editDraft(page, item) {
   }
   await randDelay(2000, 4000);
 
-  const runPaid = !!item.publish || FORCE_PAID;
-
-  // 有料境界線 挿入 (🔑 アクセスコード 直前)
+  // ─── Step 5: 有料境界線 挿入 (🔑 アクセスコード 直前)
   let boundarySet = false;
   if (runPaid) {
     boundarySet = await insertPaidBoundary(page);
   }
 
-  // 添付docx
+  // ─── Step 6: docx 添付
   let attachedCount = 0;
   if (attachPaths.length > 0) {
     attachedCount = await attachFiles(page, attachPaths);
   }
 
-  // 価格 (publish=true で「公開に進む」遷移許可、TEST_PAIDは編集画面で盲打ちのみ)
-  let priceSet = false;
-  if (runPaid) {
-    priceSet = await setPrice(page, PRICE_YEN, !!item.publish);
-  }
-
+  // ─── Step 7: 保存 or 公開
   if (item.publish) {
-    // 本番公開モード
+    // 本番公開モードのみ「公開する」ボタンクリック
     const pubBtn = page.locator(SELECTORS.publishButton).first();
     if (await pubBtn.count()) {
       await pubBtn.click();
-      await randDelay(2000, 4000);
-    }
-    const confirm = page.locator(SELECTORS.publishConfirmButton).first();
-    if (await confirm.count()) {
-      await confirm.click();
       await randDelay(3000, 5000);
     }
-    return { result: 'published', attached: attachedCount, priceSet, boundarySet };
+    return { result: 'published', attached: attachedCount, priceSet, boundarySet, paidEnabled };
   } else {
     // draft保存（TEST_PAID時もここに来る）
     await page.locator(SELECTORS.saveDraftButton).first().click();
     await randDelay(3000, 5000);
-    return { result: 'draft_saved', attached: attachedCount, priceSet, boundarySet };
+    return { result: 'draft_saved', attached: attachedCount, priceSet, boundarySet, paidEnabled };
   }
 }
 
@@ -460,7 +452,8 @@ async function main() {
         item.attached = ret.attached;
         item.priceSet = ret.priceSet;
         item.boundarySet = ret.boundarySet;
-        console.log(`[OK] ${ret.result}: id=${item.id} attached=${ret.attached} priceSet=${ret.priceSet} boundarySet=${ret.boundarySet}`);
+        item.paidEnabled = ret.paidEnabled;
+        console.log(`[OK] ${ret.result}: id=${item.id} attached=${ret.attached} priceSet=${ret.priceSet} boundarySet=${ret.boundarySet} paidEnabled=${ret.paidEnabled}`);
         await saveQueue(queue);
         await randDelay(15000, 30000);
       } catch (err) {

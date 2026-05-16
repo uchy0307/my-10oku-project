@@ -1,5 +1,5 @@
 // scripts/preprocess-articles.mjs
-// 47歳含む段落削除 + access_codes.json からアプリリンクブロック挿入
+// 47歳含む段落削除 + access_codes.json からアプリリンクブロック挿入 + 改行整理
 import { readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -18,6 +18,47 @@ function scrubAge(text) {
   return filtered.join('\n\n');
 }
 
+/**
+ * 改行ルール:
+ *  - 章番号(H2 ## / H3 ###)の前後に空行2行
+ *  - 「🔑 アクセスコード」「▼アプリで深く問う」の前に空行3行
+ *  - リスト(- / * / 1.)の前後に空行1行
+ *  - 連続3+改行は最大2行に圧縮（特殊マーカー直前のみ3行許可）
+ */
+function formatLineBreaks(text) {
+  let t = text.replace(/\r\n/g, '\n');
+  // 連続3+改行を一旦2に正規化
+  t = t.replace(/\n{3,}/g, '\n\n');
+  const lines = t.split('\n');
+  const out = [];
+  const isHeading = l => /^#{1,6}\s/.test(l);
+  const isSpecial = l => /🔑\s*アクセス|▼\s*アプリで深く問う/.test(l);
+  const isList    = l => /^\s*([-*+]|\d+\.)\s/.test(l);
+  const trimTailBlanks = () => { while (out.length && out[out.length-1] === '') out.pop(); };
+
+  for (let i = 0; i < lines.length; i++) {
+    const cur = lines[i];
+    const prev = out[out.length-1] ?? '';
+    if (isSpecial(cur)) {
+      trimTailBlanks();
+      if (out.length > 0) out.push('','','');
+    } else if (isHeading(cur)) {
+      trimTailBlanks();
+      if (out.length > 0) out.push('','');
+    } else if (isList(cur) && !isList(prev) && prev !== '') {
+      out.push('');
+    } else if (!isList(cur) && isList(prev) && cur.trim() !== '') {
+      out.push('');
+    }
+    out.push(cur);
+    if (isHeading(cur) && i+1 < lines.length && lines[i+1].trim() !== '') {
+      out.push('','');
+    }
+  }
+  while (out.length && out[out.length-1] === '') out.pop();
+  return out.join('\n') + '\n';
+}
+
 async function processOne(id, accessCodes) {
   const fp = join(ARTICLES_DIR, `note_${id}.md`);
   if (!existsSync(fp)) return { id, skipped: 'no_file' };
@@ -30,8 +71,10 @@ async function processOne(id, accessCodes) {
   if (code) {
     const re = new RegExp(`\\n*${APP_BLOCK_MARKER}[\\s\\S]*$`, 'g');
     next = next.replace(re, '').trimEnd();
-    next += `\n\n${APP_BLOCK_MARKER}\n---\n▼アプリで深く問う\nURL: https://toi-suite.vercel.app/page/${id}\nアクセスコード: ${code}\n`;
+    next += `\n\n\n\n${APP_BLOCK_MARKER}\n---\n\n▼アプリで深く問う\n\nURL: https://toi-suite.vercel.app/page/${id}\n\nアクセスコード: ${code}\n`;
   }
+
+  next = formatLineBreaks(next);
 
   if (body !== next) {
     await writeFile(fp, next, 'utf-8');

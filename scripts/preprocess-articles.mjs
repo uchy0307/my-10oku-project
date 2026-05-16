@@ -71,7 +71,7 @@ async function processOne(id, accessCodes) {
   if (code) {
     const re = new RegExp(`\\n*${APP_BLOCK_MARKER}[\\s\\S]*$`, 'g');
     next = next.replace(re, '').trimEnd();
-    next += `\n\n\n\n${APP_BLOCK_MARKER}\n---\n\n▼アプリで深く問う\n\nURL: https://toi-suite.vercel.app/page/${id}\n\nアクセスコード: ${code}\n`;
+    next += `\n\n\n\n---\n\n▼アプリで深く問う\n\nURL: https://toi-suite.vercel.app/page/${id}\n\nアクセスコード: ${code}\n`;
   }
 
   next = formatLineBreaks(next);

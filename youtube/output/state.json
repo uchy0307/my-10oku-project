@@ -7,9 +7,10 @@
     "005",
     "006",
     "007",
-    "008"
+    "008",
+    "009"
   ],
-  "lastRun": "2026-05-16T11:57:54.471Z",
+  "lastRun": "2026-05-16T15:11:00.000Z",
   "currentTopic": null,
   "lastScriptPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_script.txt",
   "lastScriptChars": 23122,
@@ -59,15 +60,16 @@
   "videoStatus": "ready",
   "lastUploadResult": {
     "status": "success",
-    "topicId": "008",
+    "topicId": "009",
     "videoId": "HtcdgPGQz74",
     "url": "https://www.youtube.com/watch?v=HtcdgPGQz74"
   },
-  "lastUploadAt": "2026-05-16T12:09:17.795Z",
+  "lastUploadAt": "2026-05-16T15:11:00.000Z",
   "lastImageSources": [
     "https://upload.wikimedia.org/wikipedia/commons/c/c3/Akechi_Mitsuhide8.jpg",
     "https://upload.wikimedia.org/wikipedia/commons/d/da/Akechi_Mituharu.jpg",
     "https://upload.wikimedia.org/wikipedia/commons/d/d5/Akechi_Mitsutada.jpg",
     "https://upload.wikimedia.org/wikipedia/commons/8/8d/Trace_of_Akechi_Castle-A.JPG"
-  ]
+  ],
+  "note_fix": "Manual state recovery 2026-05-17 by dispatch: 009 石田三成 uploaded but state commit failed"
 }

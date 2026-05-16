@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "synced_at": "2026-05-15T18:14:37.893Z",
+  "synced_at": "2026-05-16T04:07:21.128Z",
   "items": [
     {
       "id": "001",
@@ -165,9 +165,7 @@
       "scheduled_at": null,
       "posted_at": "2026-05-15T18:26:15.745Z",
       "error": null,
-      "_hasLocalBody": true,
-      "attached": 0,
-      "priceSet": false
+      "_hasLocalBody": true
     },
     {
       "id": "016",
@@ -196,11 +194,14 @@
       "draftId": "n5ceb50c8ad32",
       "title": "【AI対話アプリ】🚪 200の問い #018 「コンフォートゾーン脱出」",
       "publish": false,
-      "status": "pending",
+      "status": "draft_saved",
       "scheduled_at": null,
-      "posted_at": null,
+      "posted_at": "2026-05-16T04:15:28.111Z",
       "error": null,
-      "_hasLocalBody": true
+      "_hasLocalBody": true,
+      "attached": 3,
+      "priceSet": false,
+      "boundarySet": false
     },
     {
       "id": "019",

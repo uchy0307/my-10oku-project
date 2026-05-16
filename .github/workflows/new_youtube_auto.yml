@@ -47,6 +47,7 @@ jobs:
         env:
           # --- 台本・素材生成 ---
           GEMINI_API_KEY:        ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY:        ${{ secrets.GOOGLE_API_KEY }}
           PYTHONUNBUFFERED:      "1"
           ELEVENLABS_API_KEY:    ${{ secrets.ELEVENLABS_API_KEY }}
           ELEVENLABS_VOICE_ID:   ${{ secrets.ELEVENLABS_VOICE_ID }}

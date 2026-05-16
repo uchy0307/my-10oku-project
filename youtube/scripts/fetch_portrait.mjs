@@ -21,7 +21,7 @@ async function fetchWithTimeout(url, ms, opts = {}) {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), ms);
   try {
-    return await fetch(url, { ...opts, signal: controller.signal });
+    let r = await fetch(url, { ...opts, signal: controller.signal }); for (let n = 0; n < 2 && r && r.status === 429; n++) { const w = 2000 * (n + 1); console.warn('[fetch_portrait] 429 retry ' + (n+1) + '/2 after ' + w + 'ms'); await new Promise(rr => setTimeout(rr, w)); r = await fetch(url, { ...opts, signal: controller.signal }); } return r;
   } finally {
     clearTimeout(id);
   }

@@ -1,42 +1,74 @@
-name: Self-Heal on Failure
+name: Self-Heal Auto-Retry on Failure
 
-# 失敗した上流 workflow を検知し、Gemini で原因推定 + 修正案を GitHub Issue として起票する。
-# 同一エラーの再発は repeated-failure ラベルで強調する。
+# 失敗した上流 workflow を検知 → 自動で workflow_dispatch を再trigger
+# 連続3回失敗で初めて GitHub Issue 起票
 on:
   workflow_run:
     workflows:
       - "YouTube Auto Cycle"
       - "note Auto Post (B-plan / slow & safe)"
+      - "new-youtube auto pipeline"
     types: [completed]
 
 permissions:
   contents: read
   issues: write
-  actions: read
+  actions: write
 
 jobs:
-  heal:
+  auto-retry:
     if: ${{ github.event.workflow_run.conclusion == 'failure' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install dependencies
-        run: npm ci || npm install --no-audit --no-fund
-
-      - name: Run self-heal
+      - name: Inspect retry attempts
+        id: count
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          WORKFLOW_RUN_ID: ${{ github.event.workflow_run.id }}
           WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
-          WORKFLOW_HTML_URL: ${{ github.event.workflow_run.html_url }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: node scripts/self_heal.mjs
+          WORKFLOW_PATH: ${{ github.event.workflow_run.path }}
+        run: |
+          echo "Failed workflow: $WORKFLOW_NAME ($WORKFLOW_PATH)"
+          # Count recent failures (last 1 hour) for this workflow
+          RUNS=$(gh run list --workflow="$WORKFLOW_PATH" --limit 6 --json conclusion,createdAt -q '.[] | select(.conclusion == "failure") | .createdAt' | wc -l)
+          echo "Recent failures: $RUNS"
+          echo "fail_count=$RUNS" >> $GITHUB_OUTPUT
+
+      - name: Wait 5 minutes (let transient API issues clear)
+        if: ${{ steps.count.outputs.fail_count != '' && fromJSON(steps.count.outputs.fail_count) < 3 }}
+        run: sleep 300
+
+      - name: Re-trigger failed workflow
+        if: ${{ steps.count.outputs.fail_count != '' && fromJSON(steps.count.outputs.fail_count) < 3 }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WORKFLOW_PATH: ${{ github.event.workflow_run.path }}
+          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+        run: |
+          # Workflow path is .github/workflows/xxx.yml — extract filename
+          WF=$(basename "$WORKFLOW_PATH")
+          echo "Re-triggering: $WF"
+          # Set inputs based on workflow
+          case "$WF" in
+            youtube_auto.yml)
+              gh workflow run "$WF" -f upload=true
+              ;;
+            new_youtube_auto.yml)
+              gh workflow run "$WF" -f no_upload=false
+              ;;
+            *)
+              gh workflow run "$WF"
+              ;;
+          esac
+
+      - name: Open issue on persistent failure
+        if: ${{ steps.count.outputs.fail_count != '' && fromJSON(steps.count.outputs.fail_count) >= 3 }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+        run: |
+          gh issue create \
+            --title "🚨 Self-Heal: $WORKFLOW_NAME が3回連続失敗" \
+            --body "Run URL: $RUN_URL\n\nAuto-retry を3回試したが回復せず。手動調査が必要。" \
+            --label "self-heal,repeated-failure"

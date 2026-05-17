@@ -115,6 +115,15 @@ jobs:
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: npm run youtube:upload
 
+            - name: Verify uploaded video (title/desc/duration/public)
+        if: github.event_name == 'schedule' || inputs.upload == true
+        continue-on-error: true
+        env:
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+        run: node youtube/scripts/verify_uploaded.mjs
+
       - name: Commit & push state changes
         if: always()
         run: |

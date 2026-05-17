@@ -73,5 +73,6 @@
     "https://upload.wikimedia.org/wikipedia/commons/8/8d/Trace_of_Akechi_Castle-A.JPG"
   ],
   "note_fix": "Manual state recovery 2026-05-17 by dispatch: 009 石田三成 uploaded but state commit failed",
-  "note_fix2": "Manual recovery 2026-05-17 for #010 真田幸村 upload (Upload to YouTube succeeded but state commit conflict)"
+  "note_fix2": "Manual recovery 2026-05-17 for #010 真田幸村 upload (Upload to YouTube succeeded but state commit conflict)",
+  "note_fix3": "Manual fix 2026-05-17: removed #011 長篠 from processed - bad subtitles, re-generate with verify_subtitles guard"
 }

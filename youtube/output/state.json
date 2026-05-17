@@ -9,52 +9,73 @@
     "007",
     "008",
     "009",
-    "010"
+    "010",
+    "011"
   ],
-  "lastRun": "2026-05-17T06:53:00.000Z",
-  "currentTopic": {
-    "id": "011",
-    "title": "長篠 の戦い 鉄砲を変えた戦場",
-    "category": "合戦軸"
-  },
-  "lastScriptChars": 23122,
+  "lastRun": "2026-05-17T15:23:57.376Z",
+  "currentTopic": null,
+  "lastScriptChars": 23886,
   "lastScriptChapters": [
     {
       "index": 1,
-      "title": "éè£ããç¾©å£«ãããã®ç·ã®åã¯åç§",
-      "chars": 3819
+      "title": "風林火山、落日の序章",
+      "chars": 4283
     },
     {
       "index": 2,
-      "title": "è¬ã«åã¾ããååçã¨ç¢ºããªæè¦",
-      "chars": 4965
+      "title": "運命の地、長篠城の攻防",
+      "chars": 4794
     },
     {
       "index": 3,
-      "title": "ä¿¡é·ãè¦åºããåãäºäººã®èææä»£",
-      "chars": 4505
+      "title": "信長が仕掛けた、新たなる戦の形",
+      "chars": 4354
     },
     {
       "index": 4,
-      "title": "å¿ã³å¯ãä¸åãå¿ã«ç¯ãçå¿µã®ç",
-      "chars": 4128
+      "title": "設楽原に響く、慟哭と銃声",
+      "chars": 5586
     },
     {
       "index": 5,
-      "title": "æã¯ä»ãå¤©ãä¸ãããæ¬è½å¯ºã¸ã®é",
-      "chars": 5589
+      "title": "なぜ最強は敗れたのか、天運の行方",
+      "chars": 4767
     }
   ],
-  "lastVoiceAt": "2026-05-16T12:00:05.031Z",
-  "lastImageGenAt": "2026-05-16T12:01:47.737Z",
-  "videoStatus": "pending",
+  "lastVoiceAt": "2026-05-17T15:26:14.736Z",
+  "lastImageGenAt": "2026-05-17T15:27:01.969Z",
+  "videoStatus": "ready",
   "lastImageSources": [
-    "https://upload.wikimedia.org/wikipedia/commons/c/c3/Akechi_Mitsuhide8.jpg",
-    "https://upload.wikimedia.org/wikipedia/commons/d/da/Akechi_Mituharu.jpg",
-    "https://upload.wikimedia.org/wikipedia/commons/d/d5/Akechi_Mitsutada.jpg",
-    "https://upload.wikimedia.org/wikipedia/commons/8/8d/Trace_of_Akechi_Castle-A.JPG"
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Battle-of-Nagashino-Map-Folding-Screen-1575.png/3840px-Battle-of-Nagashino-Map-Folding-Screen-1575.png",
+    "https://upload.wikimedia.org/wikipedia/commons/c/ca/Battle_of_Changping.png",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Nagasawa_Western_Castle%28%E9%95%B7%E6%B2%A2%E8%A5%BF%E5%9F%8E%E8%B7%A1%29.jpg/3840px-Nagasawa_Western_Castle%28%E9%95%B7%E6%B2%A2%E8%A5%BF%E5%9F%8E%E8%B7%A1%29.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/5/5e/Chinese_nationalist_troops_crossing_the_Three_Gorges_at_West_Hupei.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/9/9b/Battle_of_Nagashima.jpg"
   ],
   "note_fix": "Manual state recovery 2026-05-17 by dispatch: 009 ç³ç°ä¸æ uploaded but state commit failed",
   "note_fix2": "Manual recovery 2026-05-17 for #010 çç°å¹¸æ upload (Upload to YouTube succeeded but state commit conflict)",
-  "note_fix3": "Manual fix 2026-05-17: removed #011 é·ç¯  from processed - bad subtitles, re-generate with verify_subtitles guard"
+  "note_fix3": "Manual fix 2026-05-17: removed #011 é·ç¯  from processed - bad subtitles, re-generate with verify_subtitles guard",
+  "lastScriptPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/011_script.txt",
+  "lastVoicePath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/011_voice.mp3",
+  "lastImagePaths": [
+    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/011_img_1.png",
+    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/011_img_2.png",
+    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/011_img_3.png",
+    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/011_img_4.png",
+    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/011_img_5.png"
+  ],
+  "lastMetaPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/011_meta.json",
+  "lastThumbPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/011_thumb.png",
+  "lastVideoPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/011_video.mp4",
+  "lastAssPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/011_subs.ass",
+  "lastSrtPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/011_subtitle.srt",
+  "lastSubsCount": 1524,
+  "lastCompileAt": "2026-05-17T15:33:52.585Z",
+  "lastUploadResult": {
+    "status": "success",
+    "topicId": "011",
+    "videoId": "m7kXLSL0jxg",
+    "url": "https://www.youtube.com/watch?v=m7kXLSL0jxg"
+  },
+  "lastUploadAt": "2026-05-17T15:34:05.126Z"
 }

@@ -58,7 +58,7 @@ async function renderThumb(title, totalSec, outPath, portraitBuffer) {
   const composites = [];
   if (portraitBuffer) {
     try {
-      const portrait = await sharp(portraitBuffer).resize(LEFT_W, H, { fit: 'cover', position: 'centre' }).png().toBuffer();
+      const portrait = await sharp(portraitBuffer).resize(LEFT_W, H, { fit: 'cover', position: 'top' }).png().toBuffer();
       composites.push({ input: portrait, top: 0, left: 0 });
     } catch (e) { console.warn(`[retro_thumbnails] portrait resize failed: ${e.message}`); }
   }

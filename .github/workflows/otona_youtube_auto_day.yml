@@ -1,0 +1,178 @@
+name: Otona YouTube Auto - Day (AI Images)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Target topic id (e.g. p001). Empty = let state.json decide.'
+        type: string
+        required: false
+        default: ''
+      upload:
+        description: 'Upload to YouTube (default false for dry-run)'
+        type: boolean
+        default: false
+  schedule:
+    # 朝08:00 JST = 23:00 UTC (前日)
+    - cron: '0 23 * * *'
+    # 昼13:00 JST = 04:00 UTC
+    - cron: '0 4 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: otona-youtube-day
+  cancel-in-progress: false
+
+jobs:
+  cycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: new-youtube-local
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+      NEW_YOUTUBE_CLIENT_ID: ${{ secrets.NEW_YOUTUBE_CLIENT_ID }}
+      NEW_YOUTUBE_CLIENT_SECRET: ${{ secrets.NEW_YOUTUBE_CLIENT_SECRET }}
+      NEW_YOUTUBE_REFRESH_TOKEN: ${{ secrets.NEW_YOUTUBE_REFRESH_TOKEN }}
+      YOUTUBE_PRIVACY: public
+      YOUTUBE_CATEGORY_ID: '22'
+      GTTS_VOICE_NAME: ja-JP-Neural2-B
+      GTTS_SPEAKING_RATE: '1.0'
+      VIDEO_W: '1280'
+      VIDEO_H: '720'
+      VIDEO_FPS: '24'
+      SUB_FONT: 'Noto Sans CJK JP'
+      SUB_FONT_SIZE: '36'
+      TARGET_TOPIC_ID: ${{ inputs.target }}
+      UPLOAD_FLAG: ${{ inputs.upload }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install ffmpeg and Japanese fonts
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ffmpeg fonts-noto-cjk fonts-noto-cjk-extra fontconfig
+          ffmpeg -version | head -n 1
+          fc-list | grep -i "noto.*cjk" | head -3
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install "Pillow<10" "moviepy==1.0.3" "pydub>=0.25.1" "imageio>=2.31.0" "imageio-ffmpeg>=0.4.9" "numpy>=1.24" "requests>=2.31"
+          python -c "import moviepy, PIL, pydub, numpy; print('moviepy', moviepy.__version__); print('Pillow', PIL.__version__)"
+
+      - name: Pre-flight (force topic if specified, clear stale outputs)
+        run: |
+          mkdir -p output
+          python <<'PY'
+          import json, os
+          from pathlib import Path
+          state_path = Path('output/state.json')
+          state = {}
+          if state_path.exists():
+              try:
+                  state = json.loads(state_path.read_text(encoding='utf-8'))
+              except Exception:
+                  state = {}
+          state.setdefault('processed', [])
+          tgt = os.environ.get('TARGET_TOPIC_ID', '').strip()
+          if tgt:
+              state['currentTopic'] = tgt
+              state['processed'] = [x for x in state.get('processed', []) if x != tgt]
+              print(f'[pre-flight] forced currentTopic={tgt}')
+          state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding='utf-8')
+          print('[pre-flight] state.json:', state)
+          PY
+
+      - name: Step0 - Gemini script generation
+        run: |
+          if [ -n "$TARGET_TOPIC_ID" ]; then
+            python scripts/step0_gemini.py --topic=$TARGET_TOPIC_ID
+          else
+            python scripts/step0_gemini.py
+          fi
+
+      - name: Step1 - Load & validate script
+        run: python scripts/step1_load.py
+
+      - name: Step2 - Voice (Google Cloud TTS)
+        run: python scripts/step2_voice_gtts.py
+
+      - name: Step3 - Images (Gemini Imagen)
+        run: python scripts/step3_images_imagen.py
+
+      - name: Step3b - Thumbnail (Gemini Imagen + Pillow text)
+        run: python scripts/step3b_thumbnail.py
+
+      - name: Step4 - Compile video + burn subtitles
+        run: python scripts/step4_compile_day.py
+
+      - name: Step4.5 - Sanity check (video exists, size > 1MB)
+        run: |
+          TID=$(python -c "import json; s=json.load(open('output/state.json')); print(s.get('currentTopic',''))")
+          VPATH="output/${TID}_video.mp4"
+          if [ ! -f "$VPATH" ]; then
+            echo "::error::compiled video not found: $VPATH"
+            exit 1
+          fi
+          SZ=$(stat -c%s "$VPATH")
+          echo "[sanity] $VPATH size=$SZ bytes"
+          if [ "$SZ" -lt 1048576 ]; then
+            echo "::error::video too small ($SZ < 1MB)"
+            exit 1
+          fi
+
+      - name: Upload artifacts (always - for diagnostics)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: otona-day-output-${{ github.run_number }}
+          path: |
+            new-youtube-local/output/*.mp4
+            new-youtube-local/output/*.wav
+            new-youtube-local/output/*_subtitle.srt
+            new-youtube-local/output/*_voice_timings.json
+            new-youtube-local/output/*_script.json
+            new-youtube-local/output/*_voice_meta.json
+            new-youtube-local/output/*_images.json
+            new-youtube-local/output/*_thumb.png
+            new-youtube-local/output/*_thumb.jpg
+            new-youtube-local/output/state.json
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Step5 - Upload to YouTube
+        if: github.event_name == 'schedule' || inputs.upload == true
+        run: python scripts/step5_upload.py
+
+      - name: Verify uploaded via Atom feed
+        if: github.event_name == 'schedule' || inputs.upload == true
+        run: python scripts/verify_uploaded.py
+
+      - name: Commit & push state.json
+        if: always()
+        run: |
+          cd ..
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add new-youtube-local/output/state.json || true
+          if git diff --staged --quiet; then
+            echo "[state] no changes"
+          else
+            git commit -m "chore(otona-day): update state.json [skip ci]"
+            git pull --rebase origin main || git rebase --abort || true
+            git push origin main || git push origin main --force-with-lease || true
+          fi

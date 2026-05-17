@@ -8,13 +8,24 @@ on:
         type: boolean
         default: false
   schedule:
-    # 1日3本配信
-    # 22:50 UTC = 日本時間 07:50 (朝)
+    # 1日3本配信 (each slot has 4 backup times for cron unreliability)
+    # 07:50 JST slot
     - cron: '50 22 * * *'
-    # 04:50 UTC = 日本時間 13:50 (昼)
+    - cron: '0 23 * * *'
+    - cron: '10 23 * * *'
+    - cron: '20 23 * * *'
+    # 13:50 JST slot
     - cron: '50 4 * * *'
-    # 10:50 UTC = 日本時間 19:50 (夜)
+    - cron: '0 5 * * *'
+    - cron: '10 5 * * *'
+    - cron: '20 5 * * *'
+    # 19:50 JST slot
     - cron: '50 10 * * *'
+    - cron: '0 11 * * *'
+    - cron: '10 11 * * *'
+    - cron: '20 11 * * *'
+  repository_dispatch:
+    types: [external-cron-youtube]
 
 permissions:
   contents: write

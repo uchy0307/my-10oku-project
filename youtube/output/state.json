@@ -12,67 +12,49 @@
     "010"
   ],
   "lastRun": "2026-05-17T06:53:00.000Z",
-  "currentTopic": null,
-  "lastScriptPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_script.txt",
+  "currentTopic": {
+    "id": "011",
+    "title": "長篠 の戦い 鉄砲を変えた戦場",
+    "category": "合戦軸"
+  },
   "lastScriptChars": 23122,
   "lastScriptChapters": [
     {
       "index": 1,
-      "title": "逆臣か、義士か。その男の名は光秀",
+      "title": "éè£ããç¾©å£«ãããã®ç·ã®åã¯åç§",
       "chars": 3819
     },
     {
       "index": 2,
-      "title": "謎に包まれた前半生と確かな才覚",
+      "title": "è¬ã«åã¾ããååçã¨ç¢ºããªæè¦",
       "chars": 4965
     },
     {
       "index": 3,
-      "title": "信長が見出した光、二人の蜜月時代",
+      "title": "ä¿¡é·ãè¦åºããåãäºäººã®èææä»£",
       "chars": 4505
     },
     {
       "index": 4,
-      "title": "忍び寄る不和、心に灯る疑念の炎",
+      "title": "å¿ã³å¯ãä¸åãå¿ã«ç¯ãçå¿µã®ç",
       "chars": 4128
     },
     {
       "index": 5,
-      "title": "時は今、天が下しる。本能寺への道",
+      "title": "æã¯ä»ãå¤©ãä¸ãããæ¬è½å¯ºã¸ã®é",
       "chars": 5589
     }
   ],
-  "lastVoicePath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_voice.mp3",
   "lastVoiceAt": "2026-05-16T12:00:05.031Z",
-  "lastImagePaths": [
-    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_img_1.png",
-    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_img_2.png",
-    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_img_3.png",
-    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_img_4.png",
-    "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_img_5.png"
-  ],
   "lastImageGenAt": "2026-05-16T12:01:47.737Z",
-  "lastMetaPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_meta.json",
-  "lastThumbPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_thumb.png",
-  "lastVideoPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_video.mp4",
-  "lastAssPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/008_subs.ass",
-  "lastSubsCount": 1473,
-  "lastCompileAt": "2026-05-16T12:09:02.925Z",
-  "videoStatus": "ready",
-  "lastUploadResult": {
-    "status": "success",
-    "topicId": "009",
-    "videoId": "HtcdgPGQz74",
-    "url": "https://www.youtube.com/watch?v=HtcdgPGQz74"
-  },
-  "lastUploadAt": "2026-05-17T06:53:00.000Z",
+  "videoStatus": "pending",
   "lastImageSources": [
     "https://upload.wikimedia.org/wikipedia/commons/c/c3/Akechi_Mitsuhide8.jpg",
     "https://upload.wikimedia.org/wikipedia/commons/d/da/Akechi_Mituharu.jpg",
     "https://upload.wikimedia.org/wikipedia/commons/d/d5/Akechi_Mitsutada.jpg",
     "https://upload.wikimedia.org/wikipedia/commons/8/8d/Trace_of_Akechi_Castle-A.JPG"
   ],
-  "note_fix": "Manual state recovery 2026-05-17 by dispatch: 009 石田三成 uploaded but state commit failed",
-  "note_fix2": "Manual recovery 2026-05-17 for #010 真田幸村 upload (Upload to YouTube succeeded but state commit conflict)",
-  "note_fix3": "Manual fix 2026-05-17: removed #011 長篠 from processed - bad subtitles, re-generate with verify_subtitles guard"
+  "note_fix": "Manual state recovery 2026-05-17 by dispatch: 009 ç³ç°ä¸æ uploaded but state commit failed",
+  "note_fix2": "Manual recovery 2026-05-17 for #010 çç°å¹¸æ upload (Upload to YouTube succeeded but state commit conflict)",
+  "note_fix3": "Manual fix 2026-05-17: removed #011 é·ç¯  from processed - bad subtitles, re-generate with verify_subtitles guard"
 }

@@ -139,8 +139,8 @@ async function callGemini(prompt, attempt = 1) {
   if (!res.ok) {
     const errText = await res.text();
     // 503 / 429 は一時的過負荷。指数バックオフで最大5回リトライ
-    if ((res.status === 503 || res.status === 429) && attempt < 5) {
-      const waitSec = Math.pow(2, attempt) * 15; // 30, 60, 120, 240, 480秒
+    if ((res.status === 503 || res.status === 429 || res.status === 500 || res.status === 502 || res.status === 504) && attempt < 7) {
+      const waitSec = Math.min(300, Math.pow(2, attempt) * 15); // 30, 60, 120, 240, 300, 300, 300秒 (max 5min)
       console.warn(`[generate_script] ${res.status} retryable. wait ${waitSec}s then attempt ${attempt + 1}`);
       await new Promise((r) => setTimeout(r, waitSec * 1000));
       return callGemini(prompt, attempt + 1);

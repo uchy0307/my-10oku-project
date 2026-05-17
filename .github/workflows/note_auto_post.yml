@@ -20,12 +20,36 @@ on:
         required: false
         default: 'false'
   schedule:
-    # 1日2回（UTC基準）。実行時刻はworkflow内で更にランダム遅延を挟む。
-    - cron: '50 22 * * *'  # 07:50 JST
-    - cron: '50 2 * * *'   # 11:50 JST
-    - cron: '50 6 * * *'   # 15:50 JST
-    - cron: '50 10 * * *'  # 19:50 JST
-    - cron: '50 13 * * *'  # 22:50 JST
+    # GitHub Actions cron is unreliable; we set 4 backup times per slot.
+    # The first run that finds a draft posts it; subsequent ones in the same hour exit early
+    # (queue.json state guard prevents double-posting).
+    # 07:50 JST primary + backups
+    - cron: '50 22 * * *'
+    - cron: '0 23 * * *'
+    - cron: '10 23 * * *'
+    - cron: '20 23 * * *'
+    # 11:50 JST primary + backups
+    - cron: '50 2 * * *'
+    - cron: '0 3 * * *'
+    - cron: '10 3 * * *'
+    - cron: '20 3 * * *'
+    # 15:50 JST primary + backups
+    - cron: '50 6 * * *'
+    - cron: '0 7 * * *'
+    - cron: '10 7 * * *'
+    - cron: '20 7 * * *'
+    # 19:50 JST primary + backups
+    - cron: '50 10 * * *'
+    - cron: '0 11 * * *'
+    - cron: '10 11 * * *'
+    - cron: '20 11 * * *'
+    # 22:50 JST primary + backups
+    - cron: '50 13 * * *'
+    - cron: '0 14 * * *'
+    - cron: '10 14 * * *'
+    - cron: '20 14 * * *'
+  repository_dispatch:
+    types: [external-cron-note]
 
 permissions:
   contents: write

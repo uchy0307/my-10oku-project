@@ -4,9 +4,24 @@ name: new-youtube auto pipeline
 # UTC 22:00 = JST 07:00 / UTC 04:00 = JST 13:00 / UTC 10:00 = JST 19:00
 on:
   schedule:
+    # 1日3本 (each slot has 4 backup times for cron unreliability)
+    # 07:00 JST slot
     - cron: "0 22 * * *"
+    - cron: "10 22 * * *"
+    - cron: "20 22 * * *"
+    - cron: "30 22 * * *"
+    # 13:00 JST slot
     - cron: "0 4 * * *"
+    - cron: "10 4 * * *"
+    - cron: "20 4 * * *"
+    - cron: "30 4 * * *"
+    # 19:00 JST slot
     - cron: "0 10 * * *"
+    - cron: "10 10 * * *"
+    - cron: "20 10 * * *"
+    - cron: "30 10 * * *"
+  repository_dispatch:
+    types: [external-cron-newyt]
   workflow_dispatch:
     inputs:
       topic:

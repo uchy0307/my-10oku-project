@@ -42,7 +42,9 @@ function cleanScriptForSubs(text) {
   return t.trim();
 }
 
-function splitToSentences(text) {
+function splitToSentences(text, opts = {}) {
+  // rebuild モード時は cue 長を半分にする (drift 影響緩和: 短い cue ほど時刻ズレが目立たない)
+  const minLen = opts.tight ? 14 : 28;
   const sentences = [];
   const paragraphs = text.split(/\n+/);
   for (const para of paragraphs) {
@@ -51,7 +53,7 @@ function splitToSentences(text) {
     let buf = '';
     for (const p of parts) {
       buf += p;
-      if (buf.length >= 28) { sentences.push(buf); buf = ''; }
+      if (buf.length >= minLen) { sentences.push(buf); buf = ''; }
     }
     if (buf) sentences.push(buf);
   }
@@ -269,6 +271,10 @@ async function fetchTopicPortrait(topic) {
 }
 
 async function main() {
+  const argv = process.argv.slice(2);
+  const REBUILD_SUBTITLE = argv.includes('--rebuild-subtitle') || process.env.REBUILD_SUBTITLE === '1';
+  if (REBUILD_SUBTITLE) console.log('[compile_video] --rebuild-subtitle: 短cueモードで字幕再構築');
+
   const state = await loadState();
   const topic = state.currentTopic;
   if (!topic) {
@@ -299,11 +305,26 @@ async function main() {
 
   const scriptText = await fs.readFile(scriptPath, 'utf-8');
   const cleanText = cleanScriptForSubs(scriptText);
-  const sentences = splitToSentences(cleanText);
+  const sentences = splitToSentences(cleanText, { tight: REBUILD_SUBTITLE });
   const segments = buildSubtitleSegments(sentences, totalSec);
   const assContent = buildAss(segments);
   await fs.writeFile(assPath, assContent, 'utf-8');
-  console.log(`[compile_video] subs: ${segments.length} cues -> ${assPath}`);
+  console.log(`[compile_video] subs: ${segments.length} cues -> ${assPath}${REBUILD_SUBTITLE ? ' (tight)' : ''}`);
+
+  // 補助: verify_subtitles からも参照しやすい .srt スナップショット
+  const srtPath = path.join(OUTPUT_DIR, `${topic.id}_subtitle.srt`);
+  const srtContent = segments.map((s, i) => {
+    const fmt = (sec) => {
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const ss = sec - h * 3600 - m * 60;
+      const intS = Math.floor(ss);
+      const ms = Math.floor((ss - intS) * 1000);
+      return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(intS).padStart(2,'0')},${String(ms).padStart(3,'0')}`;
+    };
+    return `${i+1}\n${fmt(s.start)} --> ${fmt(s.end)}\n${s.text}\n`;
+  }).join('\n');
+  await fs.writeFile(srtPath, srtContent, 'utf-8');
 
   const meta = generateMeta(topic, scriptText);
   await fs.writeFile(metaPath, JSON.stringify(meta, null, 2), 'utf-8');
@@ -364,6 +385,7 @@ async function main() {
   state.lastThumbPath = thumbPath;
   state.lastVideoPath = videoPath;
   state.lastAssPath = assPath;
+  state.lastSrtPath = srtPath;
   state.lastSubsCount = segments.length;
   state.lastCompileAt = new Date().toISOString();
   state.videoStatus = 'ready';

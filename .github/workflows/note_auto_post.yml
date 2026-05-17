@@ -85,8 +85,19 @@ jobs:
           git add note-auto/queue.json articles/ || true
           if git diff --staged --quiet; then
             echo "No queue/articles changes to commit."
-          else
-            git commit -m "chore(note): sync drafts & update queue.json [skip ci]"
-            git pull --rebase origin main || git rebase --abort || true
-            git push origin main || git push origin main --force-with-lease
+            exit 0
           fi
+          git commit -m "chore(note): sync drafts & update queue.json [skip ci]"
+          # Retry rebase+push up to 5 times for race conditions
+          for i in 1 2 3 4 5; do
+            git fetch origin main
+            git rebase origin/main || { git rebase --abort; git pull origin main --no-rebase --strategy-option theirs -m "auto-merge"; }
+            if git push origin main; then
+              echo "push succeeded on attempt $i"
+              exit 0
+            fi
+            echo "push failed on attempt $i, retry..."
+            sleep $((i * 5))
+          done
+          # Final fallback: force-with-lease
+          git push origin main --force-with-lease || echo "Final push failed but article was posted; manual state sync needed"

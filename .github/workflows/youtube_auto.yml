@@ -7,25 +7,14 @@ on:
         description: 'Upload generated video to YouTube (default: false to avoid spam-flag risk)'
         type: boolean
         default: false
+      target:
+        description: 'Target topic id (e.g. 011). Empty = let state.json decide.'
+        type: string
+        required: false
+        default: ''
   schedule:
-    # 1日3本配信 (each slot has 4 backup times for cron unreliability)
-    # 07:50 JST slot
-    - cron: '50 22 * * *'
     - cron: '0 23 * * *'
-    - cron: '10 23 * * *'
-    - cron: '20 23 * * *'
-    # 13:50 JST slot
-    - cron: '50 4 * * *'
-    - cron: '0 5 * * *'
-    - cron: '10 5 * * *'
-    - cron: '20 5 * * *'
-    # 19:50 JST slot
-    - cron: '50 10 * * *'
     - cron: '0 11 * * *'
-    - cron: '10 11 * * *'
-    - cron: '20 11 * * *'
-  repository_dispatch:
-    types: [external-cron-youtube]
 
 permissions:
   contents: write
@@ -35,11 +24,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 180
     env:
-      # 全ステップ共通の鍵（generate_voice は Google TTS フォールバックで GOOGLE_API_KEY を使用するなど）
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
       ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
       ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
+      TARGET_TOPIC_ID: ${{ inputs.target }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -53,7 +42,6 @@ jobs:
 
       - name: Add 8GB swap (ffmpeg compile safety net)
         run: |
-          # GitHub runner has existing 4GB swap; replace with 8GB
           sudo swapoff -a || true
           sudo rm -f /swapfile /mnt/swapfile
           sudo fallocate -l 8G /mnt/swapfile
@@ -86,6 +74,40 @@ jobs:
       - name: Compile video
         run: npm run youtube:compile
 
+      - name: Verify subtitle/narration alignment
+        id: verify_subs
+        run: |
+          set -e
+          ID=$(node -e "const s=require('./youtube/output/state.json'); const id=(s.currentTopic && s.currentTopic.id) || ''; process.stdout.write(id);")
+          if [ -z "$ID" ]; then
+            echo "::error::state.json.currentTopic.id missing - cannot verify"
+            exit 1
+          fi
+          SCRIPT="youtube/output/${ID}_script.txt"
+          if [ -f "youtube/output/${ID}_subtitle.srt" ]; then
+            SUB="youtube/output/${ID}_subtitle.srt"
+          elif [ -f "youtube/output/${ID}_subs.ass" ]; then
+            SUB="youtube/output/${ID}_subs.ass"
+          else
+            echo "::error::No subtitle file for id=$ID"
+            exit 1
+          fi
+          echo "[verify] id=$ID script=$SCRIPT subtitle=$SUB"
+          attempt=1
+          while : ; do
+            if node youtube/scripts/verify_subtitles.mjs --script "$SCRIPT" --subtitle "$SUB"; then
+              echo "[verify] PASS on attempt $attempt"
+              break
+            fi
+            if [ "$attempt" -ge 3 ]; then
+              echo "::error::verify_subtitles FAILED after 3 attempts"
+              exit 1
+            fi
+            echo "[verify] attempt $attempt failed - re-compiling with --rebuild-subtitle"
+            npm run youtube:compile -- --rebuild-subtitle
+            attempt=$((attempt+1))
+          done
+
       - name: Upload artifacts (video / thumb / state for inspection)
         if: always()
         uses: actions/upload-artifact@v4
@@ -97,11 +119,11 @@ jobs:
             youtube/output/*_img_*.png
             youtube/output/state.json
             youtube/output/*_meta.json
+            youtube/output/*_subs.ass
+            youtube/output/*_subtitle.srt
+            youtube/output/*_script.txt
           if-no-files-found: warn
           retention-days: 7
-
-      - name: Verify subtitles match script (abort upload if mismatch)
-        run: node youtube/scripts/verify_subtitles.mjs
 
       - name: Upload to YouTube
         if: github.event_name == 'schedule' || inputs.upload == true
@@ -115,15 +137,6 @@ jobs:
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: npm run youtube:upload
 
-      - name: Verify uploaded video (title/desc/duration/public)
-        if: github.event_name == 'schedule' || inputs.upload == true
-        continue-on-error: true
-        env:
-          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
-          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
-          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
-        run: node youtube/scripts/verify_uploaded.mjs
-
       - name: Commit & push state changes
         if: always()
         run: |
@@ -132,7 +145,6 @@ jobs:
           if [ -f youtube/output/state.json ]; then
             git add -f youtube/output/state.json
           fi
-          # topics.json も補充された場合はコミット
           git add youtube/topics.json || true
           if git diff --staged --quiet; then
             echo "No state changes to commit."

@@ -101,6 +101,11 @@ jobs:
           MAX="${MAX_INPUT:-1}"
           node note-auto/post.mjs --max=$MAX
 
+      - name: Verify published note articles (attach/price/boundary/link)
+        if: always()
+        continue-on-error: true
+        run: node note-auto/verify_published.mjs
+
       - name: Commit & push queue.json / articles changes
         if: always()
         run: |

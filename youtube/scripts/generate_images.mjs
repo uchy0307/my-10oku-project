@@ -165,7 +165,7 @@ async function placeholderImage(chapterTitle, chapterIndex) {
 
 async function processImage(rawBuf) {
   return sharp(rawBuf)
-    .resize(IMAGE_W, IMAGE_H, { fit: 'cover', position: 'centre' })
+    .resize(IMAGE_W, IMAGE_H, { fit: 'cover', position: 'top' })
     .modulate({ saturation: 0.9 })
     .png()
     .toBuffer();

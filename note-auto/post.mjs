@@ -73,8 +73,8 @@ const SELECTORS = {
   titleInput: 'textarea[placeholder*="タイトル"]',
   saveDraftButton: 'button:has-text("下書き保存")',
   cancelButton: 'button:has-text("キャンセル")',
-  plusMenuOpen: '[aria-label="メニューを開く"]',
-  filePickerButton: 'button:has-text("ファイル")',
+  plusMenuOpen: '[aria-label="メニューを開く"], [data-testid="plusMenu"], button[aria-label*="メニュー"], button[aria-label*="追加"]',
+  filePickerButton: 'button:has-text("ファイル"), [data-testid*="file"], button:has-text("File")',
   fileInput: 'input[type="file"]',
   paidConfigBtn: 'button:has-text("有料エリア設定")',
   publishNowBtn: 'button:has-text("投稿する")',
@@ -309,6 +309,14 @@ async function editDraft(page, item) {
   // Step 2: 添付docx
   let attachedCount = 0;
   if (attachPaths.length > 0) attachedCount = await attachFiles(page, attachPaths);
+  // Loud verification: if attachments were expected but none uploaded, fail hard.
+  if (attachPaths.length > 0 && attachedCount === 0) {
+    console.error(`[FATAL] 添付ファイル ${attachPaths.length}件 期待だが 0件しか添付されなかった (article=${articleId}) — 投稿中止`);
+    throw new Error('attachment-uploader-failure: expected ' + attachPaths.length + ' but uploaded 0');
+  }
+  if (attachPaths.length > 0 && attachedCount < attachPaths.length) {
+    console.warn(`[WARN] 添付期待 ${attachPaths.length}件中 ${attachedCount}件 のみ成功 (article=${articleId})`);
+  }
 
   // Step 3: 下書き保存（body+添付を確定）
   try {

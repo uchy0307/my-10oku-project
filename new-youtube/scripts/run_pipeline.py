@@ -77,7 +77,7 @@ def main():
 
     if not args.no_upload:
         from step5_upload import upload_video
-        vid = upload_video(final, script, privacy="private")
+        vid = upload_video(final, script, privacy="public")
         print(f"[5/5] uploaded: {vid}")
 
 

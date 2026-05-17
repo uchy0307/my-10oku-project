@@ -98,7 +98,7 @@ def _try_pollinations(full: str, seed, out: Path) -> bool:
     last = None
     for attempt in range(POLLINATIONS_MAX_ATTEMPTS):
         try:
-            r = requests.get(url, params=params, timeout=180)
+            r = requests.get(url, params=params, timeout=30)
             r.raise_for_status()
             if len(r.content) < 1000:
                 raise RuntimeError(f"response too small ({len(r.content)} bytes)")
@@ -120,12 +120,12 @@ def _try_huggingface(full: str, seed, out: Path) -> bool:
     if seed is not None:
         body["parameters"] = {"seed": int(seed)}
     try:
-        r = requests.post(HF_API_URL, headers=headers, json=body, timeout=180)
+        r = requests.post(HF_API_URL, headers=headers, json=body, timeout=30)
         if r.status_code == 503:
             # model loading -> wait then retry once
             print(f"[huggingface] 503 model loading, waiting 15s")
             time.sleep(15)
-            r = requests.post(HF_API_URL, headers=headers, json=body, timeout=180)
+            r = requests.post(HF_API_URL, headers=headers, json=body, timeout=30)
         r.raise_for_status()
         ct = r.headers.get("content-type", "")
         if "image" not in ct and len(r.content) < 1000:
@@ -159,7 +159,7 @@ def _try_together(full: str, seed, out: Path) -> bool:
     if seed is not None:
         body["seed"] = int(seed)
     try:
-        r = requests.post(TOGETHER_API_URL, headers=headers, json=body, timeout=180)
+        r = requests.post(TOGETHER_API_URL, headers=headers, json=body, timeout=30)
         r.raise_for_status()
         data = r.json()
         import base64

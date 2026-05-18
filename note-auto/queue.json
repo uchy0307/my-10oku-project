@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "synced_at": "2026-05-18T14:45:32.514Z",
+  "synced_at": "2026-05-18T17:20:18.423Z",
   "items": [
     {
       "id": "001",
@@ -407,24 +407,25 @@
       "scheduled_at": null,
       "posted_at": "2026-05-18T15:03:22.740Z",
       "error": null,
-      "_hasLocalBody": true,
-      "attached": 0,
-      "priceSet": true,
-      "boundarySet": true,
-      "paidEnabled": true,
-      "published": true,
-      "anonStatus": 200
+      "_hasLocalBody": true
     },
     {
       "id": "038",
       "draftId": "n7cf2f5335da8",
       "title": "【AI対話アプリ】🕸️ 200の問い #038 「ネットワーク分析」",
       "publish": true,
-      "status": "pending",
+      "status": "published",
       "scheduled_at": null,
-      "posted_at": null,
+      "posted_at": "2026-05-18T17:30:56.816Z",
       "error": null,
-      "_hasLocalBody": true
+      "_hasLocalBody": true,
+      "priceSet": true,
+      "boundarySet": true,
+      "paidEnabled": true,
+      "published": true,
+      "anonStatus": 200,
+      "attached": 0,
+      "attach_error": "attached=0/3 lastReason=file btn click: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"ファイル\"), [role=\"menuitem\"]:has-text(\"ファイル\"), li:has-text(\"ファイル\") button, [data-testid*=\"file\"], button:has-text(\"File\"), button:has-text(\"ドキュメント\")').first()\n    - locator resolved to <button data-selected=\"false\" aria-selected=\"false\" class=\"sc-876c5825-4 cmGlJU\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    58 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n"
     },
     {
       "id": "039",

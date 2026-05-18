@@ -28,6 +28,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 jobs:
   shorts:
@@ -64,7 +65,42 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Find latest successful main workflow run
+        id: find_main_run
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          RUN_ID=$(gh run list --workflow=youtube_auto.yml --status=success --branch=main --limit=1 --json databaseId -q '.[0].databaseId' || true)
+          echo "main_run_id=$RUN_ID" >> $GITHUB_OUTPUT
+          echo "found main run id: $RUN_ID"
+
+      - name: Download main workflow artifact (source mp4)
+        if: steps.find_main_run.outputs.main_run_id != ''
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          pattern: youtube-output-*
+          run-id: ${{ steps.find_main_run.outputs.main_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: youtube/output/
+          merge-multiple: true
+
+      - name: Resolve SHORTS_LOCAL_FILE from latest mp4
+        id: resolve_local
+        run: |
+          MP4=$(ls -t youtube/output/*_video.mp4 2>/dev/null | head -n 1 || true)
+          if [ -n "$MP4" ]; then
+            echo "Found local source: $MP4"
+            echo "local_file=$MP4" >> $GITHUB_OUTPUT
+          else
+            echo "No local mp4 found; Shorts will try yt-dlp."
+            echo "local_file=" >> $GITHUB_OUTPUT
+          fi
+
       - name: Run Shorts pipeline
+        env:
+          SHORTS_LOCAL_FILE: ${{ steps.resolve_local.outputs.local_file }}
         run: node youtube/scripts/shorts_pipeline.mjs
 
       - name: Upload artifacts (shorts state for inspection)

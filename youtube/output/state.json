@@ -9,40 +9,41 @@
     "007",
     "008",
     "009",
-    "010"
+    "010",
+    "011"
   ],
-  "lastRun": "2026-05-17T15:23:57.376Z",
+  "lastRun": "2026-05-18T01:28:24.527Z",
   "currentTopic": null,
-  "lastScriptChars": 23886,
+  "lastScriptChars": 19823,
   "lastScriptChapters": [
     {
       "index": 1,
-      "title": "é¢¨æç«å±±ãè½æ¥ã®åºç« ",
-      "chars": 4283
+      "title": "巨星墜つ、甲斐の虎の遺言",
+      "chars": 3282
     },
     {
       "index": 2,
-      "title": "éå½ã®å°ãé·ç¯ åã®æ»é²",
-      "chars": 4794
+      "title": "設楽原前夜、両雄の決断",
+      "chars": 4306
     },
     {
       "index": 3,
-      "title": "ä¿¡é·ãä»æãããæ°ããªãæ¦ã®å½¢",
-      "chars": 4354
+      "title": "戦の常識を覆す、信長の策",
+      "chars": 4426
     },
     {
       "index": 4,
-      "title": "è¨­æ¥½åã«é¿ããæå­ã¨éå£°",
-      "chars": 5586
+      "title": "鉄弾の雨に散る、武田の猛将",
+      "chars": 4050
     },
     {
       "index": 5,
-      "title": "ãªãæå¼·ã¯æããã®ããå¤©éã®è¡æ¹",
-      "chars": 4767
+      "title": "勝者の非情、敗者の慟哭",
+      "chars": 3662
     }
   ],
-  "lastVoiceAt": "2026-05-17T15:26:14.736Z",
-  "lastImageGenAt": "2026-05-17T15:27:01.969Z",
+  "lastVoiceAt": "2026-05-18T01:30:19.355Z",
+  "lastImageGenAt": "2026-05-18T01:31:00.598Z",
   "videoStatus": "ready",
   "lastImageSources": [
     "https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Battle-of-Nagashino-Map-Folding-Screen-1575.png/3840px-Battle-of-Nagashino-Map-Folding-Screen-1575.png",
@@ -68,13 +69,13 @@
   "lastVideoPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/011_video.mp4",
   "lastAssPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/011_subs.ass",
   "lastSrtPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/011_subtitle.srt",
-  "lastSubsCount": 1524,
-  "lastCompileAt": "2026-05-17T15:33:52.585Z",
+  "lastSubsCount": 1241,
+  "lastCompileAt": "2026-05-18T01:36:57.349Z",
   "lastUploadResult": {
     "status": "success",
     "topicId": "011",
-    "videoId": "m7kXLSL0jxg",
-    "url": "https://www.youtube.com/watch?v=m7kXLSL0jxg"
+    "videoId": "7R0jT5A23NI",
+    "url": "https://www.youtube.com/watch?v=7R0jT5A23NI"
   },
-  "lastUploadAt": "2026-05-17T15:34:05.126Z"
+  "lastUploadAt": "2026-05-18T01:37:07.897Z"
 }

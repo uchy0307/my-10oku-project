@@ -9,8 +9,7 @@
     "007",
     "008",
     "009",
-    "010",
-    "011"
+    "010"
   ],
   "lastRun": "2026-05-17T15:23:57.376Z",
   "currentTopic": null,
@@ -18,27 +17,27 @@
   "lastScriptChapters": [
     {
       "index": 1,
-      "title": "風林火山、落日の序章",
+      "title": "é¢¨æç«å±±ãè½æ¥ã®åºç« ",
       "chars": 4283
     },
     {
       "index": 2,
-      "title": "運命の地、長篠城の攻防",
+      "title": "éå½ã®å°ãé·ç¯ åã®æ»é²",
       "chars": 4794
     },
     {
       "index": 3,
-      "title": "信長が仕掛けた、新たなる戦の形",
+      "title": "ä¿¡é·ãä»æãããæ°ããªãæ¦ã®å½¢",
       "chars": 4354
     },
     {
       "index": 4,
-      "title": "設楽原に響く、慟哭と銃声",
+      "title": "è¨­æ¥½åã«é¿ããæå­ã¨éå£°",
       "chars": 5586
     },
     {
       "index": 5,
-      "title": "なぜ最強は敗れたのか、天運の行方",
+      "title": "ãªãæå¼·ã¯æããã®ããå¤©éã®è¡æ¹",
       "chars": 4767
     }
   ],
@@ -52,9 +51,9 @@
     "https://upload.wikimedia.org/wikipedia/commons/5/5e/Chinese_nationalist_troops_crossing_the_Three_Gorges_at_West_Hupei.jpg",
     "https://upload.wikimedia.org/wikipedia/commons/9/9b/Battle_of_Nagashima.jpg"
   ],
-  "note_fix": "Manual state recovery 2026-05-17 by dispatch: 009 ç³ç°ä¸æ uploaded but state commit failed",
-  "note_fix2": "Manual recovery 2026-05-17 for #010 çç°å¹¸æ upload (Upload to YouTube succeeded but state commit conflict)",
-  "note_fix3": "Manual fix 2026-05-17: removed #011 é·ç¯  from processed - bad subtitles, re-generate with verify_subtitles guard",
+  "note_fix": "Manual state recovery 2026-05-17 by dispatch: 009 Ã§ÂÂ³Ã§ÂÂ°Ã¤Â¸ÂÃ¦ÂÂ uploaded but state commit failed",
+  "note_fix2": "Manual recovery 2026-05-17 for #010 Ã§ÂÂÃ§ÂÂ°Ã¥Â¹Â¸Ã¦ÂÂ upload (Upload to YouTube succeeded but state commit conflict)",
+  "note_fix3": "Manual fix 2026-05-17: removed #011 Ã©ÂÂ·Ã§Â¯Â  from processed - bad subtitles, re-generate with verify_subtitles guard",
   "lastScriptPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/011_script.txt",
   "lastVoicePath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/011_voice.mp3",
   "lastImagePaths": [

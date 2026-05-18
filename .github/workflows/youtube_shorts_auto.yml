@@ -1,0 +1,94 @@
+name: YouTube Shorts Auto
+
+# 既存歴史 YouTube long video から 60s Shorts を 1日3本生成 → upload
+# cron: JST 10:30 / 16:30 / 22:30 (UTC 01:30 / 07:30 / 13:30)
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_video_id:
+        description: 'Source YouTube videoId (empty = pick latest from state.json)'
+        type: string
+        required: false
+        default: ''
+      clip_start:
+        description: 'Clip start sec (default 30)'
+        type: string
+        required: false
+        default: '30'
+      clip_duration:
+        description: 'Clip duration sec (max 59)'
+        type: string
+        required: false
+        default: '58'
+  schedule:
+    - cron: '30 1 * * *'
+    - cron: '30 7 * * *'
+    - cron: '30 13 * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  shorts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+      YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+      YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+      YOUTUBE_PLAYLIST_ALL_ID: PLDSFeBtTVyQ1A0BLUQpbv_JLdqEscfYJl
+      SHORTS_VIDEO_ID: ${{ inputs.source_video_id }}
+      SHORTS_CLIP_START: ${{ inputs.clip_start }}
+      SHORTS_CLIP_DURATION: ${{ inputs.clip_duration }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install ffmpeg + yt-dlp
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ffmpeg
+          sudo curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp
+          sudo chmod a+rx /usr/local/bin/yt-dlp
+          ffmpeg -version | head -n 1
+          yt-dlp --version
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Run Shorts pipeline
+        run: node youtube/scripts/shorts_pipeline.mjs
+
+      - name: Upload artifacts (shorts state for inspection)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shorts-output-${{ github.run_number }}
+          path: |
+            youtube/output/shorts_state.json
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Commit shorts_state.json
+        if: success()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ -f youtube/output/shorts_state.json ]; then
+            git add -f youtube/output/shorts_state.json
+            if git diff --staged --quiet; then
+              echo "No shorts_state changes."
+            else
+              git commit -m "chore(shorts): update shorts_state.json [skip ci]"
+              git pull --rebase origin main || git rebase --abort || true
+              git push origin main || git push origin main --force-with-lease
+            fi
+          fi

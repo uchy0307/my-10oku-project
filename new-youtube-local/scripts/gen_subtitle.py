@@ -8,6 +8,19 @@ import os, sys, json, wave
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+
+# Auto-load .env (when run standalone)
+_ENV = ROOT / ".env"
+if _ENV.exists():
+    for _line in _ENV.read_text(encoding="utf-8").splitlines():
+        _line = _line.strip()
+        if not _line or _line.startswith("#") or "=" not in _line:
+            continue
+        _k, _, _v = _line.partition("=")
+        _k = _k.strip(); _v = _v.strip()
+        if _k and _k not in os.environ:
+            os.environ[_k] = _v
+
 OUTPUT_DIR = ROOT / "output"
 
 CHARS_PER_LINE = int(os.environ.get("SUB_CHARS_PER_LINE", "20"))
@@ -105,8 +118,3 @@ def main():
     srt_text = "\n".join(srt_lines)
     out = OUTPUT_DIR / f"{tid}_subtitle.srt"
     out.write_text(srt_text, encoding="utf-8")
-    print(f"[gen_subtitle] wrote {out} ({len(srt_text)//1024}KB)")
-
-
-if __name__ == "__main__":
-    main()

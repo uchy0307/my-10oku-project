@@ -1,6 +1,8 @@
 """step3_images_imagen.py
 Robust image generation: Gemini Imagen / Gemini 2.0 image gen with fallback chain.
-Aspect-preserve post-processing: scale image to 1280x720 with black bar padding (NO STRETCH).
+- Pollinations / Stability 系は使用禁止（うっちー仕様）。
+- Aspect-preserve post-processing: scale image to TARGET_W x TARGET_H with black bar padding (NO STRETCH).
+- I/O は既存 step3_images.py と互換: output/<id>_img_NN_NN.jpg + <id>_images.json
 """
 import os, sys, json, time, base64
 from pathlib import Path
@@ -13,6 +15,9 @@ IMG_PER_CHAPTER = int(os.environ.get("IMG_PER_CHAPTER", "4"))
 TARGET_W = int(os.environ.get("VIDEO_W", "1280"))
 TARGET_H = int(os.environ.get("VIDEO_H", "720"))
 
+# Model override env (优先 single-model). Fallback chain below if env not set.
+GEMINI_IMG_MODEL = os.environ.get("GEMINI_IMG_MODEL", "")
+
 CANDIDATE_MODELS = [
     "imagen-4.0-fast-generate-001",
     "imagen-4.0-generate-001",
@@ -23,6 +28,8 @@ CANDIDATE_MODELS = [
     "gemini-2.5-flash-image",
     "gemini-2.5-flash-image-preview",
 ]
+if GEMINI_IMG_MODEL and GEMINI_IMG_MODEL not in CANDIDATE_MODELS:
+    CANDIDATE_MODELS.insert(0, GEMINI_IMG_MODEL)
 
 _working_model = None
 _listed = False
@@ -159,6 +166,8 @@ def make_prompt(ct, cb, vt):
         f"Adult psychology theme, suggestive but tasteful, no nudity, no minors. "
         f"Cinematic dim ambient lighting, modern japanese urban night, soft bokeh."
     )
+# 後方互換のため call_imagen のままも公開
+call_imagen = call_image_gen
 
 
 def main():

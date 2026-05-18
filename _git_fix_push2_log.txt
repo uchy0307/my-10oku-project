@@ -1,0 +1,177 @@
+Saved working directory and index state On main: auto-stash-fix2
+warning: in the working copy of 'GEMINI_HANDOFF_2026-05-13.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'HANDOFF_TO_CLAUDE_CHAT_2026-05-14.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'HANDOFF_TO_GEMINI_2026-05-14.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_check_remote_queue.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_check_remote_queue_log.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_check_run.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_check_run_log.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_commit_push_head.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_commit_push_log.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_commit_push_manual.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_copy_codes_and_push.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_copy_codes_head.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_copy_codes_log.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_diag_remote.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_fetch_run_logs.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_fetch_run_logs_log.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_git_fix_push.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_git_fix_push2.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_git_push_night.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_git_push_py.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_gpv2_head.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_gpv2_log.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_kill_python.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_local_backup/package.json.local', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_local_backup/queue.json.local', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_local_backup/sync-drafts.mjs.local', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_monitor_otona_day.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_push_2x_playlist.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_push_and_rerun.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_push_api_sniff.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_push_auto_topics.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_push_brace_fix.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_push_diag.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_push_dump.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_push_full_v2.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_push_gemini_retry.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_push_google_tts.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_push_long_script.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_push_note_auto_NOW.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_push_note_auto_NOW_v2.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_push_note_head.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_push_note_head2.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_push_note_log.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_push_note_log2.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_push_otona_day_NOW.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_push_otona_day_head.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_push_otona_day_log.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_push_paginate.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_push_rebase.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_push_three_fixes.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_push_thumb.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_push_url_fix.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_push_youtube_fixes.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_reset_log.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_reset_to_origin.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_run_fix_push.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_run_fix_push2.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_run_git_py.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_set_secret.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_set_secret2.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_set_secret_log.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_set_secret_log2.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_test_run.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_trigger_otona_day.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_trigger_workflow.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_trigger_workflow_log.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_upload_attachments.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'new-youtube-local/_find_python.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'new-youtube-local/_find_styleid.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'new-youtube-local/_fix_pillow_and_compile.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'new-youtube-local/_hellotest.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'new-youtube-local/_install_python2.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'new-youtube-local/_post_thumb_py9D94NG_Ls.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'new-youtube-local/_redo_step4.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'new-youtube-local/_register_task.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'new-youtube-local/_run_pipeline.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'new-youtube-local/_run_pipeline_night.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'new-youtube-local/_run_test_direct.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'new-youtube-local/_setup_and_test.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'new-youtube-local/scripts/step3_images.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'new-youtube-local/scripts/step3b_thumbnail.py.tmp', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'new-youtube-local/scripts/step4_compile.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'new-youtube-local/scripts/test_overwrite.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'note-auto/auto-capture.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'note-auto/check_remote_queue.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'note-auto/check_run.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'note-auto/fetch_run_logs.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'note-auto/post.mjs.broken_229lines_20260517_144742', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'note-auto/refresh-note-secret.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'note-auto/set_secret.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'note-auto/set_secret_v2.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'note-auto/trigger_workflow.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'note-auto/upload-attachments.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'toi-suite-access-codes.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'youtube/scripts/generate_images.mjs.new', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'youtube/scripts/generate_script.mjs.new', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'youtube/scripts/subtitle_timings.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'youtube/scripts/verify_subtitles.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'youtube/scripts/verify_subtitles.test.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'youtube/scripts/verify_topic_match.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'youtube/scripts/verify_topic_match.test.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'youtube/scripts/voice_timings.test.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '.github/workflows/youtube_auto.yml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'new-youtube-local/scripts/step3_images_imagen.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'new-youtube-local/scripts/step5_upload.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'youtube/scripts/compile_video.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'youtube/scripts/generate_script.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'youtube/scripts/generate_voice.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: failed to remove _run_fix_push2_stderr.txt: Invalid argument
+warning: failed to remove _run_fix_push2_stdout.txt: Invalid argument
+
+rc=1
+
+--- fetch ---
+$ git fetch origin main
+From https://github.com/uchy0307/my-10oku-project
+ * branch            main       -> FETCH_HEAD
+
+rc=0
+
+--- rebase ---
+$ git rebase origin/main
+error: cannot rebase: You have unstaged changes.
+error: Please commit or stash them.
+
+rc=1
+
+--- rebase abort ---
+$ git rebase --abort
+fatal: no rebase in progress
+
+rc=128
+
+--- merge ---
+$ git merge origin/main --no-edit
+warning: in the working copy of '.github/workflows/youtube_auto.yml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'new-youtube-local/scripts/step3_images_imagen.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'new-youtube-local/scripts/step5_upload.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'youtube/scripts/compile_video.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'youtube/scripts/generate_script.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'youtube/scripts/generate_voice.mjs', LF will be replaced by CRLF the next time Git touches it
+error: Your local changes to the following files would be overwritten by merge:
+	.github/workflows/youtube_auto.yml
+	new-youtube-local/scripts/step3_images_imagen.py
+	new-youtube-local/scripts/step5_upload.py
+	youtube/scripts/compile_video.mjs
+	youtube/scripts/generate_script.mjs
+	youtube/scripts/generate_voice.mjs
+Please commit your changes or stash them before you merge.
+Aborting
+Merge with strategy ort failed.
+
+rc=2
+
+--- push ---
+$ git push origin main
+TIMEOUT after 120s: Command '['git', 'push', 'origin', 'main']' timed out after 120 seconds
+rc=-1
+
+--- stash pop ---
+$ git stash pop
+.github/workflows/youtube_auto.yml: needs merge
+new-youtube-local/scripts/step3_images_imagen.py: needs merge
+youtube/scripts/compile_video.mjs: needs merge
+youtube/scripts/generate_script.mjs: needs merge
+youtube/scripts/generate_voice.mjs: needs merge
+The stash entry is kept in case you need it again.
+error: could not write index
+
+rc=1
+
+--- head ---
+$ git rev-parse HEAD
+dc087477d7d49c4b97a72830dd6e84f60013d52d
+
+rc=0

@@ -1,12 +1,15 @@
 // youtube/scripts/generate_voice.mjs
-// ElevenLabs APIで台本テキストからナレーション音声を生成
-// input: youtube/output/<id>_script.txt（state.json.currentTopic.id から特定）
-// output: youtube/output/<id>_voice.mp3
+// ElevenLabs / Google TTS API で台本テキストからナレーション音声を生成。
+// + Phase C: 各 chunk を ffprobe で実測 → ${id}_voice_timings.json を出力。
+//   compile_video.mjs はこれを使って subtitle cue を実時刻配置する（均一CPS廃止）。
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import os from 'node:os';
+import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import fetch from 'node-fetch';
+import { chunkTextByBytes } from './subtitle_timings.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,8 +18,6 @@ const OUTPUT_DIR = path.join(ROOT, 'output');
 const STATE_FILE = path.join(OUTPUT_DIR, 'state.json');
 
 // ─── 主TTS: Google Cloud Text-to-Speech ─────────────
-// Google Cloud Free Tierが100万字/月まで無料。ElevenLabsはGitHub Actions IPを
-// VPN扱いするためFree Tier無効化される問題を回避。
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
 const GOOGLE_TTS_VOICE = process.env.GOOGLE_TTS_VOICE || 'ja-JP-Neural2-B'; // 女性・落ち着いた声（30代）
 const GOOGLE_TTS_SPEAKING_RATE = parseFloat(process.env.GOOGLE_TTS_SPEAKING_RATE || '0.95');
@@ -29,26 +30,17 @@ const ELEVENLABS_MODEL = process.env.ELEVENLABS_MODEL || 'eleven_multilingual_v2
 const USE_ELEVENLABS = process.env.USE_ELEVENLABS === 'true';
 
 // 台本から読み上げ不要な装飾（マークダウン・ト書き）を全部剥がして純粋な日本語に
-function stripVisualDirectives(text) {
+export function stripVisualDirectives(text) {
   let t = text;
-  // 1. ト書き・舞台指示 [VISUAL: ...] [BGM: ...] [SE: ...] [...] 全部消す
   t = t.replace(/\[[^\]\n]*\]/g, '');
-  // 2. マークダウン見出し `## タイトル` 行ごと削除（章番号は別途残したいので注意）
   t = t.replace(/^#{1,6}\s.*$/gm, '');
-  // 3. 太字・斜体マーカー **text** *text* _text_ を中身だけ残す
   t = t.replace(/\*\*\*?([^*]+)\*\*\*?/g, '$1');
   t = t.replace(/\*([^*]+)\*/g, '$1');
   t = t.replace(/_([^_]+)_/g, '$1');
-  // 4. 残ったアスタリスク・アンダースコア単独を消す
   t = t.replace(/[*_]+/g, '');
-  // 5. ハッシュタグ `#日本史` を読み上げない
   t = t.replace(/#[^\s#]+/g, '');
-  // 6. 「ナレーション:」「ナレーター:」「BGM:」「SE:」「効果音:」等のラベル削除（行頭近辺）
   t = t.replace(/^\s*(ナレーション|ナレーター|BGM|SE|効果音|台本|タイトル|オープニング|エンディング|エピローグ|プロローグ|テロップ|字幕)\s*[:：]\s*/gm, '');
-  // 7. URL や https? を読み上げない
   t = t.replace(/https?:\/\/\S+/g, '');
-  // 8. バックティック・カギカッコ外のメタ括弧 (例: 「※注」) は残してOK。
-  // 9. 連続改行整理
   t = t.replace(/\n{3,}/g, '\n\n');
   return t.trim();
 }
@@ -58,90 +50,96 @@ async function loadState() {
   return JSON.parse(raw);
 }
 
-/** Google Cloud TTS: 5000バイト/リクエスト制限があるので分割合成→結合 */
-async function callGoogleTTS(text) {
-  if (!GOOGLE_API_KEY) {
-    throw new Error('GOOGLE_API_KEY (or GEMINI_API_KEY) が未設定');
-  }
-  // 句点 or 改行で分割し、約4000バイト以下のチャンクにまとめる
-  const sentences = text.split(/(?<=[。\n！？])/);
-  const chunks = [];
-  let cur = '';
-  for (const s of sentences) {
-    const tentative = cur + s;
-    if (Buffer.byteLength(tentative, 'utf8') > 4500) {
-      if (cur) chunks.push(cur);
-      cur = s;
-    } else {
-      cur = tentative;
-    }
-  }
-  if (cur) chunks.push(cur);
-  console.log(`[generate_voice] Google TTS: ${chunks.length} chunks`);
+// ──── ffprobe で MP3 buffer の duration を実測 (Phase C) ────
+export function probeDurationFromBuffer(buf) {
+  return new Promise((resolve, reject) => {
+    const tmpPath = path.join(os.tmpdir(), `vc_${process.pid}_${Date.now()}_${Math.random().toString(36).slice(2)}.mp3`);
+    fs.writeFile(tmpPath, buf).then(() => {
+      const proc = spawn('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', tmpPath]);
+      let out = '';
+      proc.stdout.on('data', d => { out += d.toString(); });
+      proc.on('error', async (e) => { await fs.unlink(tmpPath).catch(() => {}); reject(e); });
+      proc.on('close', async (code) => {
+        await fs.unlink(tmpPath).catch(() => {});
+        if (code === 0) {
+          const sec = parseFloat(out.trim());
+          if (isFinite(sec)) resolve(sec);
+          else reject(new Error(`ffprobe returned non-finite: ${out}`));
+        } else reject(new Error(`ffprobe exited ${code}`));
+      });
+    }).catch(reject);
+  });
+}
 
+// ──── Google Cloud TTS 1 chunk 合成 ────
+async function callGoogleTTSChunk(text) {
+  if (!GOOGLE_API_KEY) throw new Error('GOOGLE_API_KEY (or GEMINI_API_KEY) が未設定');
   const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${GOOGLE_API_KEY}`;
-  const audioBufs = [];
-  for (let i = 0; i < chunks.length; i++) {
-    const chunk = chunks[i];
-    const body = {
-      input: { text: chunk },
-      voice: { languageCode: 'ja-JP', name: GOOGLE_TTS_VOICE },
-      audioConfig: {
-        audioEncoding: 'MP3',
-        speakingRate: GOOGLE_TTS_SPEAKING_RATE,
-        pitch: GOOGLE_TTS_PITCH,
-      },
-    };
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`Google TTS API error ${res.status}: ${errText}`);
-    }
-    const json = await res.json();
-    if (!json.audioContent) {
-      throw new Error(`Google TTS returned no audioContent for chunk ${i + 1}`);
-    }
-    audioBufs.push(Buffer.from(json.audioContent, 'base64'));
-    console.log(`[generate_voice]   chunk ${i + 1}/${chunks.length}: ${audioBufs[i].length} bytes`);
+  const body = {
+    input: { text },
+    voice: { languageCode: 'ja-JP', name: GOOGLE_TTS_VOICE },
+    audioConfig: { audioEncoding: 'MP3', speakingRate: GOOGLE_TTS_SPEAKING_RATE, pitch: GOOGLE_TTS_PITCH },
+  };
+  const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Google TTS API error ${res.status}: ${errText}`);
   }
-  return Buffer.concat(audioBufs);
+  const json = await res.json();
+  if (!json.audioContent) throw new Error('Google TTS returned no audioContent');
+  return Buffer.from(json.audioContent, 'base64');
+}
+
+// ──── Google TTS 全体: chunk 化 → 各 chunk 合成 → ffprobe で duration 実測 ────
+async function callGoogleTTS(text) {
+  const chunks = chunkTextByBytes(text, 4500);
+  console.log(`[generate_voice] Google TTS: ${chunks.length} chunks`);
+  const audioBufs = [];
+  const timings = [];
+  let cursorSec = 0;
+  for (let i = 0; i < chunks.length; i++) {
+    const buf = await callGoogleTTSChunk(chunks[i]);
+    const dur = await probeDurationFromBuffer(buf);
+    timings.push({
+      index: i,
+      text: chunks[i],
+      byteLength: Buffer.byteLength(chunks[i], 'utf8'),
+      audioBytes: buf.length,
+      durationSec: dur,
+      startSec: cursorSec,
+      endSec: cursorSec + dur,
+    });
+    cursorSec += dur;
+    audioBufs.push(buf);
+    console.log(`[generate_voice]   chunk ${i+1}/${chunks.length}: ${buf.length} bytes, ${dur.toFixed(2)}s (total=${cursorSec.toFixed(2)}s)`);
+  }
+  return { audio: Buffer.concat(audioBufs), timings };
 }
 
 async function callElevenLabs(text) {
   if (!ELEVENLABS_API_KEY || !ELEVENLABS_VOICE_ID) {
     console.warn('[generate_voice] ElevenLabs credentials not set — writing stub mp3 placeholder.');
-    return Buffer.from('STUB_AUDIO_PLACEHOLDER');
+    const stub = Buffer.from('STUB_AUDIO_PLACEHOLDER');
+    return { audio: stub, timings: [{ index: 0, text, byteLength: Buffer.byteLength(text, 'utf8'), audioBytes: stub.length, durationSec: 0, startSec: 0, endSec: 0 }] };
   }
   const url = `https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_ID}`;
   const body = {
     text,
     model_id: ELEVENLABS_MODEL,
-    voice_settings: {
-      stability: 0.55,
-      similarity_boost: 0.75,
-      style: 0.35,
-      use_speaker_boost: true,
-    },
+    voice_settings: { stability: 0.55, similarity_boost: 0.75, style: 0.35, use_speaker_boost: true },
   };
   const res = await fetch(url, {
     method: 'POST',
-    headers: {
-      'xi-api-key': ELEVENLABS_API_KEY,
-      'Content-Type': 'application/json',
-      'Accept': 'audio/mpeg',
-    },
+    headers: { 'xi-api-key': ELEVENLABS_API_KEY, 'Content-Type': 'application/json', 'Accept': 'audio/mpeg' },
     body: JSON.stringify(body),
   });
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`ElevenLabs API error ${res.status}: ${errText}`);
-  }
+  if (!res.ok) throw new Error(`ElevenLabs API error ${res.status}: ${await res.text()}`);
   const arrayBuf = await res.arrayBuffer();
-  return Buffer.from(arrayBuf);
+  const buf = Buffer.from(arrayBuf);
+  let dur = 0;
+  try { dur = await probeDurationFromBuffer(buf); }
+  catch (e) { console.warn(`[generate_voice] ffprobe on ElevenLabs audio failed: ${e.message}`); }
+  return { audio: buf, timings: [{ index: 0, text, byteLength: Buffer.byteLength(text, 'utf8'), audioBytes: buf.length, durationSec: dur, startSec: 0, endSec: dur }] };
 }
 
 async function synthesize(text) {
@@ -163,6 +161,7 @@ async function main() {
 
   const scriptPath = path.join(OUTPUT_DIR, `${topic.id}_script.txt`);
   const voicePath = path.join(OUTPUT_DIR, `${topic.id}_voice.mp3`);
+  const timingsPath = path.join(OUTPUT_DIR, `${topic.id}_voice_timings.json`);
 
   const scriptRaw = await fs.readFile(scriptPath, 'utf-8');
   const cleanText = stripVisualDirectives(scriptRaw);
@@ -170,16 +169,25 @@ async function main() {
   console.log(`[generate_voice] Synthesizing voice for [${topic.id}] ${topic.title}`);
   console.log(`[generate_voice] Text length: ${cleanText.length} chars`);
 
-  const audio = await synthesize(cleanText);
+  const { audio, timings } = await synthesize(cleanText);
   await fs.writeFile(voicePath, audio);
+  await fs.writeFile(timingsPath, JSON.stringify(timings, null, 2), 'utf-8');
+  const totalSec = timings.length ? timings[timings.length - 1].endSec : 0;
   console.log(`[generate_voice] Voice written: ${voicePath}`);
+  console.log(`[generate_voice] Timings written: ${timingsPath} (${timings.length} chunks, total ${totalSec.toFixed(2)}s)`);
 
   state.lastVoicePath = voicePath;
   state.lastVoiceAt = new Date().toISOString();
+  state.lastVoiceTimingsPath = timingsPath;
+  state.lastVoiceTotalSec = totalSec;
   await fs.writeFile(STATE_FILE, JSON.stringify(state, null, 2), 'utf-8');
 }
 
-main().catch(err => {
-  console.error('[generate_voice] FAILED:', err);
-  process.exit(1);
-});
+const isMain = import.meta.url === `file://${process.argv[1]}` ||
+               import.meta.url.endsWith(path.basename(process.argv[1] || ''));
+if (isMain) {
+  main().catch(err => {
+    console.error('[generate_voice] FAILED:', err);
+    process.exit(1);
+  });
+}

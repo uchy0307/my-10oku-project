@@ -1,6 +1,7 @@
 // youtube/scripts/compile_video.mjs
 // 動画コンパイル: 章ごとの画像切替 + 字幕焼き込み + 音声 → mp4 (2-pass)
 // + サムネ: Wikipedia人物写真 + 黄色和紙風背景 + 赤＋黄縁太字タイトル + 動画長pill
+// + Phase C: ${id}_voice_timings.json があれば実音声 duration ベースで cue 配置（uniform CPS 廃止）
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -8,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import sharp from 'sharp';
 import { fetchWikiImage, buildCandidateQueries } from './fetch_portrait.mjs';
+import { buildSegmentsFromTimings } from './subtitle_timings.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -60,7 +62,8 @@ function splitToSentences(text, opts = {}) {
   return sentences;
 }
 
-function buildSubtitleSegments(sentences, totalSec) {
+// ─── Legacy: voice_timings 不在時の uniform CPS fallback ───
+function buildSubtitleSegmentsUniform(sentences, totalSec) {
   const totalChars = sentences.reduce((s, x) => s + x.length, 0) || 1;
   const cps = totalChars / totalSec;
   let cursor = 0;
@@ -133,10 +136,9 @@ async function buildImageConcatList(topicId, imagePaths, totalSec) {
 async function renderThumb(topic, totalSec, outPath, portraitBuffer) {
   const W = 1280;
   const H = 720;
-  const LEFT_W = 576; // 45%
+  const LEFT_W = 576;
 
   const rawTitle = (topic.title || '').replace(/^[【「『][^】」』]*[】」』]\s*/g, '').trim();
-  // 主要部分: 半角・全角スペース/中黒/カンマで分割した先頭
   const main = rawTitle.split(/[\s　,、・「」『』]/)[0] || rawTitle || '日本史';
   const len = main.length;
   const mid = Math.ceil(len / 2);
@@ -144,7 +146,6 @@ async function renderThumb(topic, totalSec, outPath, portraitBuffer) {
   const line2 = main.slice(mid);
   const maxLine = Math.max(line1.length, line2.length || 0);
 
-  // フォントサイズ自動調整。利用幅 1280-576-80 = 624px
   let fontSize = 300;
   if (maxLine === 2) fontSize = 300;
   else if (maxLine === 3) fontSize = 220;
@@ -158,7 +159,6 @@ async function renderThumb(topic, totalSec, outPath, portraitBuffer) {
   const ds = Math.floor(totalSec % 60).toString().padStart(2, '0');
   const durTxt = `${dm}:${ds}`;
 
-  // 背景SVG: 黄色和紙テクスチャ
   const bgSvg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
   <defs>
@@ -177,7 +177,6 @@ async function renderThumb(topic, totalSec, outPath, portraitBuffer) {
   <rect width="${W}" height="${H}" fill="url(#paper)" opacity="0.6"/>
 </svg>`;
 
-  // テキスト+pill SVG（左肖像領域は除外）
   const textSvg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
   <text x="${textCx}" y="${line2 ? '32%' : '50%'}" text-anchor="middle" dominant-baseline="middle"
@@ -304,11 +303,13 @@ async function main() {
 
   const scriptPath = path.join(OUTPUT_DIR, `${topic.id}_script.txt`);
   const voicePath = path.join(OUTPUT_DIR, `${topic.id}_voice.mp3`);
+  const timingsPath = path.join(OUTPUT_DIR, `${topic.id}_voice_timings.json`);
   const thumbPath = path.join(OUTPUT_DIR, `${topic.id}_thumb.png`);
   const videoPath = path.join(OUTPUT_DIR, `${topic.id}_video.mp4`);
   const silentPath = path.join(OUTPUT_DIR, `${topic.id}_silent.mp4`);
   const metaPath = path.join(OUTPUT_DIR, `${topic.id}_meta.json`);
   const assPath = path.join(OUTPUT_DIR, `${topic.id}_subs.ass`);
+  const srtPath = path.join(OUTPUT_DIR, `${topic.id}_subtitle.srt`);
 
   if (!(await fileExists(scriptPath))) throw new Error(`Script missing: ${scriptPath}`);
   if (!(await fileExists(voicePath))) throw new Error(`Voice missing: ${voicePath}`);
@@ -325,11 +326,35 @@ async function main() {
 
   const scriptText = await fs.readFile(scriptPath, 'utf-8');
   const cleanText = cleanScriptForSubs(scriptText);
-  const sentences = splitToSentences(cleanText, { tight: REBUILD_SUBTITLE });
-  const segments = buildSubtitleSegments(sentences, totalSec);
+
+  // ─── Phase C: voice_timings.json があれば実音声 duration ベースで cue 配置 ───
+  let segments = null;
+  let timings = null;
+  if (await fileExists(timingsPath)) {
+    try {
+      const raw = await fs.readFile(timingsPath, 'utf-8');
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        timings = parsed;
+      }
+    } catch (e) {
+      console.warn(`[compile_video] failed to parse ${timingsPath}: ${e.message}`);
+    }
+  }
+  if (timings) {
+    console.log(`[compile_video] timings.json detected: ${timings.length} chunks, building segments from real durations`);
+    segments = buildSegmentsFromTimings(timings, { tight: REBUILD_SUBTITLE });
+  } else {
+    console.log(`[compile_video] no timings.json — falling back to uniform CPS estimation`);
+    const sentences = splitToSentences(cleanText, { tight: REBUILD_SUBTITLE });
+    segments = (typeof buildSubtitleSegmentsUniform === 'function')
+      ? buildSubtitleSegmentsUniform(sentences, totalSec)
+      : buildSubtitleSegments(sentences, totalSec);
+  }
+
   const assContent = buildAss(segments);
   await fs.writeFile(assPath, assContent, 'utf-8');
-  console.log(`[compile_video] subs: ${segments.length} cues -> ${assPath}${REBUILD_SUBTITLE ? ' (tight)' : ''}`);
+  console.log(`[compile_video] subs: ${segments.length} cues -> ${assPath}${REBUILD_SUBTITLE ? ' (tight)' : ''}${timings ? ' (timings)' : ' (uniform)'}`);
 
   // 補助: verify_subtitles からも参照しやすい .srt スナップショット
   const srtPath = path.join(OUTPUT_DIR, `${topic.id}_subtitle.srt`);
@@ -356,7 +381,6 @@ async function main() {
   await renderThumb(topic, totalSec, thumbPath, portraitBuf);
 
   // ── 2パス ffmpeg ──
-  // Pass1: 画像concat + 字幕焼き込み → 無音動画
   if (imagePaths.length >= 1) {
     const listPath = await buildImageConcatList(topic.id, imagePaths, totalSec);
     const pass1Args = [
@@ -373,7 +397,6 @@ async function main() {
     console.log(`[compile_video] PASS1 silent video: ${silentPath}`);
     await runFfmpeg(pass1Args);
   } else {
-    // 画像なしフォールバック: 黒背景＋字幕
     const pass1Args = [
       '-y',
       '-f', 'lavfi', '-t', String(totalSec), '-i', 'color=c=#0a0a0a:s=1280x720:r=30',
@@ -388,7 +411,6 @@ async function main() {
     await runFfmpeg(pass1Args);
   }
 
-  // Pass2: 無音動画 + 音声 mux (-c:v copy で爆速)
   const pass2Args = [
     '-y',
     '-i', silentPath,
@@ -401,14 +423,13 @@ async function main() {
   console.log(`[compile_video] PASS2 mux audio: ${videoPath}`);
   await runFfmpeg(pass2Args);
 
-  // silent.mp4 は中間生成物として残しておく（artifactsからdebug可能）
-
   state.lastMetaPath = metaPath;
   state.lastThumbPath = thumbPath;
   state.lastVideoPath = videoPath;
   state.lastAssPath = assPath;
   state.lastSrtPath = srtPath;
   state.lastSubsCount = segments.length;
+  state.lastSubsSource = timings ? 'voice_timings' : 'uniform_cps';
   state.lastCompileAt = new Date().toISOString();
   state.videoStatus = 'ready';
   await saveState(state);

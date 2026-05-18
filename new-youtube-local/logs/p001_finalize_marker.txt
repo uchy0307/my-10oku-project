@@ -1,0 +1,2 @@
+START 
+END thumb=1 compile=1 upload=1 verify=0 

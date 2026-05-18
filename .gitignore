@@ -13,3 +13,4 @@ youtube/output/*
 note-auto/storageState.json
 note-auto/client_secret.json
 note-auto/youtube_tokens.json
+new-youtube-local/output/p001_video.mp4 

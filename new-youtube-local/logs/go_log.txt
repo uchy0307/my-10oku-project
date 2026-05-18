@@ -1,0 +1,46 @@
+[run_pipeline_night] start at 2026-05-18 21:44:23
+[run_pipeline_night] test_mode=False skip=[0, 2]
+[run_pipeline_night] step2 skipped → VOICEVOX check bypassed
+[run_pipeline_night] SKIP step0 Gemini script
+
+=== [night-step1] Load & validate ===
+C:\Users\user\AppData\Local\Programs\Python\Python312\python.exe C:\Users\user\Documents\10oku-project\new-youtube-local\scripts\step1_load.py
+[step1] p001: 5 chapters, total 10462 chars
+[step1] wrote C:\Users\user\Documents\10oku-project\new-youtube-local\output\current.json
+
+[run_pipeline_night] SKIP step2 VOICEVOX synth (冥鳴ひまり)
+
+=== [night-step3] Pixabay video clips ===
+C:\Users\user\AppData\Local\Programs\Python\Python312\python.exe C:\Users\user\Documents\10oku-project\new-youtube-local\scripts\step3_video_clips.py
+e%3AMonster-with-melting-candle.webm
+[step3_video] transcode _raw_p001_clip_01_02.webm -> p001_clip_01_02.mp4
+[step3_video] dl OK 253MB https://commons.wikimedia.org/wiki/File%3AHeavy%20Rains%20Cause%20Flooding%20in%20New%20York%20City%20%28NESDIS%202023-10-06%202023%2010%2006%20Heavy%20Rains%20Cause%20Flooding%20in%20NY%20NO%20TEXT%29.webm
+[step3_video] transcode _raw_p001_clip_02_00.webm -> p001_clip_02_00.mp4
+[step3_video] dl OK 440MB https://commons.wikimedia.org/wiki/File%3AViolent%20Storms%20Tear%20Through%20the%20South%20%28NESDIS%202023-03-30%202023%2003%2003-%20ViolentStormsTearThroughSouth%20UHD%20TEXT%29.webm
+[step3_video] transcode _raw_p001_clip_02_01.webm -> p001_clip_02_01.mp4
+[step3_video] dl OK 52MB https://commons.wikimedia.org/wiki/File%3AFahrt%20durch%20den%20Tomitztunnel%201.webm
+[step3_video] transcode _raw_p001_clip_02_02.webm -> p001_clip_02_02.mp4
+[step3_video] dl OK 1MB https://commons.wikimedia.org/wiki/File%3ANeptune%27s%20Dynamic%20Environment.webm
+[step3_video] transcode _raw_p001_clip_03_00.webm -> p001_clip_03_00.mp4
+[step3_video] dl OK 27MB https://commons.wikimedia.org/wiki/File%3AMoon%E2%80%99s%20Shadow%20Followed%20by%20Severe%20Weather%20in%20Texas%20%28CIRA%202024-04-09%20-%20nolabels%20portrait%29.webm
+[step3_video] transcode _raw_p001_clip_03_01.webm -> p001_clip_03_01.mp4
+[step3_video] dl OK 2MB https://commons.wikimedia.org/wiki/File%3AMoon%27s%20shadow%20passes%20over%20pair%20of%20von%20Karman%20vortex%20streets%20%28CIRA%202020-12-15%29.webm
+[step3_video] transcode _raw_p001_clip_03_02.webm -> p001_clip_03_02.mp4
+[step3_video] dl OK 4MB https://commons.wikimedia.org/wiki/File%3ASunrise%20to%20sunset%20view%20of%20an%20annular%20Hurricane%20Linda%20%28CIRA%202021-08-16%29.webm
+[step3_video] transcode _raw_p001_clip_04_00.webm -> p001_clip_04_00.mp4
+[step3_video] dl OK 93MB https://commons.wikimedia.org/wiki/File%3AZeitraffer%20vom%20Sonnenuntergang%20%C3%BCber%20dem%20Meer%20%28Juli%202024%29.webm
+[step3_video] transcode _raw_p001_clip_04_01.webm -> p001_clip_04_01.mp4
+[step3_video] dl OK 7MB https://commons.wikimedia.org/wiki/File%3ASunset%20Convection%20Within%20Remnants%20of%20Jasper%20%28CIRA%202023-12-14%20-%20labels%29.webm
+[step3_video] transcode _raw_p001_clip_04_02.webm -> p001_clip_04_02.mp4
+[step3_video] dl OK 21MB https://commons.wikimedia.org/wiki/File%3ACandle%20light%20march%20organised%20in%20Mehsana%2C%20Gujarat%2C%20India%20in%20wake%20of%202019%20Pulwama%20Attack.ogv
+[step3_video] transcode _raw_p001_clip_05_00.ogv -> p001_clip_05_00.mp4
+[step3_video] dl OK 0MB https://commons.wikimedia.org/wiki/File%3ACandle%20and%20Match.ogv
+[step3_video] transcode _raw_p001_clip_05_01.ogv -> p001_clip_05_01.mp4
+[step3_video] dl OK 4MB https://commons.wikimedia.org/wiki/File%3APresident%20Kovind%20lights%20a%20candle%20to%20express%20solidarity%20with%20nation%20in%20fight%20against%20COVID-19.webm
+[step3_video] transcode _raw_p001_clip_05_02.webm -> p001_clip_05_02.mp4
+[step3_video] total 15 clips
+
+
+=== [night-step4] Gemini Imagen thumbnail ===
+C:\Users\user\AppData\Local\Programs\Python\Python312\python.exe C:\Users\user\Documents\10oku-project\new-youtube-local\scripts\step3b_thumbnail.py
+[run_pipeline_night] step4 FAILED rc=3221225477. see C:\Users\user\Documents\10oku-project\new-youtube-local\logs\night_step4_20260518_215508.log

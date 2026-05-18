@@ -1,0 +1,145 @@
+=== FIX PUSH 4 ===
+
+--- backup files ---
+saved new-youtube-local/scripts/step3b_thumbnail.py -> new-youtube-local__scripts__step3b_thumbnail.py
+saved new-youtube-local/scripts/step4_compile_night.py -> new-youtube-local__scripts__step4_compile_night.py
+saved new-youtube-local/scripts/step3_video_clips.py -> new-youtube-local__scripts__step3_video_clips.py
+saved new-youtube-local/scripts/step2_voice_voicevox.py -> new-youtube-local__scripts__step2_voice_voicevox.py
+saved new-youtube-local/scripts/gen_subtitle.py -> new-youtube-local__scripts__gen_subtitle.py
+saved new-youtube-local/scripts/set_thumb_for_video.py -> new-youtube-local__scripts__set_thumb_for_video.py
+saved new-youtube-local/run_pipeline_night.py -> new-youtube-local__run_pipeline_night.py
+miss: new-youtube-local/output/state.json
+saved new-youtube-local/topics.json -> new-youtube-local__topics.json
+saved new-youtube-local/_resume_from_thumb.bat -> new-youtube-local___resume_from_thumb.bat
+saved new-youtube-local/_go_night.bat -> new-youtube-local___go_night.bat
+saved new-youtube-local/_resume_night.bat -> new-youtube-local___resume_night.bat
+saved new-youtube-local/_register_task_night.bat -> new-youtube-local___register_task_night.bat
+saved new-youtube-local/_kill_pipeline.bat -> new-youtube-local___kill_pipeline.bat
+saved new-youtube-local/_go_p003_full.bat -> new-youtube-local___go_p003_full.bat
+saved new-youtube-local/.env.example -> new-youtube-local__.env.example
+
+--- fetch ---
+$ git fetch origin main
+From https://github.com/uchy0307/my-10oku-project
+ * branch            main       -> FETCH_HEAD
+
+rc=0
+
+--- reset hard ---
+$ git reset --hard origin/main
+HEAD is now at 4cd8447 Create otona_retro_thumbnail.yml
+Updating files:  51% (430/833)
+Updating files:  52% (434/833)
+Updating files:  53% (442/833)
+Updating files:  54% (450/833)
+Updating files:  55% (459/833)
+Updating files:  56% (467/833)
+Updating files:  57% (475/833)
+Updating files:  58% (484/833)
+Updating files:  59% (492/833)
+Updating files:  60% (500/833)
+Updating files:  61% (509/833)
+Updating files:  62% (517/833)
+Updating files:  63% (525/833)
+Updating files:  64% (534/833)
+Updating files:  65% (542/833)
+Updating files:  66% (550/833)
+Updating files:  67% (559/833)
+Updating files:  68% (567/833)
+Updating files:  69% (575/833)
+Updating files:  70% (584/833)
+Updating files:  71% (592/833)
+Updating files:  72% (600/833)
+Updating files:  73% (609/833)
+Updating files:  74% (617/833)
+Updating files:  75% (625/833)
+Updating files:  76% (634/833)
+Updating files:  77% (642/833)
+Updating files:  78% (650/833)
+Updating files:  79% (659/833)
+Updating files:  80% (667/833)
+Updating files:  81% (675/833)
+Updating files:  82% (684/833)
+Updating files:  83% (692/833)
+Updating files:  84% (700/833)
+Updating files:  85% (709/833)
+Updating files:  86% (717/833)
+Updating files:  87% (725/833)
+Updating files:  88% (734/833)
+Updating files:  89% (742/833)
+Updating files:  90% (750/833)
+Updating files:  91% (759/833)
+Updating files:  92% (767/833)
+Updating files:  93% (775/833)
+Updating files:  94% (784/833)
+Updating files:  95% (792/833)
+Updating files:  96% (800/833)
+Updating files:  97% (809/833)
+Updating files:  98% (817/833)
+Updating files:  99% (825/833)
+Updating files: 100% (833/833)
+Updating files: 100% (833/833), done.
+
+rc=0
+
+--- clean ---
+$ git clean -fd -e _backup_for_push -e _git_* -e _run_* -e _gpv* -e _kill_* -e _test_* -e _commit_push* -e _check_* -e _copy_* -e _diag_* -e _fetch_* -e _monitor_* -e _post_* -e _push_* -e _register_* -e _reset_* -e _setup_* -e _trigger_* -e _upload_* -e _set_* -e _install_* -e _python_path* -e _local_backup -e *.log -e *.txt -e GEMINI_HANDOFF* -e HANDOFF* -e new-youtube-local/output -e new-youtube-local/logs -e new-youtube-local/_* -e toi-suite-access-codes.json
+Removing new-youtube-local/scripts/__pycache__/
+
+rc=0
+
+--- restore files ---
+restored new-youtube-local/scripts/step3b_thumbnail.py
+restored new-youtube-local/scripts/step4_compile_night.py
+restored new-youtube-local/scripts/step3_video_clips.py
+restored new-youtube-local/scripts/step2_voice_voicevox.py
+restored new-youtube-local/scripts/gen_subtitle.py
+restored new-youtube-local/scripts/set_thumb_for_video.py
+restored new-youtube-local/run_pipeline_night.py
+restored new-youtube-local/topics.json
+restored new-youtube-local/_resume_from_thumb.bat
+restored new-youtube-local/_go_night.bat
+restored new-youtube-local/_resume_night.bat
+restored new-youtube-local/_register_task_night.bat
+restored new-youtube-local/_kill_pipeline.bat
+restored new-youtube-local/_go_p003_full.bat
+restored new-youtube-local/.env.example
+
+--- add preserved files ---
+$ git add new-youtube-local/scripts/step3b_thumbnail.py new-youtube-local/scripts/step4_compile_night.py new-youtube-local/scripts/step3_video_clips.py new-youtube-local/scripts/step2_voice_voicevox.py new-youtube-local/scripts/gen_subtitle.py new-youtube-local/scripts/set_thumb_for_video.py new-youtube-local/run_pipeline_night.py new-youtube-local/output/state.json new-youtube-local/topics.json new-youtube-local/_resume_from_thumb.bat new-youtube-local/_go_night.bat new-youtube-local/_resume_night.bat new-youtube-local/_register_task_night.bat new-youtube-local/_kill_pipeline.bat new-youtube-local/_go_p003_full.bat new-youtube-local/.env.example
+
+rc=0
+
+--- commit ---
+$ git commit -m feat(otona-night): VOICEVOX 冥鳴ひまり pipeline + step4 letterbox/14:30 cap + step3b Imagen fallback chain
+[main dc08747] feat(otona-night): VOICEVOX 冥鳴ひまり pipeline + step4 letterbox/14:30 cap + step3b Imagen fallback chain
+ 15 files changed, 1383 insertions(+), 167 deletions(-)
+ create mode 100644 new-youtube-local/.env.example
+ create mode 100644 new-youtube-local/_go_night.bat
+ create mode 100644 new-youtube-local/_go_p003_full.bat
+ create mode 100644 new-youtube-local/_kill_pipeline.bat
+ create mode 100644 new-youtube-local/_register_task_night.bat
+ create mode 100644 new-youtube-local/_resume_from_thumb.bat
+ create mode 100644 new-youtube-local/_resume_night.bat
+ create mode 100644 new-youtube-local/run_pipeline_night.py
+ create mode 100644 new-youtube-local/scripts/gen_subtitle.py
+ create mode 100644 new-youtube-local/scripts/set_thumb_for_video.py
+ create mode 100644 new-youtube-local/scripts/step2_voice_voicevox.py
+ create mode 100644 new-youtube-local/scripts/step3_video_clips.py
+ create mode 100644 new-youtube-local/scripts/step4_compile_night.py
+ create mode 100644 new-youtube-local/topics.json
+
+rc=0
+
+--- push ---
+$ git push origin main
+To https://github.com/uchy0307/my-10oku-project.git
+   4cd8447..dc08747  main -> main
+
+rc=0
+
+--- head ---
+$ git rev-parse HEAD
+dc087477d7d49c4b97a72830dd6e84f60013d52d
+
+rc=0

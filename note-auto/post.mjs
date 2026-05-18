@@ -1,6 +1,6 @@
 // note-auto/post.mjs
 // ───────────────────────────────────────────────────────────────
-// note.com 下書き編集型自動投稿（B案・新方針 / v7）
+// note.com 下書き編集型自動投稿（B案・新方針 / v8）
 //
 // 2026-05-16 v7 改修（実機UIフロー検証済み）:
 //   - /publish/ で 有料radio + 価格100入力（Playwright keyboard）
@@ -8,6 +8,14 @@
 //   - 「ラインをこの場所に変更」(🔑 H2 直前) ボタン click → 境界線移動
 //   - publish=true 時のみ「投稿する」ボタン click → 本番公開
 //   - publish=false (FORCE_PAID) 時はキャンセル→/edit/→下書き保存
+//
+// 2026-05-19 v8 改修（attached=0 silent fail 修正）:
+//   - attachFiles: 直接 input[type=file] への setInputFiles を PRIMARY パス化
+//     （plus menu selector ドリフトに耐性）
+//   - filechooser timeout 5s → 10s
+//   - 失敗時 [ATTACH-FAIL] console.error + queue.json に attach_error フィールド追加
+//   - NOTE_TEST_ATTACH_ONLY=true 環境変数で本文/価格/境界線/公開を skip し
+//     添付のみの dry-run を可能化（既公開記事の遡及添付・既存draftへの安全試験用）
 // ───────────────────────────────────────────────────────────────
 
 import { chromium } from 'playwright';
@@ -25,6 +33,7 @@ const ACCESS_CODES_PATH = join(__dirname, 'access_codes.json');
 const PRICE_YEN = 100;
 const URL_PATTERN = 'https://toi-suite.vercel.app/page/';
 const FORCE_PAID = process.env.NOTE_TEST_PAID === 'true';
+const ATTACH_ONLY = process.env.NOTE_TEST_ATTACH_ONLY === 'true';
 
 let ACCESS_CODES = {};
 try {
@@ -63,7 +72,7 @@ async function resolveBody(item) {
 
 async function resolveAttachments(id) {
   const dir = join(ATTACHMENTS_DIR, `app${id}`);
-  if (!existsSync(dir)) { console.warn(`[WARN] attach dir 不倨: ${dir}`); return []; }
+  if (!existsSync(dir)) { console.warn(`[WARN] attach dir 不在: ${dir}`); return []; }
   const entries = await readdir(dir);
   return entries.filter((f) => f.toLowerCase().endsWith('.docx')).map((f) => join(dir, f));
 }
@@ -73,8 +82,28 @@ const SELECTORS = {
   titleInput: 'textarea[placeholder*="タイトル"]',
   saveDraftButton: 'button:has-text("下書き保存")',
   cancelButton: 'button:has-text("キャンセル")',
-  plusMenuOpen: '[aria-label="メニューを開く"], [data-testid="plusMenu"], button[aria-label*="メニュー"], button[aria-label*="追加"]',
-  filePickerButton: 'button:has-text("ファイル"), [data-testid*="file"], button:has-text("File")',
+  // 2026-05 note.com UI: plus(＋) button selectors broadened. The editor renders a floating ＋
+  // beside the active block; aria-label/data-testid vary by build. We OR many candidates.
+  plusMenuOpen: [
+    '[aria-label="メニューを開く"]',
+    '[data-testid="plusMenu"]',
+    '[data-testid="block-add-button"]',
+    '[data-testid="addBlockMenu"]',
+    'button[aria-label*="メニュー"]',
+    'button[aria-label*="追加"]',
+    'button[aria-label*="ブロック"]',
+    'button[aria-label*="挿入"]',
+    'button[aria-label="その他"]',
+    'button[aria-label="ファイル"]',
+  ].join(', '),
+  filePickerButton: [
+    'button:has-text("ファイル")',
+    '[role="menuitem"]:has-text("ファイル")',
+    'li:has-text("ファイル") button',
+    '[data-testid*="file"]',
+    'button:has-text("File")',
+    'button:has-text("ドキュメント")',
+  ].join(', '),
   fileInput: 'input[type="file"]',
   paidConfigBtn: 'button:has-text("有料エリア設定")',
   publishNowBtn: 'button:has-text("投稿する")',
@@ -100,9 +129,26 @@ function parseStorageState() {
   return JSON.parse(raw);
 }
 
+/**
+ * Attach files to the active note editor.
+ *
+ * Strategy (priority order):
+ *   1) DIRECT input[type="file"] injection (preferred — bypasses UI menu entirely).
+ *      note.com keeps hidden <input type="file"> nodes in the editor DOM that
+ *      accept setInputFiles() even when the visible plus menu selector drifts.
+ *   2) Plus-menu fallback: open ＋ menu, click "ファイル", catch filechooser
+ *      event with 10s timeout (was 5s — too short for slow CI runners).
+ *
+ * Returns { attached: number, error: string | null }.
+ * On any partial/total failure logs [ATTACH-FAIL] with a reason so the cron run
+ * surfaces the problem instead of silently writing attached:0.
+ */
 async function attachFiles(page, filePaths) {
-  if (filePaths.length === 0) return 0;
+  if (filePaths.length === 0) return { attached: 0, error: null };
   let attached = 0;
+  let lastError = null;
+
+  // place caret at end of body so the upload anchors after content
   await page.evaluate(() => {
     const pm = document.querySelector('.ProseMirror');
     if (!pm) return;
@@ -115,35 +161,92 @@ async function attachFiles(page, filePaths) {
     sel.removeAllRanges();
     sel.addRange(range);
     last.scrollIntoView({ block: 'center' });
-  });
-  await sleep(500);
-  for (const fp of filePaths) {
+  }).catch(() => {});
+  await sleep(600);
+
+  const basename = (p) => p.split(/[\\/]/).pop();
+
+  for (let i = 0; i < filePaths.length; i++) {
+    const fp = filePaths[i];
+    let ok = false;
+    let reason = null;
+
+    // ─── Method A (PRIMARY): direct file-input injection ────────────────
     try {
-      const plus = page.locator(SELECTORS.plusMenuOpen).first();
-      if (!(await plus.count())) break;
-      await plus.click();
-      await sleep(800);
-      const fileBtn = page.locator(SELECTORS.filePickerButton).first();
-      if (!(await fileBtn.count())) {
-        await page.keyboard.press('Escape').catch(() => {});
-        continue;
+      const handles = await page.$$(SELECTORS.fileInput);
+      for (let k = 0; k < handles.length; k++) {
+        const h = handles[k];
+        try {
+          await h.setInputFiles(fp);
+          await sleep(4500); // wait for upload network round-trip
+          ok = true;
+          break;
+        } catch (e) {
+          reason = `direct[${k}]: ${e.message}`;
+        }
       }
-      const [fc] = await Promise.all([
-        page.waitForEvent('filechooser', { timeout: 5000 }).catch(() => null),
-        fileBtn.click(),
-      ]);
-      if (fc) await fc.setFiles(fp);
-      else {
-        const inp = page.locator(SELECTORS.fileInput).first();
-        if (await inp.count()) await inp.setInputFiles(fp);
-        else continue;
+      if (!handles.length) reason = 'no input[type=file] in DOM';
+    } catch (e) {
+      reason = `direct query: ${e.message}`;
+    }
+
+    // ─── Method B (FALLBACK): open ＋ menu, click "ファイル" ───────────
+    if (!ok) {
+      try {
+        const plus = page.locator(SELECTORS.plusMenuOpen).first();
+        if (await plus.count()) {
+          await plus.click({ timeout: 5000 }).catch(() => {});
+          await sleep(900);
+          const fileBtn = page.locator(SELECTORS.filePickerButton).first();
+          if (await fileBtn.count()) {
+            const [fc] = await Promise.all([
+              page.waitForEvent('filechooser', { timeout: 10000 }).catch((e) => { reason = `filechooser timeout: ${e.message}`; return null; }),
+              fileBtn.click().catch((e) => { reason = `file btn click: ${e.message}`; }),
+            ]);
+            if (fc) {
+              await fc.setFiles(fp);
+              await sleep(4500);
+              ok = true;
+            } else {
+              // After menu click some builds inject a fresh input[type=file];
+              // re-query and try once more.
+              const handles2 = await page.$$(SELECTORS.fileInput);
+              for (const h of handles2) {
+                try {
+                  await h.setInputFiles(fp);
+                  await sleep(4500);
+                  ok = true;
+                  break;
+                } catch (e) { reason = `post-menu input: ${e.message}`; }
+              }
+            }
+          } else {
+            reason = reason || 'file button not found in opened menu';
+          }
+        } else {
+          reason = reason || 'plus menu selector did not match any element';
+        }
+      } catch (e) {
+        reason = `menu fallback: ${e.message}`;
       }
-      await sleep(4000);
+      // close any leftover menu before next iteration
+      await page.keyboard.press('Escape').catch(() => {});
+      await sleep(300);
+    }
+
+    if (ok) {
       attached++;
-      console.log(`[INFO] 添付 ${attached}/${filePaths.length}`);
-    } catch (err) { console.warn(`[WARN] 添付:`, err.message); }
+      console.log(`[ATTACH-OK] ${attached}/${filePaths.length} ${basename(fp)}`);
+    } else {
+      lastError = reason || 'unknown';
+      console.error(`[ATTACH-FAIL] ${basename(fp)} reason=${lastError}`);
+    }
   }
-  return attached;
+
+  const err = attached < filePaths.length
+    ? `attached=${attached}/${filePaths.length} lastReason=${lastError || 'unknown'}`
+    : null;
+  return { attached, error: err };
 }
 
 /** /publish/ 経由で 有料設定+価格+境界線移動+(publish=true時のみ)投稿する */
@@ -260,74 +363,69 @@ async function editDraft(page, item) {
   if (!item.draftId) throw new Error(`item ${item.id} に draftId なし`);
   const resolvedBody = await resolveBody(item);
   const attachPaths = await resolveAttachments(item.id);
-  const runPaid = !!item.publish || FORCE_PAID;
-  console.log(`[INFO] id=${item.id} publish=${!!item.publish} FORCE_PAID=${FORCE_PAID} runPaid=${runPaid}`);
+  const runPaid = (!!item.publish || FORCE_PAID) && !ATTACH_ONLY;
+  console.log(`[INFO] id=${item.id} publish=${!!item.publish} FORCE_PAID=${FORCE_PAID} ATTACH_ONLY=${ATTACH_ONLY} runPaid=${runPaid}`);
 
   // Step 1: /edit/ で 本文置換 + 添付
   const draftUrl = `https://note.com/notes/${item.draftId}/edit`;
   await page.goto(draftUrl, { waitUntil: 'domcontentloaded' });
   await randDelay(3000, 5000);
 
-  if (item.title && item.title.trim()) {
-    try {
-      const titleEl = page.locator(SELECTORS.titleInput).first();
-      if (await titleEl.count()) {
-        await titleEl.click();
-        await randDelay(400, 900);
-        await page.keyboard.press('Control+A');
-        await page.keyboard.press('Delete');
-        await randDelay(200, 500);
-        for (const ch of item.title) await titleEl.type(ch, { delay: 40 + Math.floor(Math.random() * 80) });
-        await randDelay(800, 1500);
-      }
-    } catch (err) { console.warn('[WARN] title:', err.message); }
-  }
-
-  await page.waitForSelector(SELECTORS.bodyEditor, { timeout: 20000 });
-  const body = page.locator(SELECTORS.bodyEditor).first();
-  await body.click();
-  await randDelay(500, 1000);
-  await page.keyboard.press('Control+A');
-  await page.keyboard.press('Delete');
-  await randDelay(500, 1000);
-
-  const paragraphs = (resolvedBody || '').split('\n');
-  for (let i = 0; i < paragraphs.length; i++) {
-    const line = paragraphs[i];
-    if (line.length > 0) {
-      for (const ch of line) {
-        await body.type(ch, { delay: 25 + Math.floor(Math.random() * 60) });
-      }
+  // In ATTACH_ONLY mode skip title & body rewrite to avoid clobbering the
+  // existing draft content — we only want to verify the attach path.
+  if (!ATTACH_ONLY) {
+    if (item.title && item.title.trim()) {
+      try {
+        const titleEl = page.locator(SELECTORS.titleInput).first();
+        if (await titleEl.count()) {
+          await titleEl.click();
+          await randDelay(400, 900);
+          await page.keyboard.press('Control+A');
+          await page.keyboard.press('Delete');
+          await randDelay(200, 500);
+          for (const ch of item.title) await titleEl.type(ch, { delay: 40 + Math.floor(Math.random() * 80) });
+          await randDelay(800, 1500);
+        }
+      } catch (err) { console.warn('[WARN] title:', err.message); }
     }
-    if (i < paragraphs.length - 1) {
-      await page.keyboard.press('Enter');
-      await sleep(120 + Math.floor(Math.random() * 200));
-    }
-  }
-  await randDelay(2000, 4000);
 
-  // Step 2: 添付docx
-  let attachedCount = 0;
-  if (attachPaths.length > 0) attachedCount = await attachFiles(page, attachPaths);
-  // Retry until all attachments are uploaded (no abort, keep trying alternative paths).
-  if (attachPaths.length > 0 && attachedCount < attachPaths.length) {
-    const remaining = attachPaths.slice(attachedCount);
-    console.warn(`[ATTACH] 1回目失敗 ${attachedCount}/${attachPaths.length} → fileInput直挿入で残り${remaining.length}件を再試行`);
-    // Method 2: bypass plus menu, push files directly to any visible <input type="file">
-    try {
-      const fileInputs = await page.locator('input[type="file"]').elementHandles();
-      for (const fp of remaining) {
-        for (const fi of fileInputs) {
-          try {
-            await fi.setInputFiles(fp);
-            await sleep(2500);
-            attachedCount++;
-            break;
-          } catch (e) { /* try next input */ }
+    await page.waitForSelector(SELECTORS.bodyEditor, { timeout: 20000 });
+    const body = page.locator(SELECTORS.bodyEditor).first();
+    await body.click();
+    await randDelay(500, 1000);
+    await page.keyboard.press('Control+A');
+    await page.keyboard.press('Delete');
+    await randDelay(500, 1000);
+
+    const paragraphs = (resolvedBody || '').split('\n');
+    for (let i = 0; i < paragraphs.length; i++) {
+      const line = paragraphs[i];
+      if (line.length > 0) {
+        for (const ch of line) {
+          await body.type(ch, { delay: 25 + Math.floor(Math.random() * 60) });
         }
       }
-    } catch (e) { console.warn('[ATTACH] direct input method failed:', e.message); }
-    console.log(`[ATTACH] 最終 ${attachedCount}/${attachPaths.length}`);
+      if (i < paragraphs.length - 1) {
+        await page.keyboard.press('Enter');
+        await sleep(120 + Math.floor(Math.random() * 200));
+      }
+    }
+    await randDelay(2000, 4000);
+  } else {
+    // ATTACH_ONLY: just wait for editor mount so input[type=file] handles exist
+    await page.waitForSelector(SELECTORS.bodyEditor, { timeout: 20000 }).catch(() => {});
+    await randDelay(2000, 3500);
+  }
+
+  // Step 2: 添付docx — new attachFiles is self-sufficient (direct input primary + menu fallback)
+  let attachedCount = 0;
+  let attachError = null;
+  if (attachPaths.length > 0) {
+    const ar = await attachFiles(page, attachPaths);
+    attachedCount = ar.attached;
+    attachError = ar.error;
+    if (attachError) console.error(`[ATTACH-FAIL] id=${item.id} ${attachError}`);
+    else console.log(`[ATTACH-OK] id=${item.id} ${attachedCount}/${attachPaths.length}`);
   }
 
   // Step 3: 下書き保存（body+添付を確定）
@@ -337,14 +435,16 @@ async function editDraft(page, item) {
   } catch (err) { console.warn('[WARN] save draft:', err.message); }
 
   // Step 4: 有料化 + 境界線移動 + (publish=true時) 投稿する
+  // ATTACH_ONLY モードでは runPaid=false 強制でこのブロックは skip される
   let paidResult = { paidConfigured: false, boundaryRepositioned: false, published: false };
   if (runPaid) {
     paidResult = await configurePaidAndPublish(page, item.draftId, PRICE_YEN, !!item.publish);
   }
 
   return {
-    result: paidResult.published ? 'published' : 'draft_saved',
+    result: ATTACH_ONLY ? 'attach_only' : (paidResult.published ? 'published' : 'draft_saved'),
     attached: attachedCount,
+    attachError,
     priceSet: paidResult.paidConfigured,
     boundarySet: paidResult.boundaryRepositioned,
     paidEnabled: paidResult.paidConfigured,
@@ -356,7 +456,7 @@ async function editDraft(page, item) {
 async function main() {
   const { max } = parseArgs();
   const storageState = parseStorageState();
-  console.log(`[INFO] FORCE_PAID=${FORCE_PAID}`);
+  console.log(`[INFO] FORCE_PAID=${FORCE_PAID} ATTACH_ONLY=${ATTACH_ONLY}`);
   const queue = await loadQueue();
   const pendings = (queue.items || []).filter((i) => i.status === 'pending' && i.draftId && i.draftId.trim());
   if (pendings.length === 0) { console.log('[INFO] 対象なし'); return; }
@@ -375,16 +475,23 @@ async function main() {
     for (const item of targets) {
       try {
         const ret = await editDraft(page, item);
-        item.status = ret.result;
-        item.posted_at = new Date().toISOString();
-        item.error = null;
+        // ATTACH_ONLY モードでは published/status を変更しない（次回 cron で本投稿）
+        if (!ATTACH_ONLY) {
+          item.status = ret.result;
+          item.posted_at = new Date().toISOString();
+          item.error = null;
+          item.priceSet = ret.priceSet;
+          item.boundarySet = ret.boundarySet;
+          item.paidEnabled = ret.paidEnabled;
+          item.published = ret.published;
+          item.anonStatus = ret.anonStatus;
+        } else {
+          item.attach_only_run_at = new Date().toISOString();
+        }
         item.attached = ret.attached;
-        item.priceSet = ret.priceSet;
-        item.boundarySet = ret.boundarySet;
-        item.paidEnabled = ret.paidEnabled;
-        item.published = ret.published;
-        item.anonStatus = ret.anonStatus;
-        console.log(`[OK] id=${item.id} ${ret.result} attached=${ret.attached} priceSet=${ret.priceSet} boundary=${ret.boundarySet} published=${ret.published} anonStatus=${ret.anonStatus}`);
+        if (ret.attachError) item.attach_error = ret.attachError;
+        else delete item.attach_error;
+        console.log(`[OK] id=${item.id} ${ret.result} attached=${ret.attached} attachError=${ret.attachError || 'none'} priceSet=${ret.priceSet} boundary=${ret.boundarySet} published=${ret.published} anonStatus=${ret.anonStatus}`);
         await saveQueue(queue);
         await randDelay(15000, 30000);
       } catch (err) {

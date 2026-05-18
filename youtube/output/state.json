@@ -9,9 +9,9 @@
     "007",
     "008",
     "009",
-    "010",
-    "011"
+    "010"
   ],
+  "note_fix4": "2026-05-19 dispatch: actually removed #011 from processed (note_fix3 was comment-only). Workflow merge conflicts also resolved in youtube_auto.yml + generate_script.mjs + generate_voice.mjs + compile_video.mjs + step3_images_imagen.py.",
   "lastRun": "2026-05-18T01:28:24.527Z",
   "currentTopic": null,
   "lastScriptChars": 19823,

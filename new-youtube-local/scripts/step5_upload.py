@@ -10,6 +10,19 @@ from pathlib import Path
 import urllib.request, urllib.parse, urllib.error
 
 ROOT = Path(__file__).resolve().parent.parent
+
+# Auto-load .env (when run standalone)
+_ENV = ROOT / ".env"
+if _ENV.exists():
+    for _line in _ENV.read_text(encoding="utf-8").splitlines():
+        _line = _line.strip()
+        if not _line or _line.startswith("#") or "=" not in _line:
+            continue
+        _k, _, _v = _line.partition("=")
+        _k = _k.strip(); _v = _v.strip()
+        if _k and _k not in os.environ:
+            os.environ[_k] = _v
+
 OUTPUT_DIR = ROOT / "output"
 
 CLIENT_ID = os.environ.get("NEW_YOUTUBE_CLIENT_ID", "")
@@ -132,65 +145,4 @@ def set_thumbnail(access_token, video_id, thumb_path):
     try:
         with urllib.request.urlopen(req, timeout=120) as r:
             res = json.loads(r.read().decode("utf-8"))
-        print(f"[step5] thumbnail set: {json.dumps(res)[:200]}")
-        return True
-    except urllib.error.HTTPError as e:
-        msg = e.read().decode("utf-8", errors="ignore")
-        print(f"[step5] thumbnail set FAILED {e.code}: {msg[:300]}")
-        return False
-    except Exception as e:
-        print(f"[step5] thumbnail set exception: {e}")
-        return False
-
-
-def main():
-    test_mode = "--test" in sys.argv
-    cur = json.loads((OUTPUT_DIR / "current.json").read_text(encoding="utf-8"))
-    tid = cur["id"]
-    video_path = OUTPUT_DIR / f"{tid}_video.mp4"
-    if not video_path.exists():
-        print(f"[step5] missing video: {video_path}")
-        sys.exit(1)
-    meta = build_metadata(cur)
-    print(f"[step5] title: {meta['snippet']['title']}")
-    print(f"[step5] size: {video_path.stat().st_size/1024/1024:.1f}MB")
-    if test_mode:
-        print("[step5] --test: skip upload")
-        (OUTPUT_DIR / f"{tid}_upload_meta.json").write_text(
-            json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
-        return
-    if not (CLIENT_ID and CLIENT_SECRET and REFRESH_TOKEN):
-        print("[step5] ABORT: NEW_YOUTUBE_* env not set")
-        sys.exit(1)
-    token = get_access_token()
-    vid, channel_id = resumable_upload(token, video_path, meta)
-    if not channel_id:
-        channel_id = fetch_channel_id(token)
-    print(f"[step5] uploaded: https://www.youtube.com/watch?v={vid}")
-    print(f"[step5] channel_id: {channel_id}")
-    thumb_candidates = [
-        OUTPUT_DIR / f"{tid}_thumb.png",
-        OUTPUT_DIR / f"{tid}_thumb.jpg",
-    ]
-    thumb_path = next((p for p in thumb_candidates if p.exists()), None)
-    if thumb_path and vid:
-        ok = set_thumbnail(token, vid, thumb_path)
-        if ok:
-            print(f"[step5] thumbnail uploaded: {thumb_path.name}")
-        else:
-            print(f"[step5] thumbnail upload failed (video remains with auto-thumb)")
-    else:
-        print(f"[step5] no thumbnail file found for {tid}, skip thumbnails.set")
-    state_path = OUTPUT_DIR / "state.json"
-    state = json.loads(state_path.read_text(encoding="utf-8"))
-    if tid not in state.get("processed", []):
-        state.setdefault("processed", []).append(tid)
-    state["lastVideoId"] = vid
-    if channel_id:
-        state["lastChannelId"] = channel_id
-    state["lastUploadedAt"] = time.strftime("%Y-%m-%dT%H:%M:%S")
-    state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
-
-
-if __name__ == "__main__":
-    main()
+        print(f"[step5] thumbnail set: {json.dumps(res)[:200]}"

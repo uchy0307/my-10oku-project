@@ -239,6 +239,26 @@ function runFfmpeg(args) {
   });
 }
 
+// ─── /mnt + /tmp cleanup before heavy ffmpeg pass to avoid OOM/disk-full ───
+async function cleanupTempBeforeFfmpeg(label) {
+  console.log('[compile_video] cleanup before ' + label + ': freeing /tmp and pruning caches');
+  return new Promise((resolve) => {
+    const proc = spawn('bash', ['-c',
+      'echo "[compile_video] disk before:"; df -h / /mnt 2>/dev/null || df -h /; ' +
+      'rm -rf /tmp/ffmpeg-* /tmp/*.mp4 /tmp/*.png /tmp/*.aac /tmp/*.m4a /tmp/*.wav /tmp/*.ass /tmp/*.srt 2>/dev/null || true; ' +
+      'sudo rm -rf /mnt/tmp/* 2>/dev/null || true; ' +
+      'sudo find /var/cache/apt/archives -name "*.deb" -delete 2>/dev/null || true; ' +
+      'sudo journalctl --vacuum-size=10M 2>/dev/null || true; ' +
+      'sync; ' +
+      'echo "[compile_video] mem free:"; free -h 2>/dev/null || true; ' +
+      'echo "[compile_video] disk after:"; df -h / /mnt 2>/dev/null || df -h /'
+    ], { stdio: 'inherit' });
+    proc.on('close', () => resolve());
+    proc.on('error', () => resolve());
+  });
+}
+
+
 function generateMeta(topic, scriptText) {
   const cleanText = scriptText.replace(/\[VISUAL:[^\]]*\]/g, '').replace(/\n+/g, ' ').trim();
   const opening = cleanText.slice(0, 200);
@@ -343,12 +363,13 @@ async function main() {
       '-y',
       '-f', 'concat', '-safe', '0', '-i', listPath,
       '-vf', `scale=1280:720:force_original_aspect_ratio=increase,crop=1280:720,fps=10,subtitles=${assPath}`,
-      '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '26', '-pix_fmt', 'yuv420p', '-threads', '1',
+      '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '26', '-pix_fmt', 'yuv420p', '-threads', '2',
       '-fps_mode', 'vfr',
       '-max_muxing_queue_size', '9999',
       '-t', String(totalSec),
       silentPath,
     ];
+    await cleanupTempBeforeFfmpeg('PASS1 silent');
     console.log(`[compile_video] PASS1 silent video: ${silentPath}`);
     await runFfmpeg(pass1Args);
   } else {
@@ -357,11 +378,12 @@ async function main() {
       '-y',
       '-f', 'lavfi', '-t', String(totalSec), '-i', 'color=c=#0a0a0a:s=1280x720:r=30',
       '-vf', `subtitles=${assPath}`,
-      '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '26', '-pix_fmt', 'yuv420p', '-threads', '1',
+      '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '26', '-pix_fmt', 'yuv420p', '-threads', '2',
       '-fps_mode', 'vfr',
       '-max_muxing_queue_size', '9999',
       silentPath,
     ];
+    await cleanupTempBeforeFfmpeg('PASS1 fallback');
     console.log(`[compile_video] PASS1 fallback silent: ${silentPath}`);
     await runFfmpeg(pass1Args);
   }

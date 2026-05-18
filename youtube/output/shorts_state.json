@@ -1,6 +1,7 @@
 {
   "processed": [
-    "pBDYbuiCzHY"
+    "pBDYbuiCzHY",
+    "DWk2UL8z3OQ"
   ],
   "records": [
     {
@@ -9,12 +10,19 @@
       "shortsUrl": "https://www.youtube.com/shorts/t5-GxsJqp3s",
       "title": "【侍の美学】伊達政宗 独眼竜の野望",
       "uploadedAt": "2026-05-18T08:31:58.710Z"
+    },
+    {
+      "sourceVideoId": "DWk2UL8z3OQ",
+      "shortsVideoId": "LRQ5ez0hNFI",
+      "shortsUrl": "https://www.youtube.com/shorts/LRQ5ez0hNFI",
+      "title": "【侍の美学】石田三成 義のために散った男",
+      "uploadedAt": "2026-05-18T10:52:39.305Z"
     }
   ],
   "lastUpload": {
-    "sourceVideoId": "pBDYbuiCzHY",
-    "shortsVideoId": "t5-GxsJqp3s",
-    "shortsUrl": "https://www.youtube.com/shorts/t5-GxsJqp3s",
-    "at": "2026-05-18T08:31:58.710Z"
+    "sourceVideoId": "DWk2UL8z3OQ",
+    "shortsVideoId": "LRQ5ez0hNFI",
+    "shortsUrl": "https://www.youtube.com/shorts/LRQ5ez0hNFI",
+    "at": "2026-05-18T10:52:39.305Z"
   }
 }

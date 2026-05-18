@@ -1,7 +1,8 @@
 {
   "processed": [
     "pBDYbuiCzHY",
-    "DWk2UL8z3OQ"
+    "DWk2UL8z3OQ",
+    "dLOHK7U1vJc"
   ],
   "records": [
     {
@@ -17,12 +18,19 @@
       "shortsUrl": "https://www.youtube.com/shorts/LRQ5ez0hNFI",
       "title": "【侍の美学】石田三成 義のために散った男",
       "uploadedAt": "2026-05-18T10:52:39.305Z"
+    },
+    {
+      "sourceVideoId": "dLOHK7U1vJc",
+      "shortsVideoId": "KES2RgtT1Ak",
+      "shortsUrl": "https://www.youtube.com/shorts/KES2RgtT1Ak",
+      "title": "【侍の美学】武田信玄 風林火山の哲学",
+      "uploadedAt": "2026-05-18T16:16:32.597Z"
     }
   ],
   "lastUpload": {
-    "sourceVideoId": "DWk2UL8z3OQ",
-    "shortsVideoId": "LRQ5ez0hNFI",
-    "shortsUrl": "https://www.youtube.com/shorts/LRQ5ez0hNFI",
-    "at": "2026-05-18T10:52:39.305Z"
+    "sourceVideoId": "dLOHK7U1vJc",
+    "shortsVideoId": "KES2RgtT1Ak",
+    "shortsUrl": "https://www.youtube.com/shorts/KES2RgtT1Ak",
+    "at": "2026-05-18T16:16:32.597Z"
   }
 }

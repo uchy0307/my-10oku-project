@@ -200,10 +200,24 @@ async function main() {
   console.log(`[shorts] source title = "${snippet.title}"`);
 
   await fs.mkdir(OUTPUT_DIR, { recursive: true });
-  const srcPath = path.join(OUTPUT_DIR, `shorts_src_${sourceVideoId}.mp4`);
+  let srcPath = path.join(OUTPUT_DIR, `shorts_src_${sourceVideoId}.mp4`);
   const outPath = path.join(OUTPUT_DIR, `shorts_${sourceVideoId}.mp4`);
 
-  await downloadSource(sourceVideoId, srcPath);
+  const localFile = process.env.SHORTS_LOCAL_FILE;
+  if (localFile) {
+    try {
+      const s = await fs.stat(localFile);
+      if (s.size > 0) {
+        console.log(`[shorts] using local file: ${localFile} (${s.size} bytes)`);
+        srcPath = localFile;
+      }
+    } catch (e) {
+      console.warn(`[shorts] SHORTS_LOCAL_FILE not usable: ${e.message}. Falling back to download.`);
+    }
+  }
+  if (srcPath !== localFile) {
+    await downloadSource(sourceVideoId, srcPath);
+  }
   await makeShortsVideo(srcPath, outPath);
 
   const result = await uploadShorts(youtube, outPath, snippet, sourceVideoId);

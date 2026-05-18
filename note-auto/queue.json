@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "synced_at": "2026-05-18T12:19:12.950Z",
+  "synced_at": "2026-05-18T12:49:47.634Z",
   "items": [
     {
       "id": "001",
@@ -385,6 +385,17 @@
       "scheduled_at": null,
       "posted_at": "2026-05-18T12:31:14.781Z",
       "error": null,
+      "_hasLocalBody": true
+    },
+    {
+      "id": "036",
+      "draftId": "n12f607ed2bab",
+      "title": "【AI対話アプリ】🔬 200の問い #036 「プロジェクト解像度アップ」",
+      "publish": true,
+      "status": "published",
+      "scheduled_at": null,
+      "posted_at": "2026-05-18T12:57:02.535Z",
+      "error": null,
       "_hasLocalBody": true,
       "attached": 0,
       "priceSet": true,
@@ -392,17 +403,6 @@
       "paidEnabled": true,
       "published": true,
       "anonStatus": 200
-    },
-    {
-      "id": "036",
-      "draftId": "n12f607ed2bab",
-      "title": "【AI対話アプリ】🔬 200の問い #036 「プロジェクト解像度アップ」",
-      "publish": true,
-      "status": "pending",
-      "scheduled_at": null,
-      "posted_at": null,
-      "error": null,
-      "_hasLocalBody": true
     },
     {
       "id": "037",

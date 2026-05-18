@@ -100,7 +100,7 @@ jobs:
 
       - name: Run Shorts pipeline
         env:
-          SHORTS_LOCAL_FILE: ${{ inputs.source_video_id == '' && steps.resolve_local.outputs.local_file || '' }}
+          SHORTS_LOCAL_FILE: ${{ steps.resolve_local.outputs.local_file }}
         run: node youtube/scripts/shorts_pipeline.mjs
 
       - name: Upload artifacts (shorts state for inspection)

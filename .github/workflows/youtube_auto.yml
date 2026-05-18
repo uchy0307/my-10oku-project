@@ -65,6 +65,32 @@ jobs:
       - name: Generate script
         run: npm run youtube:script
 
+      - name: Verify topic match (anti-off-topic)
+        id: verify_topic
+        run: |
+          set -e
+          ID=$(node -e "const s=require('./youtube/output/state.json'); const id=(s.currentTopic && s.currentTopic.id) || ''; process.stdout.write(id);")
+          if [ -z "$ID" ]; then
+            echo "::error::state.json.currentTopic.id missing - cannot verify topic"
+            exit 1
+          fi
+          SCRIPT="youtube/output/${ID}_script.txt"
+          echo "[verify_topic] id=$ID script=$SCRIPT"
+          attempt=1
+          while : ; do
+            if node youtube/scripts/verify_topic_match.mjs --script "$SCRIPT" --topic-id "$ID" --category-aware; then
+              echo "[verify_topic] PASS on attempt $attempt"
+              break
+            fi
+            if [ "$attempt" -ge 5 ]; then
+              echo "::error::verify_topic_match FAILED after 5 attempts - script keeps drifting off-topic"
+              exit 1
+            fi
+            echo "[verify_topic] attempt $attempt failed - regenerating script"
+            npm run youtube:script
+            attempt=$((attempt+1))
+          done
+
       - name: Generate voice
         run: npm run youtube:voice
 
@@ -99,8 +125,8 @@ jobs:
               echo "[verify] PASS on attempt $attempt"
               break
             fi
-            if [ "$attempt" -ge 3 ]; then
-              echo "::error::verify_subtitles FAILED after 3 attempts"
+            if [ "$attempt" -ge 5 ]; then
+              echo "::error::verify_subtitles FAILED after 5 attempts"
               exit 1
             fi
             echo "[verify] attempt $attempt failed - re-compiling with --rebuild-subtitle"

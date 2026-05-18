@@ -95,12 +95,32 @@ async function fetchVideoMeta(youtube, videoId) {
 
 async function downloadSource(videoId, dest) {
   // yt-dlp で 720p 以下の mp4
-  await run('yt-dlp', [
-    '-f', 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720][ext=mp4]/best',
-    '-o', dest,
-    '--merge-output-format', 'mp4',
-    `https://www.youtube.com/watch?v=${videoId}`,
-  ]);
+  // bot-detect bypass: try multiple player_clients & UA。失敗時は別strategyで再試行
+  const tryArgs = [
+    ['--extractor-args', 'youtube:player_client=android', '--user-agent', 'com.google.android.youtube/19.09.37 (Linux; U; Android 14; en_US) gzip'],
+    ['--extractor-args', 'youtube:player_client=ios', '--user-agent', 'com.google.ios.youtube/19.09.3 (iPhone16,2; U; CPU iOS 17_0 like Mac OS X)'],
+    ['--extractor-args', 'youtube:player_client=web_safari'],
+    [],
+  ];
+  let lastErr = null;
+  for (const extra of tryArgs) {
+    try {
+      await run('yt-dlp', [
+        ...extra,
+        '--no-check-certificate',
+        '--no-playlist',
+        '-f', 'best[height<=720][ext=mp4]/best[ext=mp4]/best',
+        '-o', dest,
+        `https://www.youtube.com/watch?v=${videoId}`,
+      ]);
+      console.log('[yt-dlp] OK with', JSON.stringify(extra));
+      return;
+    } catch (e) {
+      console.warn('[yt-dlp] strategy failed:', e.message);
+      lastErr = e;
+    }
+  }
+  throw lastErr || new Error('yt-dlp all strategies failed');
 }
 
 async function makeShortsVideo(srcPath, outPath) {

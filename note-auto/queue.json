@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "synced_at": "2026-05-18T12:49:47.634Z",
+  "synced_at": "2026-05-18T14:45:32.514Z",
   "items": [
     {
       "id": "001",
@@ -396,6 +396,17 @@
       "scheduled_at": null,
       "posted_at": "2026-05-18T12:57:02.535Z",
       "error": null,
+      "_hasLocalBody": true
+    },
+    {
+      "id": "037",
+      "draftId": "ncc726dd821d2",
+      "title": "【AI対話アプリ】⚠️ 200の問い #037 「挫折予測チェッカー」",
+      "publish": true,
+      "status": "published",
+      "scheduled_at": null,
+      "posted_at": "2026-05-18T15:03:22.740Z",
+      "error": null,
       "_hasLocalBody": true,
       "attached": 0,
       "priceSet": true,
@@ -403,17 +414,6 @@
       "paidEnabled": true,
       "published": true,
       "anonStatus": 200
-    },
-    {
-      "id": "037",
-      "draftId": "ncc726dd821d2",
-      "title": "【AI対話アプリ】⚠️ 200の問い #037 「挫折予測チェッカー」",
-      "publish": true,
-      "status": "pending",
-      "scheduled_at": null,
-      "posted_at": null,
-      "error": null,
-      "_hasLocalBody": true
     },
     {
       "id": "038",

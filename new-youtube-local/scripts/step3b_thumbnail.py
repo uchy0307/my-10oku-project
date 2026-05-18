@@ -1,6 +1,7 @@
 """step3b_thumbnail.py
-Imagen-generated 1280x720 thumbnail with title text overlay.
-Falls back to gradient if Imagen API fails.
+Gemini Imagen でサムネ用ベース画像を生成 → Pillow でタイトル文字焼込み。
+- 入力: output/current.json
+- 出力: output/<id>_thumb.png  (1280x720, YouTube カスタムサムネ用 < 2MB)
 """
 import os, sys, json, base64
 from pathlib import Path
@@ -8,123 +9,114 @@ import urllib.request, urllib.error
 
 ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = ROOT / "output"
+
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "") or os.environ.get("GOOGLE_API_KEY", "")
+# Default = Gemini 3.1 Flash Image (Nano Banana 2), available since 2026-02-26.
+# Older 2.5-flash-image returns 404 on this account.
+GEMINI_IMG_MODEL = os.environ.get("GEMINI_IMG_MODEL", "gemini-3.1-flash-image-preview")
+# Optional comma-separated fallback chain of model names tried in order on 404.
+GEMINI_IMG_FALLBACK = [
+    m.strip() for m in os.environ.get(
+        "GEMINI_IMG_FALLBACK",
+        "gemini-2.5-flash-image,gemini-3-pro-image-preview,imagen-4.0-generate-001",
+    ).split(",") if m.strip()
+]
+
 THUMB_W = 1280
 THUMB_H = 720
 
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "") or os.environ.get("GOOGLE_API_KEY", "")
 
-THUMB_MODELS = [
-    "imagen-4.0-fast-generate-001",
-    "imagen-4.0-generate-001",
-    "imagen-3.0-generate-001",
-    "imagen-3.0-fast-generate-001",
-    "gemini-2.0-flash-preview-image-generation",
-    "gemini-2.0-flash-exp-image-generation",
-    "gemini-2.5-flash-image",
-    "gemini-2.5-flash-image-preview",
-]
-
-
-def call_image_gen(prompt, model):
-    if model.startswith("imagen"):
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:predict?key={GEMINI_API_KEY}"
-        body = {"instances": [{"prompt": prompt}], "parameters": {"sampleCount": 1, "aspectRatio": "16:9"}}
-    else:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
-        body = {
-            "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-            "generationConfig": {"responseModalities": ["TEXT", "IMAGE"]},
-        }
-    req = urllib.request.Request(url, data=json.dumps(body).encode("utf-8"),
-                                  headers={"Content-Type": "application/json"}, method="POST")
+def _call_generate_content(model, prompt):
+    url = ("https://generativelanguage.googleapis.com/v1beta/models/"
+           + model + ":generateContent?key=" + GEMINI_API_KEY)
+    body = {
+        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+        "generationConfig": {"responseModalities": ["TEXT", "IMAGE"]},
+        "safetySettings": [
+            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_ONLY_HIGH"},
+            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_ONLY_HIGH"},
+            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_ONLY_HIGH"},
+            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_ONLY_HIGH"},
+        ],
+    }
+    req = urllib.request.Request(
+        url, data=json.dumps(body).encode("utf-8"),
+        headers={"Content-Type": "application/json"}, method="POST",
+    )
     with urllib.request.urlopen(req, timeout=180) as resp:
         data = json.loads(resp.read().decode("utf-8"))
-        if "predictions" in data:
-            preds = data.get("predictions", [])
-            if not preds:
-                raise RuntimeError("no predictions")
-            b64 = preds[0].get("bytesBase64Encoded") or (preds[0].get("image") or {}).get("bytesBase64Encoded")
-            if not b64:
-                raise RuntimeError("no bytes")
-            return base64.b64decode(b64)
-        cands = data.get("candidates", [])
-        if not cands:
-            raise RuntimeError(f"no candidates: {json.dumps(data)[:200]}")
-        parts = cands[0].get("content", {}).get("parts", [])
-        for p in parts:
-            inline = p.get("inlineData") or p.get("inline_data")
-            if inline and inline.get("data"):
+    cands = data.get("candidates", [])
+    if not cands:
+        raise RuntimeError("no candidates from " + model + ": " + json.dumps(data)[:300])
+    parts = cands[0].get("content", {}).get("parts", [])
+    for p in parts:
+        inline = p.get("inlineData") or p.get("inline_data")
+        if inline and inline.get("data"):
+            mime = inline.get("mimeType") or inline.get("mime_type") or "image/png"
+            if mime.startswith("image/"):
                 return base64.b64decode(inline["data"])
-        raise RuntimeError("no inline_data in response")
+    raise RuntimeError("no image inline_data from " + model + " in response")
 
 
+def _call_imagen_predict(model, prompt):
+    """Imagen 4 dedicated endpoint (predict). Used when model name starts with 'imagen-'."""
+    url = ("https://generativelanguage.googleapis.com/v1beta/models/"
+           + model + ":predict?key=" + GEMINI_API_KEY)
+    body = {
+        "instances": [{"prompt": prompt}],
+        "parameters": {"sampleCount": 1, "aspectRatio": "16:9"},
+    }
+    req = urllib.request.Request(
+        url, data=json.dumps(body).encode("utf-8"),
+        headers={"Content-Type": "application/json"}, method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=180) as resp:
+        data = json.loads(resp.read().decode("utf-8"))
+    preds = data.get("predictions", [])
+    for p in preds:
+        b64 = p.get("bytesBase64Encoded")
+        if b64:
+            return base64.b64decode(b64)
+    raise RuntimeError("no predictions image from " + model + ": " + json.dumps(data)[:300])
 
-def fetch_thumbnail_background(prompt, out_tmp_path):
-    if not GEMINI_API_KEY:
-        print("[step3b_thumb] GEMINI_API_KEY missing - falling back to gradient")
-        return False
-    for m in THUMB_MODELS:
+
+def call_imagen(prompt):
+    """Try primary model, fall back through chain on 404/error."""
+    models = [GEMINI_IMG_MODEL] + GEMINI_IMG_FALLBACK
+    last_err = None
+    for m in models:
         try:
-            img_bytes = call_image_gen(prompt, m)
-            out_tmp_path.write_bytes(img_bytes)
-            print(f"[step3b_thumb] thumbnail bg OK using model={m}")
-            return True
+            if m.startswith("imagen-"):
+                return _call_imagen_predict(m, prompt)
+            return _call_generate_content(m, prompt)
         except urllib.error.HTTPError as e:
-            msg = e.read().decode("utf-8", errors="ignore")[:200]
-            print(f"[step3b_thumb] {m} HTTP {e.code}: {msg}")
+            body = ""
+            try:
+                body = e.read().decode("utf-8", errors="ignore")[:200]
+            except Exception:
+                pass
+            print("[step3b_thumb] model " + m + " HTTP " + str(e.code) + ": " + body)
+            last_err = e
+            if e.code != 404:
+                # non-404 — abort fallback (likely safety/quota)
+                raise
         except Exception as e:
-            print(f"[step3b_thumb] {m} exc: {e}")
-    return False
-
-
-def fit_to_thumb_size(src_path):
-    from PIL import Image
-    with Image.open(src_path) as im:
-        im = im.convert("RGB")
-        sw, sh = im.size
-        ta = THUMB_W / THUMB_H
-        sa = sw / sh
-        if abs(sa - ta) < 0.005:
-            return im.resize((THUMB_W, THUMB_H), Image.LANCZOS)
-        if sa > ta:
-            new_w = THUMB_W
-            new_h = int(THUMB_W / sa)
-            res = im.resize((new_w, new_h), Image.LANCZOS)
-            canvas = Image.new("RGB", (THUMB_W, THUMB_H), (0, 0, 0))
-            canvas.paste(res, (0, (THUMB_H - new_h) // 2))
-            return canvas
-        else:
-            new_h = THUMB_H
-            new_w = int(THUMB_H * sa)
-            res = im.resize((new_w, new_h), Image.LANCZOS)
-            canvas = Image.new("RGB", (THUMB_W, THUMB_H), (0, 0, 0))
-            canvas.paste(res, ((THUMB_W - new_w) // 2, 0))
-            return canvas
-
-
-def gradient_bg():
-    from PIL import Image, ImageDraw
-    img = Image.new("RGB", (THUMB_W, THUMB_H), (28, 30, 52))
-    d = ImageDraw.Draw(img)
-    for y in range(THUMB_H):
-        ratio = y / THUMB_H
-        r = int(28 + 20 * (1 - ratio))
-        g = int(30 + 10 * (1 - ratio))
-        b = int(52 - 30 * ratio)
-        d.line([(0, y), (THUMB_W, y)], fill=(max(8, r), max(8, g), max(8, b)))
-    return img
-
+            print("[step3b_thumb] model " + m + " error: " + str(e))
+            last_err = e
+    raise RuntimeError("all image models failed: " + str(last_err))
 
 
 def find_font(size):
     from PIL import ImageFont
-    for p in [
+    candidates = [
         "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
         "/usr/share/fonts/truetype/noto/NotoSansCJK-Bold.ttc",
         "C:/Windows/Fonts/YuGothB.ttc",
         "C:/Windows/Fonts/yugothb.ttc",
         "C:/Windows/Fonts/meiryob.ttc",
-    ]:
+        "C:/Windows/Fonts/msgothic.ttc",
+    ]
+    for p in candidates:
         if Path(p).exists():
             try:
                 return ImageFont.truetype(p, size)
@@ -133,102 +125,116 @@ def find_font(size):
     return ImageFont.load_default()
 
 
-def wrap_title(title, mx=12):
+def wrap_title(title, max_chars_per_line=12):
     title = title.strip()
-    if len(title) <= mx:
+    if len(title) <= max_chars_per_line:
         return [title]
-    cut_chars = "、。！？ ・「」"
+    cut_chars = "、。！？　・「」"
     best = -1
     for i, ch in enumerate(title):
-        if i >= mx - 2 and i <= mx + 4 and ch in cut_chars:
+        if i >= max_chars_per_line - 2 and i <= max_chars_per_line + 4 and ch in cut_chars:
             best = i + 1
             break
     if best < 0:
-        best = mx
-    line1 = title[:best].rstrip("、。！？ ")
-    line2 = title[best:].lstrip("、。！？ ")
-    if len(line2) > mx + 4:
-        line2 = line2[: mx + 2] + "…"
+        best = max_chars_per_line
+    line1 = title[:best].rstrip("、。！？　")
+    line2 = title[best:].lstrip("、。！？　")
+    if len(line2) > max_chars_per_line + 4:
+        line2 = line2[: max_chars_per_line + 2] + "…"
     return [line1, line2] if line2 else [line1]
 
 
-def make_thumb_prompt(title, category):
-    return (
-        f"Wide 16:9 cinematic thumbnail background for a Japanese adult psychology channel. "
-        f"Title theme: {title}. Category: {category}. "
-        f"Moody dramatic atmosphere, low-key lighting, japanese urban night, soft bokeh, suggestive but tasteful, "
-        f"no nudity, no minors, no visible text, plenty of negative space in upper-center for title overlay. "
-        f"Color palette: deep navy, burgundy, gold accents."
-    )
-
-
-
-def main():
+def overlay_title(img_bytes, title, category, out_path):
     from PIL import Image, ImageDraw
-    cur = json.loads((OUTPUT_DIR / "current.json").read_text(encoding="utf-8"))
-    tid = cur["id"]
-    title = cur["title"]
-    category = cur.get("category", "")
-    out_path = OUTPUT_DIR / f"{tid}_thumb.png"
-    tmp_path = OUTPUT_DIR / f"{tid}_thumb_bg_raw.jpg"
+    from io import BytesIO
 
-    bg_img = None
-    if fetch_thumbnail_background(make_thumb_prompt(title, category), tmp_path):
-        try:
-            bg_img = fit_to_thumb_size(tmp_path)
-        except Exception as e:
-            print(f"[step3b_thumb] fit failed: {e}")
-            bg_img = None
-        try:
-            tmp_path.unlink()
-        except Exception:
-            pass
-    if bg_img is None:
-        print("[step3b_thumb] using gradient fallback")
-        bg_img = gradient_bg()
+    img = Image.open(BytesIO(img_bytes)).convert("RGB")
+    if img.size != (THUMB_W, THUMB_H):
+        img = img.resize((THUMB_W, THUMB_H), Image.LANCZOS)
 
-    d = ImageDraw.Draw(bg_img)
-    lines = wrap_title(title, mx=12)
-    font_size = 96 if len(lines) == 1 else 84
+    overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    draw_ov = ImageDraw.Draw(overlay)
+    for y in range(THUMB_H // 2, THUMB_H):
+        ratio = (y - THUMB_H // 2) / (THUMB_H // 2)
+        alpha = int(180 * ratio)
+        draw_ov.rectangle([0, y, THUMB_W, y + 1], fill=(0, 0, 0, alpha))
+    img = Image.alpha_composite(img.convert("RGBA"), overlay).convert("RGB")
+
+    draw = ImageDraw.Draw(img)
+    lines = wrap_title(title, max_chars_per_line=12)
+    font_size = 96 if len(lines) <= 1 else 84
     font = find_font(font_size)
-    lws, lhs = [], []
+
+    line_heights, line_widths = [], []
     for ln in lines:
-        bb = d.textbbox((0, 0), ln, font=font)
-        lws.append(bb[2] - bb[0])
-        lhs.append(bb[3] - bb[1])
-    total_h = sum(lhs) + 12 * (len(lines) - 1)
-    y0 = THUMB_H // 2 - total_h // 2
+        bbox = draw.textbbox((0, 0), ln, font=font)
+        line_widths.append(bbox[2] - bbox[0])
+        line_heights.append(bbox[3] - bbox[1])
+    total_h = sum(line_heights) + 12 * (len(lines) - 1)
+
+    y0 = THUMB_H - total_h - 60
     for i, ln in enumerate(lines):
-        x = (THUMB_W - lws[i]) // 2
-        y = y0 + sum(lhs[:i]) + 12 * i
+        x = (THUMB_W - line_widths[i]) // 2
+        y = y0 + sum(line_heights[:i]) + 12 * i
         for dx in (-3, -2, 0, 2, 3):
             for dy in (-3, -2, 0, 2, 3):
                 if dx == 0 and dy == 0:
                     continue
-                d.text((x + dx, y + dy), ln, font=font, fill=(0, 0, 0))
-        d.text((x, y), ln, font=font, fill=(255, 255, 255))
+                draw.text((x + dx, y + dy), ln, font=font, fill=(0, 0, 0))
+        draw.text((x, y), ln, font=font, fill=(255, 255, 255))
 
     cat_font = find_font(36)
-    cat_text = f"#{category}"
-    cb = d.textbbox((0, 0), cat_text, font=cat_font)
+    cat_text = "#" + category
+    cat_bbox = draw.textbbox((0, 0), cat_text, font=cat_font)
     pad = 12
-    d.rectangle([40, 40, 40 + (cb[2] - cb[0]) + pad * 2,
-                 40 + (cb[3] - cb[1]) + pad * 2], fill=(180, 30, 60))
-    d.text((40 + pad, 40 + pad), cat_text, font=cat_font, fill=(255, 255, 255))
+    draw.rectangle(
+        [40, 40, 40 + (cat_bbox[2] - cat_bbox[0]) + pad * 2, 40 + (cat_bbox[3] - cat_bbox[1]) + pad * 2],
+        fill=(180, 30, 60),
+    )
+    draw.text((40 + pad, 40 + pad), cat_text, font=cat_font, fill=(255, 255, 255))
 
-    bg_img.save(out_path, format="PNG", optimize=True)
+    img.save(out_path, format="PNG", optimize=True)
     sz = out_path.stat().st_size
-    print(f"[step3b_thumb] wrote {out_path} ({sz/1024:.1f}KB)")
+    print("[step3b_thumb] wrote " + str(out_path) + " (" + str(sz//1024) + "KB)")
     if sz > 2 * 1024 * 1024:
-        jp = out_path.with_suffix(".jpg")
-        bg_img.save(jp, format="JPEG", quality=88, optimize=True)
-        print(f"[step3b_thumb] PNG > 2MB, JPEG fallback: {jp}")
+        jpeg_path = out_path.with_suffix(".jpg")
+        img.save(jpeg_path, format="JPEG", quality=88, optimize=True)
+        print("[step3b_thumb] >2MB, JPEG fallback")
+
+
+def main():
+    if not GEMINI_API_KEY:
+        print("[step3b_thumb] FATAL: GEMINI_API_KEY not set")
+        sys.exit(1)
+    cur = json.loads((OUTPUT_DIR / "current.json").read_text(encoding="utf-8"))
+    tid = cur["id"]
+    title = cur["title"]
+    category = cur.get("category", "")
+    print("[step3b_thumb] generate thumb for " + tid + ": " + title)
+
+    prompt = (
+        "YouTube thumbnail for adult psychology channel. "
+        "Theme: " + title + ". Category: " + category + ". "
+        "Cinematic dark moody portrait, dramatic rim lighting, "
+        "sensual but tasteful, modern Japan night scene, photorealistic 35mm, "
+        "focal point in upper half, bottom half darker for text overlay, "
+        "no text, no watermark, no logo, no minors, no nudity."
+    )
+    img_bytes = None
+    last_err = None
+    for attempt in range(3):
         try:
-            out_path.unlink()
-        except Exception:
-            pass
+            img_bytes = call_imagen(prompt)
+            break
+        except Exception as e:
+            last_err = e
+            print("[step3b_thumb] retry " + str(attempt) + ": " + str(e))
+    if img_bytes is None:
+        print("[step3b_thumb] FATAL: Imagen failed: " + str(last_err))
+        sys.exit(2)
+    out_path = OUTPUT_DIR / (tid + "_thumb.png")
+    overlay_title(img_bytes, title, category, out_path)
 
 
 if __name__ == "__main__":
     main()
-

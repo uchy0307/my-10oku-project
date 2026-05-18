@@ -12,7 +12,7 @@ on:
         required: false
         default: '1'
       test_paid:
-        description: 'true で publish:false でも 有料境界線/価格 を試行（NOTE_TEST_PAID）'
+        description: 'true で publish:false でも 有料境界線/価格 を試行 (NOTE_TEST_PAID) '
         required: false
         default: 'false'
       skip_delay:
@@ -117,10 +117,14 @@ jobs:
             exit 0
           fi
           git commit -m "chore(note): sync drafts & update queue.json [skip ci]"
-          # Retry rebase+push up to 5 times for race conditions
+          # Stash any unstaged leftover changes (debug logs/screenshots) so rebase can run
+          git stash push --include-untracked --quiet -m wf-leftover || true
           for i in 1 2 3 4 5; do
             git fetch origin main
-            git rebase origin/main || { git rebase --abort; git pull origin main --no-rebase --strategy-option theirs -m "auto-merge"; }
+            if ! git rebase origin/main; then
+              git rebase --abort || true
+              git pull origin main --no-rebase --strategy-option theirs -m "auto-merge" || true
+            fi
             if git push origin main; then
               echo "push succeeded on attempt $i"
               exit 0

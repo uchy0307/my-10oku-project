@@ -17,6 +17,8 @@ CROSSFADE = float(os.environ.get("CROSSFADE_SEC", "0.8"))
 SUB_FONT = os.environ.get("SUB_FONT", "Noto Sans CJK JP")
 SUB_FONT_SIZE = int(os.environ.get("SUB_FONT_SIZE", "32"))
 
+# === 15-min cap for unverified YouTube account (auto-applied) ===
+MAX_DURATION_SEC = float(os.environ.get("MAX_DURATION_SEC", "870"))
 
 def compile_silent_video(tid: str) -> Path:
     from moviepy.editor import AudioFileClip, ImageClip, concatenate_videoclips
@@ -29,6 +31,11 @@ def compile_silent_video(tid: str) -> Path:
     audio = AudioFileClip(str(voice_path))
     total_dur = audio.duration
     print(f"[step4_day] audio duration: {total_dur:.1f}s")
+
+    if total_dur > MAX_DURATION_SEC:
+        print(f"[step4_day] truncating audio {total_dur:.1f}s -> {MAX_DURATION_SEC:.1f}s (15-min cap)")
+        audio = audio.subclip(0, MAX_DURATION_SEC)
+        total_dur = MAX_DURATION_SEC
 
     img_files = sorted(glob.glob(str(OUTPUT_DIR / f"{tid}_img_*.jpg")))
     if not img_files:
@@ -59,7 +66,6 @@ def compile_silent_video(tid: str) -> Path:
     )
     print(f"[step4_day] wrote silent-sub video: {pre_path}")
     return pre_path
-
 
 def burn_subtitles(pre_path: Path, srt_path: Path, out_path: Path) -> None:
     if not shutil.which("ffmpeg"):
@@ -92,7 +98,6 @@ def burn_subtitles(pre_path: Path, srt_path: Path, out_path: Path) -> None:
     if r.returncode != 0:
         raise RuntimeError(f"ffmpeg subtitles burn failed rc={r.returncode}")
 
-
 def main():
     cur = json.loads((OUTPUT_DIR / "current.json").read_text(encoding="utf-8"))
     tid = cur["id"]
@@ -117,7 +122,6 @@ def main():
         shutil.move(str(pre_path), str(out_path))
 
     print(f"[step4_day] FINAL: {out_path} ({out_path.stat().st_size/1024/1024:.1f}MB)")
-
 
 if __name__ == "__main__":
     main()

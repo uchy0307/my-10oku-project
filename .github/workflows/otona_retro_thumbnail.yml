@@ -1,0 +1,93 @@
+name: Otona Retro Thumbnail
+
+# 既存 @Otona_Psychology 動画にカスタムサムネ (Gemini Imagen + Pillow text) を後付け set。
+# 動画本体は再アップロードしない。thumbnails.set のみ。
+
+on:
+  workflow_dispatch:
+    inputs:
+      video_id:
+        description: 'YouTube videoId (e.g. py9D94NG_Ls)'
+        required: true
+      topic_id:
+        description: 'Topic ID (for thumbnail filename / category lookup)'
+        required: true
+      title:
+        description: 'Video title text to burn in thumbnail'
+        required: true
+      category:
+        description: 'Category label for thumb (default 対人心理)'
+        required: false
+        default: '対人心理'
+
+permissions:
+  contents: read
+
+jobs:
+  retro-thumb:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: new-youtube-local
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+      NEW_YOUTUBE_CLIENT_ID: ${{ secrets.NEW_YOUTUBE_CLIENT_ID }}
+      NEW_YOUTUBE_CLIENT_SECRET: ${{ secrets.NEW_YOUTUBE_CLIENT_SECRET }}
+      NEW_YOUTUBE_REFRESH_TOKEN: ${{ secrets.NEW_YOUTUBE_REFRESH_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y fonts-noto-cjk fonts-noto-cjk-extra fontconfig
+          pip install 'Pillow<10'
+
+      - name: Build current.json from inputs
+        run: |
+          mkdir -p output
+          python <<'PY'
+          import json, os
+          cur = {
+            "id": os.environ["TID"],
+            "title": os.environ["TITLE"],
+            "category": os.environ["CAT"],
+          }
+          open("output/current.json", "w", encoding="utf-8").write(
+            json.dumps(cur, ensure_ascii=False, indent=2)
+          )
+          print("current.json:", cur)
+          PY
+        env:
+          TID: ${{ inputs.topic_id }}
+          TITLE: ${{ inputs.title }}
+          CAT: ${{ inputs.category }}
+
+      - name: Generate Imagen thumbnail (step3b)
+        run: python scripts/step3b_thumbnail.py
+
+      - name: Set thumbnail via YouTube Data API
+        run: |
+          THUMB="output/${{ inputs.topic_id }}_thumb.png"
+          if [ ! -f "$THUMB" ]; then THUMB="output/${{ inputs.topic_id }}_thumb.jpg"; fi
+          python scripts/retro_set_thumbnail.py --video-id=${{ inputs.video_id }} --thumb-path="$THUMB"
+
+      - name: Upload artifact (the generated thumbnail)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: otona-retro-thumb-${{ inputs.topic_id }}
+          path: |
+            new-youtube-local/output/${{ inputs.topic_id }}_thumb.png
+            new-youtube-local/output/${{ inputs.topic_id }}_thumb.jpg
+          if-no-files-found: warn
+          retention-days: 7
+

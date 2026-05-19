@@ -29,9 +29,26 @@ GCP_VOICE = "ja-JP-Neural2-B"
 TTS_URL = "https://texttospeech.googleapis.com/v1/text:synthesize"
 
 
+def _tts_gtts(text: str, out_path: Path) -> None:
+    """gTTS (Google Translate TTS) — 完全無料・API key 不要・billing 不要。
+    音質は Neural2-B より劣るが「完全無料化軸」遵守のため採用。
+    """
+    try:
+        from gtts import gTTS
+    except ImportError as e:
+        raise RuntimeError("gtts package not installed: pip install gtts") from e
+    tts = gTTS(text=text, lang="ja", slow=False)
+    tts.save(str(out_path))
+
+
 def _tts_google(text: str, out_path: Path) -> None:
+    """Cloud TTS REST. 課金有効プロジェクトのみ動作。Free Tier project では 403 / SERVICE_DISABLED。
+    fallback として gTTS を使う運用に切替（完全無料化軸・2026-05-19）。
+    """
     if not GOOGLE_API_KEY:
-        raise RuntimeError("GOOGLE_API_KEY env var is not set")
+        # 直接 gTTS にフォールバック
+        _tts_gtts(text, out_path)
+        return
     body = {
         "input": {"text": text},
         "voice": {
@@ -53,10 +70,19 @@ def _tts_google(text: str, out_path: Path) -> None:
             payload = json.loads(r.read().decode("utf-8"))
     except urllib.error.HTTPError as e:
         body_txt = e.read().decode("utf-8", "replace")
-        raise RuntimeError("TTS HTTP " + str(e.code) + ": " + body_txt)
+        # TTS Cloud 失敗時は gTTS にフォールバック（billing が無い free tier project でも動かす）
+        print(f"[step2_voice] Cloud TTS HTTP {e.code}: {body_txt[:200]}; falling back to gTTS")
+        _tts_gtts(text, out_path)
+        return
+    except Exception as e:
+        print(f"[step2_voice] Cloud TTS exc: {e}; falling back to gTTS")
+        _tts_gtts(text, out_path)
+        return
     audio_b64 = payload.get("audioContent")
     if not audio_b64:
-        raise RuntimeError("TTS missing audioContent: " + json.dumps(payload)[:200])
+        print(f"[step2_voice] Cloud TTS missing audioContent; falling back to gTTS")
+        _tts_gtts(text, out_path)
+        return
     out_path.write_bytes(base64.b64decode(audio_b64))
 
 

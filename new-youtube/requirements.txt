@@ -5,4 +5,5 @@ Pillow>=9.5.0,<10.0
 numpy>=1.24.0
 imageio-ffmpeg>=0.4.9
 google-cloud-texttospeech>=2.16.0
+gTTS>=2.4.0
 # ElevenLabs は REST 直叩きなので追加 SDK 不要 (requests のみ)

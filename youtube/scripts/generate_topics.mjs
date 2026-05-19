@@ -22,7 +22,10 @@ const STATE_FILE = path.join(OUTPUT_DIR, 'state.json');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+// 2026-05-19: 429 / 404 quota 対策・確認済み正しいモデル名のみ
+const GEMINI_FALLBACK_MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-2.5-flash-lite'];
+const _gemini_endpoint = (model) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+const GEMINI_ENDPOINT = _gemini_endpoint(GEMINI_MODEL);
 
 const GENERATE_THRESHOLD = parseInt(process.env.TOPIC_THRESHOLD || '10', 10);
 const BATCH_SIZE = parseInt(process.env.TOPIC_BATCH || '50', 10);
@@ -88,9 +91,11 @@ ${existingTitles.map((t, i) => `${i + 1}. ${t}`).join('\n')}
 それでは執筆開始。`;
 }
 
-async function callGemini(prompt, attempt = 1) {
+async function callGemini(prompt, attempt = 1, modelIdx = 0) {
   if (!GEMINI_API_KEY) throw new Error('GEMINI_API_KEY 未設定');
-  const url = `${GEMINI_ENDPOINT}?key=${GEMINI_API_KEY}`;
+  const modelsChain = [GEMINI_MODEL, ...GEMINI_FALLBACK_MODELS.filter(m => m !== GEMINI_MODEL)];
+  const currentModel = modelsChain[modelIdx] || GEMINI_MODEL;
+  const url = `${_gemini_endpoint(currentModel)}?key=${GEMINI_API_KEY}`;
   const body = {
     contents: [{ parts: [{ text: prompt }] }],
     generationConfig: {
@@ -113,13 +118,18 @@ async function callGemini(prompt, attempt = 1) {
   });
   if (!res.ok) {
     const errText = await res.text();
-    if ((res.status === 503 || res.status === 429) && attempt < 5) {
-      const wait = Math.pow(2, attempt) * 15;
-      console.warn(`[generate_topics] ${res.status} retry in ${wait}s`);
-      await new Promise((r) => setTimeout(r, wait * 1000));
-      return callGemini(prompt, attempt + 1);
+    // 429 / 404 → 次モデルへ fallback
+    if ((res.status === 429 || res.status === 404) && modelIdx < modelsChain.length - 1) {
+      console.warn(`[generate_topics] model=${currentModel} ${res.status}; fallback to next model`);
+      return callGemini(prompt, 1, modelIdx + 1);
     }
-    throw new Error(`Gemini API error ${res.status}: ${errText}`);
+    if (res.status === 503 && attempt < 3) {
+      const wait = Math.min(60, Math.pow(2, attempt) * 10);
+      console.warn(`[generate_topics] model=${currentModel} 503 retry in ${wait}s`);
+      await new Promise((r) => setTimeout(r, wait * 1000));
+      return callGemini(prompt, attempt + 1, modelIdx);
+    }
+    throw new Error(`Gemini API error ${res.status} on model=${currentModel}: ${errText}`);
   }
   const json = await res.json();
   const text = json?.candidates?.[0]?.content?.parts?.[0]?.text;

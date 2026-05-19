@@ -269,12 +269,15 @@ export function pickNextTopic(topics, state) {
   return topics.find(t => !processed.has(String(t.id))) || null;
 }
 
-async function callGemini(prompt, attempt = 1) {
+async function callGemini(prompt, attempt = 1, modelIdx = 0) {
   if (!GEMINI_API_KEY) {
     console.warn('[generate_script] GEMINI_API_KEY not set — emitting stub script.');
     return `[STUB SCRIPT]\n${prompt}\n\n--- ここにGemini生成台本が入ります ---`;
   }
-  const url = `${GEMINI_ENDPOINT}?key=${GEMINI_API_KEY}`;
+  // 2026-05-19: multi-model fallback chain
+  const modelsChain = [GEMINI_MODEL, ...GEMINI_FALLBACK_MODELS.filter(m => m !== GEMINI_MODEL)];
+  const currentModel = modelsChain[modelIdx] || GEMINI_MODEL;
+  const url = `${_gemini_endpoint(currentModel)}?key=${GEMINI_API_KEY}`;
   const body = {
     contents: [{ parts: [{ text: prompt }] }],
     generationConfig: {
@@ -299,14 +302,24 @@ async function callGemini(prompt, attempt = 1) {
   });
   if (!res.ok) {
     const errText = await res.text();
-    // 503 / 429 / 5xx は一時的過負荷。指数バックオフで最大7回リトライ
-    if ((res.status === 503 || res.status === 429 || res.status === 500 || res.status === 502 || res.status === 504) && attempt < 7) {
-      const waitSec = Math.min(300, Math.pow(2, attempt) * 15); // 30, 60, 120, 240, 300, 300, 300秒 (max 5min)
-      console.warn(`[generate_script] ${res.status} retryable. wait ${waitSec}s then attempt ${attempt + 1}`);
-      await new Promise((r) => setTimeout(r, waitSec * 1000));
-      return callGemini(prompt, attempt + 1);
+    // 429 quota exhaust → 次のモデルへ即 fallback
+    if (res.status === 429 && modelIdx < modelsChain.length - 1) {
+      console.warn(`[generate_script] model=${currentModel} 429 quota; falling back to next model`);
+      return callGemini(prompt, 1, modelIdx + 1);
     }
-    throw new Error(`Gemini API error ${res.status}: ${errText}`);
+    // 503 / 5xx は一時的過負荷。指数バックオフで最大3回リトライ（同じモデル）
+    if ((res.status === 503 || res.status === 500 || res.status === 502 || res.status === 504) && attempt < 3) {
+      const waitSec = Math.min(60, Math.pow(2, attempt) * 10);
+      console.warn(`[generate_script] model=${currentModel} ${res.status} retryable. wait ${waitSec}s attempt ${attempt + 1}`);
+      await new Promise((r) => setTimeout(r, waitSec * 1000));
+      return callGemini(prompt, attempt + 1, modelIdx);
+    }
+    // 404 (model not found) → 次のモデルへ
+    if (res.status === 404 && modelIdx < modelsChain.length - 1) {
+      console.warn(`[generate_script] model=${currentModel} 404 not found; switching to next model`);
+      return callGemini(prompt, 1, modelIdx + 1);
+    }
+    throw new Error(`Gemini API error ${res.status} on model=${currentModel}: ${errText}`);
   }
   const json = await res.json();
   const cand = json?.candidates?.[0];
@@ -321,14 +334,14 @@ async function callGemini(prompt, attempt = 1) {
   if (!text) {
     if (attempt < 2) {
       console.warn('[generate_script] empty text. Retrying...');
-      return callGemini(prompt, attempt + 1);
+      return callGemini(prompt, attempt + 1, modelIdx);
     }
     throw new Error(`Gemini returned empty content (finishReason=${finishReason})`);
   }
   // 4000字未満は事実上失敗とみなしリトライ（旧閾値1000は緩すぎて短い章を見逃す）
   if (text.length < 4000 && attempt < 2) {
     console.warn(`[generate_script] suspiciously short response (${text.length} chars, need >=4000). Retrying...`);
-    return callGemini(prompt, attempt + 1);
+    return callGemini(prompt, attempt + 1, modelIdx);
   }
   return text;
 }

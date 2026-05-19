@@ -35,9 +35,9 @@ import requests
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 # 2026-05-19: 完全無料化軸・Free Tier 多 quota 確保
-# fallback chain: env override > gemini-1.5-flash (RPD 1500) > gemini-2.5-flash (RPD 1000) > gemini-1.5-flash-latest
-GEMINI_MODEL_PRIMARY = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
-GEMINI_MODEL_FALLBACKS = ["gemini-2.5-flash", "gemini-1.5-flash-latest", "gemini-1.5-flash-002"]
+# fallback chain: 確認済みの正しいモデル名のみ使用（404 を回避）
+GEMINI_MODEL_PRIMARY = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_MODEL_FALLBACKS = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-flash-8b", "gemini-2.5-flash-lite"]
 def _build_url(model_name):
     return f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent"
 GEMINI_URL = _build_url(GEMINI_MODEL_PRIMARY)

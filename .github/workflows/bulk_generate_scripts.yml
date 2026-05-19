@@ -1,0 +1,110 @@
+name: Bulk Generate 100 Scripts (Pre-stock)
+
+# 100本事前ストック化用 manual workflow。
+# Gemini API で youtube/inputs/scripts/script_NNN.json を batch 生成し commit back。
+# quota 切れで graceful exit → 同 workflow を再 dispatch すると残りから続行。
+
+on:
+  workflow_dispatch:
+    inputs:
+      max:
+        description: 'Max scripts to generate this run (CI timeout safety). Default 25.'
+        type: string
+        required: false
+        default: '25'
+      ids:
+        description: 'Comma-separated topic IDs to generate (e.g. 081,082,083). Empty = auto-pick unprocessed.'
+        type: string
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bulk-generate-scripts
+  cancel-in-progress: false
+
+jobs:
+  bulk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330  # 5.5h (GitHub max is 6h)
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GEMINI_MODEL: 'gemini-2.5-flash'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Show pre-state
+        run: |
+          ls -la youtube/inputs/scripts/ 2>&1 | head -30 || echo "[bulk] no scripts dir yet"
+          echo "[bulk] existing script count:"
+          ls youtube/inputs/scripts/script_*.json 2>/dev/null | wc -l || echo 0
+
+      - name: Run bulk generator
+        id: gen
+        run: |
+          set -e
+          ARGS=""
+          if [ -n "${{ inputs.ids }}" ]; then
+            ARGS="$ARGS --ids=${{ inputs.ids }}"
+          fi
+          if [ -n "${{ inputs.max }}" ]; then
+            ARGS="$ARGS --max=${{ inputs.max }}"
+          fi
+          echo "[bulk] invoking: node youtube/scripts/bulk_generate_scripts.mjs $ARGS"
+          node youtube/scripts/bulk_generate_scripts.mjs $ARGS
+
+      - name: Show post-state
+        run: |
+          echo "[bulk] post script count:"
+          ls youtube/inputs/scripts/script_*.json 2>/dev/null | wc -l
+          ls -la youtube/inputs/scripts/ | head -30
+
+      - name: Commit & push generated scripts
+        if: always()
+        env:
+          GIT_AUTHOR_NAME: 'github-actions[bot]'
+          GIT_AUTHOR_EMAIL: '41898282+github-actions[bot]@users.noreply.github.com'
+          GIT_COMMITTER_NAME: 'github-actions[bot]'
+          GIT_COMMITTER_EMAIL: '41898282+github-actions[bot]@users.noreply.github.com'
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase --autostash origin main || true
+          git add youtube/inputs/scripts/ || true
+          COUNT=$(ls youtube/inputs/scripts/script_*.json 2>/dev/null | wc -l)
+          if git diff --cached --quiet; then
+            echo "[bulk] no changes to commit (count_in_repo=$COUNT)"
+          else
+            git commit -m "bulk: pre-stock scripts (now ${COUNT}/100) [skip ci]"
+            for i in 1 2 3; do
+              git push origin main && break
+              echo "[bulk] push attempt $i failed; rebasing and retrying"
+              git pull --rebase --autostash origin main || true
+              sleep 5
+            done
+          fi
+          echo "[bulk] final repo script count: $COUNT / 100"
+
+      - name: Upload artifacts (scripts for inspection)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bulk-scripts-${{ github.run_number }}
+          path: youtube/inputs/scripts/script_*.json
+          if-no-files-found: warn
+          retention-days: 30

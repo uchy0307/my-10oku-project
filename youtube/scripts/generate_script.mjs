@@ -378,6 +378,24 @@ export function parseOutline(outlineText) {
   return chapters.slice(0, 5);
 }
 
+// 2026-05-20: pre-stock 化対応。inputs/scripts/script_<id>.json が repo にあれば
+// Gemini をその場で叩かず JSON から本編 txt を組み立てて state を更新する。
+// 既存ダウンストリーム (voice / images / compile) は output/<id>_script.txt を消費するため
+// 出力フォーマットは従来と完全互換に保つ。
+const INPUTS_SCRIPTS_DIR = path.join(ROOT, 'inputs', 'scripts');
+
+async function tryLoadPrestockedScript(topicId) {
+  const p = path.join(INPUTS_SCRIPTS_DIR, `script_${topicId}.json`);
+  try {
+    const raw = await fs.readFile(p, 'utf-8');
+    const data = JSON.parse(raw);
+    if (!data || !Array.isArray(data.chapters) || data.chapters.length === 0) return null;
+    return { path: p, data };
+  } catch {
+    return null;
+  }
+}
+
 async function main() {
   await ensureDir(OUTPUT_DIR);
   const topics = await loadTopics();
@@ -390,6 +408,51 @@ async function main() {
   }
 
   console.log(`[generate_script] Selected topic: [${topic.id}] ${topic.title} (${topic.category})`);
+
+  // === PRE-STOCK FAST PATH (2026-05-20 root fix) ===
+  const pre = await tryLoadPrestockedScript(topic.id);
+  if (pre) {
+    console.log(`[generate_script] PRE-STOCKED script found: ${pre.path} — consuming JSON, skipping Gemini calls`);
+    const sectionsFromJson = pre.data.chapters.map((c, i) => ({
+      index: c.index || (i + 1),
+      title: c.title || `第${i + 1}章`,
+      body: (c.narration || '').trim(),
+    }));
+    const fullScriptFromJson = sectionsFromJson
+      .map((s) => `第${s.index}章 ${s.title}\n\n${s.body}`)
+      .join('\n\n');
+    const totalCharsFromJson = fullScriptFromJson.length;
+    console.log(`[generate_script] (pre-stock) total ${totalCharsFromJson} chars across ${sectionsFromJson.length} chapters`);
+    const scriptPathFromJson = path.join(OUTPUT_DIR, `${topic.id}_script.txt`);
+    await fs.writeFile(scriptPathFromJson, fullScriptFromJson, 'utf-8');
+    // metadata snapshot (description/tags/image_prompts) for downstream image gen / upload
+    const metaPath = path.join(OUTPUT_DIR, `${topic.id}_meta.json`);
+    await fs.writeFile(metaPath, JSON.stringify({
+      id: topic.id,
+      title: pre.data.title || topic.title,
+      description: pre.data.description || '',
+      tags: pre.data.tags || [],
+      thumbnail_text: pre.data.thumbnail_text || '',
+      chapters: pre.data.chapters.map((c) => ({
+        index: c.index,
+        title: c.title,
+        image_prompts: c.image_prompts || [],
+      })),
+      source: 'prestocked',
+      generated_at: pre.data.generated_at || null,
+    }, null, 2), 'utf-8');
+    state.currentTopic = topic;
+    state.lastRun = new Date().toISOString();
+    state.lastScriptPath = scriptPathFromJson;
+    state.lastScriptChars = totalCharsFromJson;
+    state.lastScriptSource = 'prestocked';
+    state.lastScriptChapters = sectionsFromJson.map((s) => ({ index: s.index, title: s.title, chars: s.body.length }));
+    await saveState(state);
+    console.log('[generate_script] State updated from pre-stocked JSON.');
+    return;
+  }
+  // === fall through to live Gemini generation (legacy path) ===
+  console.log('[generate_script] No pre-stocked JSON; falling back to live Gemini outline+chapter generation.');
 
   console.log('[generate_script] Step 1/6: outline generation');
   const outlineText = await callGemini(OUTLINE_PROMPT(topic.title, topic.category));

@@ -282,10 +282,10 @@ async function callGemini(prompt, attempt = 1, modelIdx = 0) {
     contents: [{ parts: [{ text: prompt }] }],
     generationConfig: {
       temperature: 0.85,
-      // gemini-2.5-flash は thinkingMode が default で有効。thinking が
-      // maxOutputTokens を食い潰すので、thinkingBudget=2048 に固定（pro は thinking 必須）。
-      thinkingConfig: { thinkingBudget: 2048 },
-      maxOutputTokens: 65536,
+      // 2026-05-19 真因対策：flash モデルは thinking で出力 budget を食い潰すため thinkingBudget=0 に。
+      // pro モデルは思考必須だが今は flash 主・thinkingBudget=0 で full output 確保。
+      thinkingConfig: { thinkingBudget: 0 },
+      maxOutputTokens: 32768,  // flash の実用上限・無駄に大きい値は逆効果
       responseMimeType: 'text/plain',
     },
     safetySettings: [

@@ -24,14 +24,24 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 // 2026-05-19: 完全無料化軸 → default を flash に変更（Free Tier RPD 多）
 // gemini-2.5-pro は Free Tier 制限が厳しく即429。env で上書きする場合のみ pro 使用可
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-// 2026-05-19: 429 quota exhaust 対策・確認済み正しいモデル名のみ
-const GEMINI_FALLBACK_MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-2.5-flash-lite'];
+// 2026-05-20: ROOT FIX - removed dead 1.5 models (404 on current API), added live free-tier ones
+// Order: tried in sequence; each 429 instantly falls to next. Total 6 distinct quota pools.
+const GEMINI_FALLBACK_MODELS = [
+  'gemini-2.0-flash',
+  'gemini-2.0-flash-lite',
+  'gemini-2.5-flash-lite',
+  'gemini-flash-latest',
+  'gemma-3-27b-it',
+  'gemma-3-12b-it',
+];
 const _gemini_endpoint = (model) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 const GEMINI_ENDPOINT = _gemini_endpoint(GEMINI_MODEL);
 
-// 章本文の最低文字数（これを下回ったら章単位で再生成）
-const CHAPTER_MIN_CHARS = 8000;
-const CHAPTER_MAX_RETRIES = 2;
+// 2026-05-20: ROOT FIX - 8000→2000. Gemini flash 実測 2000-4000/章。
+// 8000要求は永遠に未達 → 章ごと2回retry × 5章 × チェーン6モデル = 60+ APIcall = 即429。
+// 2000なら大体1発で達成 → 5章で~7call。free-tier 内に余裕で収まる。
+const CHAPTER_MIN_CHARS = 2000;
+const CHAPTER_MAX_RETRIES = 0;
 
 // ─── カテゴリ別執筆方針＋出力例 (Phase D root-fix) ───
 export function getCategoryGuidance(category, title) {
@@ -206,7 +216,7 @@ ${prevSummary ? `【前章までの要約】\n${prevSummary}\n` : ''}
 
 ${category === '合戦軸' ? BATTLE_AXIS_ADDENDUM(title) : ''}
 【絶対要件】
-1. 文字数: 日本語で最低8000字、理想10000字（必ず満たすこと、短い回答は不採用）（句読点・改行含む）。8000字未満は不合格。指定字数を必ず満たすこと。
+1. 文字数: 日本語で最低2500字、理想3500字（句読点・改行含む）。短すぎる回答は不採用。
 2. 純粋なナレーション本文のみ。マークダウン記号（**, ##, *, _, バッククォート）禁止
 3. 「ナレーション:」「ナレーター:」「BGM:」「SE:」「VISUAL:」「テロップ:」等のラベル禁止
 4. ハッシュタグ（#）禁止
@@ -338,15 +348,15 @@ async function callGemini(prompt, attempt = 1, modelIdx = 0) {
     }
     throw new Error(`Gemini returned empty content (finishReason=${finishReason})`);
   }
-  // 2026-05-19 緩和: 4000→2500 字（flash モデルは pro よりも応答が短くなりがち）
-  // 同 model で 2回 retry → だめなら次 model に切替（短い応答も fallback 対象）
-  if (text.length < 2500 && attempt < 2) {
-    console.warn(`[generate_script] suspiciously short response (${text.length} chars, need >=2500) on model=${currentModel}. Retrying same model attempt ${attempt + 1}...`);
-    return callGemini(prompt, attempt + 1, modelIdx);
-  }
-  if (text.length < 2500 && modelIdx < modelsChain.length - 1) {
-    console.warn(`[generate_script] short response on model=${currentModel} after retries. Switching to next model.`);
-    return callGemini(prompt, 1, modelIdx + 1);
+  // 2026-05-20 ROOT FIX: 2500→1200 字。同model内 retry も削除（quota 浪費の主因）。
+  // flash 実測 ~2000-4000/章。1200 を超えれば accept してさっさと次の章へ。
+  // 後段の章ループ側 (CHAPTER_MIN_CHARS=2000) で必要なら再生成判断する。
+  if (!text || text.length < 1200) {
+    if (modelIdx < modelsChain.length - 1) {
+      console.warn(`[generate_script] short response (${text?.length || 0} chars < 1200) on model=${currentModel}. Switching to next model.`);
+      return callGemini(prompt, 1, modelIdx + 1);
+    }
+    console.warn(`[generate_script] all models exhausted but short response (${text?.length || 0} chars). Returning best-effort.`);
   }
   return text;
 }

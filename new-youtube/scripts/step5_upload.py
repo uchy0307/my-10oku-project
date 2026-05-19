@@ -41,6 +41,7 @@ import requests
 TOKEN_URL = "https://oauth2.googleapis.com/token"
 UPLOAD_URL = "https://www.googleapis.com/upload/youtube/v3/videos"
 PLAYLIST_ITEMS_URL = "https://www.googleapis.com/youtube/v3/playlistItems"
+THUMB_UPLOAD_URL = "https://www.googleapis.com/upload/youtube/v3/thumbnails/set"
 
 
 def _need(name: str) -> str:
@@ -61,9 +62,39 @@ def _get_access_token() -> str:
     return r.json()["access_token"]
 
 
+def upload_thumbnail(token: str, video_id: str, thumb_path: Path) -> None:
+    """videos.thumbnails.set: upload custom thumbnail JPEG.
+    Requires account verification (phone) on YouTube; will return 400 with
+    'youtubeSignupRequired' if未認証. We log + swallow that case so the rest of
+    the pipeline doesn't fail.
+    """
+    size = thumb_path.stat().st_size
+    if size > 2 * 1024 * 1024:
+        print(f"[step5] WARN thumbnail too large ({size} bytes, max 2MB), skipping")
+        return
+    with open(thumb_path, "rb") as f:
+        r = requests.post(
+            THUMB_UPLOAD_URL,
+            params={"videoId": video_id, "uploadType": "media"},
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "image/jpeg",
+            },
+            data=f.read(),
+            timeout=120,
+        )
+    if r.status_code >= 400:
+        msg = r.text[:300]
+        print(f"[step5] WARN thumbnails.set HTTP {r.status_code}: {msg}")
+        r.raise_for_status()
+    else:
+        print(f"[step5] thumbnail set OK ({size} bytes)")
+
+
 def upload_video(video_path: Path, script: dict,
                  schedule_at_jst: datetime | None = None,
-                 privacy: str = "private") -> str:
+                 privacy: str = "private",
+                 thumbnail_path: Path | None = None) -> str:
     token = _get_access_token()
     metadata = {
         "snippet": {
@@ -109,6 +140,15 @@ def upload_video(video_path: Path, script: dict,
     r.raise_for_status()
     vid = r.json()["id"]
     print(f"uploaded: https://youtu.be/{vid}")
+
+    # 2026-05-20 fix: custom thumbnail upload (旧版未実装 → YouTube 自動生成の黒画面サムネだった)
+    if thumbnail_path and thumbnail_path.exists() and thumbnail_path.stat().st_size > 1000:
+        try:
+            upload_thumbnail(token, vid, thumbnail_path)
+        except Exception as e:
+            print(f"[step5] WARN thumbnail set failed: {e}")
+    else:
+        print(f"[step5] no custom thumbnail provided (path={thumbnail_path})")
 
     # optional: add to playlist
     pl = os.environ.get("NEW_YOUTUBE_PLAYLIST_ID")

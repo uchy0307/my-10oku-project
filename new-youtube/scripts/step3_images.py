@@ -24,6 +24,8 @@ if not hasattr(_flush_b, "_orig_print"):
 
 import hashlib
 import time
+import json
+import base64
 from pathlib import Path
 from urllib.parse import quote
 import requests
@@ -34,6 +36,22 @@ from PIL import Image, ImageDraw, ImageFont
 POLLINATIONS_BASE = "https://image.pollinations.ai/prompt/"
 MODEL = "flux"
 WIDTH, HEIGHT = 1280, 720
+
+# --- Gemini (Nano Banana / Imagen) primary backend (2026-05-20 fix) ---
+# Free tier: gemini-2.5-flash-image (Nano Banana) ~200 req/day, no billing required.
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or ""
+GEMINI_IMG_MODELS = [
+    # 無料 tier (Nano Banana). 動けばこれだけで通る。
+    "gemini-2.5-flash-image",
+    "gemini-2.5-flash-image-preview",
+    "gemini-2.0-flash-preview-image-generation",
+    "gemini-2.0-flash-exp-image-generation",
+    # billing 有効プロジェクトでは Imagen に fall through (free tier では 403 → 次へ)
+    "imagen-4.0-fast-generate-001",
+    "imagen-3.0-fast-generate-001",
+    "imagen-3.0-generate-001",
+]
+_gemini_working_model = None
 
 PROMPT_TEMPLATE = (
     "cinematic photograph, 16:9 aspect, 1280x720, NO PEOPLE in foreground, "
@@ -89,6 +107,96 @@ def _validate(scene_prompt: str) -> None:
 def _cache_key(full_prompt: str, seed: int | None) -> str:
     base = full_prompt + (f"|seed={seed}" if seed is not None else "")
     return hashlib.sha256(base.encode("utf-8")).hexdigest()[:16]
+
+
+def _gemini_call(prompt: str, model: str) -> bytes:
+    """Single Gemini image API call. Raises on failure. Returns image bytes."""
+    if model.startswith("imagen"):
+        url = (
+            f"https://generativelanguage.googleapis.com/v1beta/models/{model}"
+            f":predict?key={GEMINI_API_KEY}"
+        )
+        body = {
+            "instances": [{"prompt": prompt}],
+            "parameters": {"sampleCount": 1, "aspectRatio": "16:9"},
+        }
+    else:
+        url = (
+            f"https://generativelanguage.googleapis.com/v1beta/models/{model}"
+            f":generateContent?key={GEMINI_API_KEY}"
+        )
+        body = {
+            "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+            "generationConfig": {"responseModalities": ["TEXT", "IMAGE"]},
+        }
+    r = requests.post(url, json=body, timeout=180,
+                      headers={"Content-Type": "application/json"})
+    r.raise_for_status()
+    data = r.json()
+    if "predictions" in data:
+        preds = data.get("predictions") or []
+        if not preds:
+            raise RuntimeError(f"empty predictions: {json.dumps(data)[:200]}")
+        first = preds[0]
+        b64 = first.get("bytesBase64Encoded") or (first.get("image") or {}).get("bytesBase64Encoded")
+        if not b64:
+            raise RuntimeError(f"no bytes in predictions: {json.dumps(data)[:200]}")
+        return base64.b64decode(b64)
+    cands = data.get("candidates") or []
+    if not cands:
+        raise RuntimeError(f"no candidates: {json.dumps(data)[:200]}")
+    parts = cands[0].get("content", {}).get("parts", [])
+    for p in parts:
+        inline = p.get("inlineData") or p.get("inline_data")
+        if inline and inline.get("data"):
+            return base64.b64decode(inline["data"])
+    raise RuntimeError(f"no inline_data: {json.dumps(data)[:200]}")
+
+
+def _try_gemini(full: str, seed, out: Path) -> bool:
+    """Try Gemini Image (Nano Banana) / Imagen cascade. Free tier first."""
+    global _gemini_working_model
+    if not GEMINI_API_KEY:
+        print("[gemini] GEMINI_API_KEY/GOOGLE_API_KEY not set, skipping")
+        return False
+    candidates = list(GEMINI_IMG_MODELS)
+    if _gemini_working_model and _gemini_working_model in candidates:
+        # try the previously-working one first
+        candidates.remove(_gemini_working_model)
+        candidates.insert(0, _gemini_working_model)
+    for model in candidates:
+        try:
+            img_bytes = _gemini_call(full, model)
+            img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+            # aspect-fit with black bar padding (no stretch)
+            sw, sh = img.size
+            ta = WIDTH / HEIGHT
+            sa = sw / sh
+            if abs(sa - ta) < 0.01:
+                img = img.resize((WIDTH, HEIGHT), Image.LANCZOS)
+            elif sa > ta:
+                nw = WIDTH; nh = int(WIDTH / sa)
+                res = img.resize((nw, nh), Image.LANCZOS)
+                canvas = Image.new("RGB", (WIDTH, HEIGHT), (0, 0, 0))
+                canvas.paste(res, (0, (HEIGHT - nh) // 2))
+                img = canvas
+            else:
+                nh = HEIGHT; nw = int(HEIGHT * sa)
+                res = img.resize((nw, nh), Image.LANCZOS)
+                canvas = Image.new("RGB", (WIDTH, HEIGHT), (0, 0, 0))
+                canvas.paste(res, ((WIDTH - nw) // 2, 0))
+                img = canvas
+            img.save(out, "JPEG", quality=88)
+            _gemini_working_model = model
+            print(f"[gemini] OK model={model}: {out.name}")
+            return True
+        except requests.HTTPError as e:
+            code = e.response.status_code if e.response is not None else "?"
+            body_txt = (e.response.text[:200] if e.response is not None else "")
+            print(f"[gemini] {model} HTTP {code}: {body_txt}")
+        except Exception as e:
+            print(f"[gemini] {model} exc: {e}")
+    return False
 
 
 def _try_pollinations(full: str, seed, out: Path) -> bool:
@@ -221,8 +329,10 @@ def generate_image(scene_prompt: str, cache_dir: Path,
     if out.exists() and out.stat().st_size > 1000:
         return out
 
-    # Cascade: pollinations -> HF -> Together -> Pillow placeholder
+    # Cascade: Gemini (Nano Banana, free tier) -> pollinations -> HF -> Together -> Pillow placeholder
+    # 2026-05-20 fix: Gemini を primary に昇格 (workflow に GEMINI_API_KEY が通っているのに従来未使用だった)
     backends = [
+        ("gemini",       lambda: _try_gemini(full, seed, out)),
         ("pollinations", lambda: _try_pollinations(full, seed, out)),
         ("huggingface",  lambda: _try_huggingface(full, seed, out)),
         ("together",     lambda: _try_together(full, seed, out)),

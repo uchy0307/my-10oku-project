@@ -22,8 +22,15 @@ const STATE_FILE = path.join(OUTPUT_DIR, 'state.json');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-// 2026-05-19: 429 / 404 quota 対策・確認済み正しいモデル名のみ
-const GEMINI_FALLBACK_MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-2.5-flash-lite'];
+// 2026-05-20 ROOT FIX: removed dead 1.5 models (404 on current API), added live free-tier ones
+const GEMINI_FALLBACK_MODELS = [
+  'gemini-2.0-flash',
+  'gemini-2.0-flash-lite',
+  'gemini-2.5-flash-lite',
+  'gemini-flash-latest',
+  'gemma-3-27b-it',
+  'gemma-3-12b-it',
+];
 const _gemini_endpoint = (model) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 const GEMINI_ENDPOINT = _gemini_endpoint(GEMINI_MODEL);
 

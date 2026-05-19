@@ -32,6 +32,7 @@ sys.path.insert(0, str(ROOT))
 from step1_load import read_script
 from step2_voice import generate_voice
 from step3_images import generate_all_images
+from step3b_thumbnail import generate_thumbnail
 from step4_compile import compile_video
 
 
@@ -65,6 +66,13 @@ def main():
     imgs = generate_all_images(script, cache, target_per_chapter=5)
     print(f"[3/4] images OK: {sum(len(c) for c in imgs)} files")
 
+    # 2026-05-20 fix: サムネ画像を明示生成 (旧版は未実装→YouTube 自動黒画面サムネ)
+    thumb_dir = outputs / script_path.stem
+    thumb_dir.mkdir(parents=True, exist_ok=True)
+    first_img = imgs[0][0] if imgs and imgs[0] else None
+    thumb_path = generate_thumbnail(script, first_img, thumb_dir / "thumb.jpg")
+    print(f"[3b/4] thumbnail OK: {thumb_path}")
+
     compile_work = outputs / script_path.stem / "compile_work"
     bgm = assets / script["bgm"]
     final = compile_video(
@@ -77,7 +85,8 @@ def main():
 
     if not args.no_upload:
         from step5_upload import upload_video
-        vid = upload_video(final, script, privacy="public")
+        vid = upload_video(final, script, privacy="public",
+                           thumbnail_path=thumb_path)
         print(f"[5/5] uploaded: {vid}")
 
 

@@ -81,13 +81,37 @@ def make_voice(text, out_wav):
     out_wav.write_bytes(wav_bytes)
     print(f"[voicevox] wrote {out_wav} ({len(wav_bytes)} bytes)")
 
+def find_ffmpeg():
+    import shutil
+    p = shutil.which("ffmpeg")
+    if p:
+        return p
+    try:
+        import imageio_ffmpeg
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception as e:
+        print(f"[ffmpeg] imageio_ffmpeg unavailable: {e}")
+    # last resort: try standard install dirs
+    for cand in [r"C:\ffmpeg\bin\ffmpeg.exe", r"C:\Program Files\ffmpeg\bin\ffmpeg.exe"]:
+        if Path(cand).exists():
+            return cand
+    raise RuntimeError("ffmpeg not found")
+
+def ffprobe_duration(ffmpeg, audio_wav):
+    """Use ffmpeg -i to parse Duration (no separate ffprobe needed)."""
+    r = subprocess.run([ffmpeg, "-i", str(audio_wav)], capture_output=True, text=True)
+    # Duration line: Duration: 00:00:30.00,
+    import re
+    m = re.search(r"Duration:\s*(\d+):(\d+):(\d+\.\d+)", r.stderr)
+    if not m:
+        raise RuntimeError(f"Cannot parse duration: {r.stderr[-500:]}")
+    h, mi, s = m.groups()
+    return int(h) * 3600 + int(mi) * 60 + float(s)
+
 def make_video(audio_wav, out_mp4):
-    # Get duration of audio
-    dur_out = subprocess.run(
-        ["ffprobe", "-v", "error", "-show_entries", "format=duration",
-         "-of", "default=noprint_wrappers=1:nokey=1", str(audio_wav)],
-        capture_output=True, text=True)
-    dur = float(dur_out.stdout.strip())
+    ffmpeg = find_ffmpeg()
+    print(f"[ffmpeg] using {ffmpeg}")
+    dur = ffprobe_duration(ffmpeg, audio_wav)
     print(f"[ffmpeg] audio duration={dur:.2f}s")
 
     # Create a 1280x720 black bg with title text and Japanese font using drawtext
@@ -130,7 +154,7 @@ def make_video(audio_wav, out_mp4):
     )
 
     cmd = [
-        "ffmpeg", "-y",
+        ffmpeg, "-y",
         "-f", "lavfi", "-i", f"color=c=black:s=1280x720:d={dur:.3f}:r=30",
         "-i", str(audio_wav),
         "-vf", vf,
@@ -215,8 +239,9 @@ def upload_video(mp4_path, access_token, privacy="public"):
 
 def make_silent_audio(out_wav, duration=30.0):
     """Fallback: generate silent audio via ffmpeg when TTS unavailable."""
+    ffmpeg = find_ffmpeg()
     cmd = [
-        "ffmpeg", "-y",
+        ffmpeg, "-y",
         "-f", "lavfi", "-i", f"anullsrc=channel_layout=mono:sample_rate=24000",
         "-t", str(duration),
         "-c:a", "pcm_s16le",

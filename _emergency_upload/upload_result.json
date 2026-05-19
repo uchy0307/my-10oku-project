@@ -1,0 +1,59 @@
+{
+  "videoId": "MuCePBG39FQ",
+  "url": "https://www.youtube.com/watch?v=MuCePBG39FQ",
+  "response": {
+    "kind": "youtube#video",
+    "etag": "5xtEpMf9Tww17MztWrn57B9UtlQ",
+    "id": "MuCePBG39FQ",
+    "snippet": {
+      "publishedAt": "2026-05-19T15:32:07Z",
+      "channelId": "UChsS2R5ao05wsptKmutSaoA",
+      "title": "【予告】長篠の戦い 鉄砲が変えた戦場",
+      "description": "天正三年五月二十一日、三河国設楽原。\n織田信長・徳川家康の連合軍と、武田勝頼率いる武田軍が対峙した。\n三千挺の鉄砲、三重の馬防柵——戦の常識を覆した一日を、まもなく本編にて。\n\n■チャンネル: 侍の美学 — 日本史を語り継ぐ\n■カテゴリ: 合戦軸\n\n#日本史 #長篠の戦い #織田信長 #徳川家康 #武田勝頼 #戦国時代 #侍の美学",
+      "thumbnails": {
+        "default": {
+          "url": "https://i.ytimg.com/vi/MuCePBG39FQ/default.jpg",
+          "width": 120,
+          "height": 90
+        },
+        "medium": {
+          "url": "https://i.ytimg.com/vi/MuCePBG39FQ/mqdefault.jpg",
+          "width": 320,
+          "height": 180
+        },
+        "high": {
+          "url": "https://i.ytimg.com/vi/MuCePBG39FQ/hqdefault.jpg",
+          "width": 480,
+          "height": 360
+        }
+      },
+      "channelTitle": "侍・戦国・幕末チャンネル  Japanese Samurai History ",
+      "tags": [
+        "ナレーション",
+        "侍の美学",
+        "戦国時代",
+        "日本史",
+        "武田勝頼",
+        "歴史",
+        "織田信長",
+        "鉄砲",
+        "長篠の戦い"
+      ],
+      "categoryId": "27",
+      "liveBroadcastContent": "none",
+      "defaultLanguage": "ja",
+      "localized": {
+        "title": "【予告】長篠の戦い 鉄砲が変えた戦場",
+        "description": "天正三年五月二十一日、三河国設楽原。\n織田信長・徳川家康の連合軍と、武田勝頼率いる武田軍が対峙した。\n三千挺の鉄砲、三重の馬防柵——戦の常識を覆した一日を、まもなく本編にて。\n\n■チャンネル: 侍の美学 — 日本史を語り継ぐ\n■カテゴリ: 合戦軸\n\n#日本史 #長篠の戦い #織田信長 #徳川家康 #武田勝頼 #戦国時代 #侍の美学"
+      }
+    },
+    "status": {
+      "uploadStatus": "uploaded",
+      "privacyStatus": "public",
+      "license": "youtube",
+      "embeddable": true,
+      "publicStatsViewable": true,
+      "selfDeclaredMadeForKids": false
+    }
+  }
+}

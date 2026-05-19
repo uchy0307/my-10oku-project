@@ -338,10 +338,15 @@ async function callGemini(prompt, attempt = 1, modelIdx = 0) {
     }
     throw new Error(`Gemini returned empty content (finishReason=${finishReason})`);
   }
-  // 4000字未満は事実上失敗とみなしリトライ（旧閾値1000は緩すぎて短い章を見逃す）
-  if (text.length < 4000 && attempt < 2) {
-    console.warn(`[generate_script] suspiciously short response (${text.length} chars, need >=4000). Retrying...`);
+  // 2026-05-19 緩和: 4000→2500 字（flash モデルは pro よりも応答が短くなりがち）
+  // 同 model で 2回 retry → だめなら次 model に切替（短い応答も fallback 対象）
+  if (text.length < 2500 && attempt < 2) {
+    console.warn(`[generate_script] suspiciously short response (${text.length} chars, need >=2500) on model=${currentModel}. Retrying same model attempt ${attempt + 1}...`);
     return callGemini(prompt, attempt + 1, modelIdx);
+  }
+  if (text.length < 2500 && modelIdx < modelsChain.length - 1) {
+    console.warn(`[generate_script] short response on model=${currentModel} after retries. Switching to next model.`);
+    return callGemini(prompt, 1, modelIdx + 1);
   }
   return text;
 }

@@ -32,5 +32,15 @@
     "shortsVideoId": "KES2RgtT1Ak",
     "shortsUrl": "https://www.youtube.com/shorts/KES2RgtT1Ak",
     "at": "2026-05-18T16:16:32.597Z"
-  }
+  },
+  "deadVideos": [
+    "m7kXLSL0jxg"
+  ],
+  "deadVideoLog": [
+    {
+      "videoId": "m7kXLSL0jxg",
+      "reason": "fetchVideoMeta 404",
+      "at": "2026-05-19T23:42:13.248Z"
+    }
+  ]
 }

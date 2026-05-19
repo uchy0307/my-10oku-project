@@ -12,10 +12,12 @@ on:
         type: string
         required: false
         default: ''
-  schedule:
-    - cron: '50 22 * * *'
-    - cron: '50 4 * * *'
-    - cron: '50 10 * * *'
+  # 2026-05-20: bulk ストック化が動くまで quota 浪費防止のため schedule を一時停止
+  # bulk pipeline 復帰後に再有効化予定 (元: '50 22 * * *' / '50 4 * * *' / '50 10 * * *')
+  # schedule:
+  #   - cron: '50 22 * * *'
+  #   - cron: '50 4 * * *'
+  #   - cron: '50 10 * * *'
 
 permissions:
   contents: write

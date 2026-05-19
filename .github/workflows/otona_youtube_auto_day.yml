@@ -35,6 +35,8 @@ jobs:
     env:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+      # 2026-05-20: Nano Banana (Gemini 2.5 Flash Image) を primary で固定。Free Tier 対応の唯一の画像生成モデル。
+      GEMINI_IMG_MODEL: gemini-2.5-flash-image
       NEW_YOUTUBE_CLIENT_ID: ${{ secrets.NEW_YOUTUBE_CLIENT_ID }}
       NEW_YOUTUBE_CLIENT_SECRET: ${{ secrets.NEW_YOUTUBE_CLIENT_SECRET }}
       NEW_YOUTUBE_REFRESH_TOKEN: ${{ secrets.NEW_YOUTUBE_REFRESH_TOKEN }}

@@ -1,4 +1,16 @@
 """step2_voice_voicevox.py
+[DEPRECATED 2026-05-19]
+==========================================================
+VOICEVOX local 依存は廃止されました。
+夜版 B 案も完全 cloud / 完全無料化方針に統一されました。
+pipeline からは `step2_voice_google_tts.py`（Google Cloud TTS
+Neural2-B 無料枠 1M chars/月）に切替済です。
+
+このファイルは実装そのまま保持しますが、
+`run_pipeline_night.py` の STEPS テーブルからは除外されます。
+VOICEVOX を手動で再起用したい場合のみ、明示的に呼び出してください。
+==========================================================
+
 VOICEVOX API (http://localhost:50021) で 冥鳴ひまり voice 生成
 - /speakers から「冥鳴ひまり」style_id を解決（環境変数 VOICEVOX_STYLE_ID で上書き可）
 - 章ごとに /audio_query → /synthesis でWAV取得
@@ -69,6 +81,12 @@ def synth_chapter(text: str, style_id: int, out_path: Path):
     out_path.write_bytes(wav)
 
 def main():
+    # Deprecation guard: 通常パイプラインからは呼ばれない
+    if os.environ.get("VOICEVOX_FORCE", "") != "1":
+        print("[step2_voicevox] DEPRECATED: このスクリプトは pipeline から除外されました。")
+        print("[step2_voicevox] Google Cloud TTS (step2_voice_google_tts.py) を使用してください。")
+        print("[step2_voicevox] 強制実行する場合は環境変数 VOICEVOX_FORCE=1 をセットしてください。")
+        sys.exit(0)
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     TMP_DIR.mkdir(parents=True, exist_ok=True)
     cur = json.loads((OUTPUT_DIR / "current.json").read_text(encoding="utf-8"))

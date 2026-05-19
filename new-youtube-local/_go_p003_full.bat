@@ -1,6 +1,8 @@
 @echo off
 REM Full pipeline run for p003 (state.json already marks p001/p002 processed).
-REM Step0 will pick p003 ("触れたい欲求の正体"). Requires VOICEVOX engine on localhost:50021.
+REM Step0 will pick p003 ("触れたい欲求の正体").
+REM [2026-05-19] VOICEVOX 依存廃止、Google Cloud TTS (Neural2-B) に統一。
+REM 必要 env: GEMINI_API_KEY or GOOGLE_API_KEY
 chcp 65001 >nul
 cd /d C:\Users\user\Documents\10oku-project\new-youtube-local
 set PYTHONIOENCODING=utf-8

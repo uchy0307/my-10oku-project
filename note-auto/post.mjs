@@ -49,9 +49,16 @@ function preprocessBody(body, articleId) {
   out = out.replace(/47歳の/g, '').replace(/47歳が/g, '私が').replace(/47歳に/g, '').replace(/47歳/g, '').replace(/[#＃]\s?47歳\s*/g, '');
   out = out.split('\n').map((l) => l.replace(/[ \t]{2,}/g, ' ').replace(/^ +| +$/g, '')).join('\n');
   out = out.replace(/\n{4,}/g, '\n\n\n');
-  const code = ACCESS_CODES[articleId];
+  const code = ACCESS_CODES[articleId] || '';
+  const link = `${URL_PATTERN}${articleId}`;
+  // 2026-05-19: テンプレ placeholder の literal 置換（#033-#037 で発生した未置換問題を fix）
+  out = out.replace(/\{\{ACCESS_CODE\}\}/g, code || '(コード生成中)');
+  out = out.replace(/\{\{APP_URL\}\}/g, link);
+  out = out.replace(/\{\{WORKBOOK_URL\}\}/g, link);   // 添付 docx の DL は note 添付機能で（リンクは app への誘導に統一）
+  out = out.replace(/\{\{30DAY_URL\}\}/g, link);
+  out = out.replace(/\{\{PROMPT_URL\}\}/g, link);
+  out = out.replace(/\{\{ARTICLE_ID\}\}/g, articleId);
   if (code) {
-    const link = `${URL_PATTERN}${articleId}`;
     if (!out.includes(link)) {
       out += `\n\n\n\n---\n\n▼アプリで深く問う\n\n${link}\n\nアクセスコード: ${code}\n`;
     }

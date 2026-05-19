@@ -63,6 +63,13 @@ jobs:
           # --- 台本・素材生成 ---
           GEMINI_API_KEY:        ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY:        ${{ secrets.GOOGLE_API_KEY }}
+          # 2026-05-19: 完全無料化軸 → flash Free Tier (1500req/day) を使用
+          GEMINI_MODEL:          "gemini-2.5-flash"
+          # 2026-05-19: 完全無料化軸 → Google TTS Neural2-B (free 1M chars/月) を主に
+          USE_ELEVENLABS:        "false"
+          GOOGLE_TTS_VOICE:      "ja-JP-Neural2-B"
+          # 顔なし運用 + QC 3層
+          STEP3_QC_MAX_RETRIES:  "3"
           PYTHONUNBUFFERED:      "1"
           ELEVENLABS_API_KEY:    ${{ secrets.ELEVENLABS_API_KEY }}
           ELEVENLABS_VOICE_ID:   ${{ secrets.ELEVENLABS_VOICE_ID }}

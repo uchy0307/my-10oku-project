@@ -36,12 +36,16 @@ MODEL = "flux"
 WIDTH, HEIGHT = 1280, 720
 
 PROMPT_TEMPLATE = (
-    "anime style, cel-shading, adult anime, professional Japanese woman in her 30s, "
-    "office attire, casual wear, calm composition, soft pastel background, "
-    "warm lighting, high detail, 16:9 aspect, 1280x720, {scene}"
+    "cinematic photograph, 16:9 aspect, 1280x720, NO PEOPLE in foreground, "
+    "NO PORTRAIT, NO FACES, OBJECT-ONLY composition, "
+    "modern japanese aesthetic, soft pastel or melancholic dim lighting, "
+    "professional clean composition, no AI artifacts, no horror, no deformed features, "
+    "subject: {scene}"
 )
 
 NEGATIVE = (
+    "human face, portrait, close-up of person, multiple people, group shot, "
+    "stretched face, distorted face, horror, deformed, "
     "nude, naked, topless, sexual, suggestive, school, uniform, "
     "child, minor, underage, schoolgirl, loli"
 )

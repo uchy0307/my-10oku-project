@@ -71,11 +71,15 @@
   "lastSrtPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/011_subtitle.srt",
   "lastSubsCount": 1241,
   "lastCompileAt": "2026-05-18T01:36:57.349Z",
-  "lastUploadResult": {
-    "status": "success",
-    "topicId": "011",
-    "videoId": "7R0jT5A23NI",
-    "url": "https://www.youtube.com/watch?v=7R0jT5A23NI"
+  "lastUploadResult": null,
+  "_invalidated_lastUploadResult_2026_05_19": {
+    "reason": "videoId 7R0jT5A23NI (#011 武田信玄汚染) was deleted from YouTube by user. Shorts pipeline kept failing 'Video not found' because it picks from lastUploadResult.videoId. Set to null so Shorts falls back to *_uploaded.json scan.",
+    "previousValue": {
+      "status": "success",
+      "topicId": "011",
+      "videoId": "7R0jT5A23NI",
+      "url": "https://www.youtube.com/watch?v=7R0jT5A23NI"
+    }
   },
   "lastUploadAt": "2026-05-18T01:37:07.897Z"
 }

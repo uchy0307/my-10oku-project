@@ -232,26 +232,45 @@ def main():
     tid = cur["id"]
     out_path = OUTPUT_DIR / f"{tid}_video.mp4"
 
+    # ★ step3 の QC 結果をチェック（image_quality.json が pass率 50% 以上か）
+    qc_path = OUTPUT_DIR / f"{tid}_quality.json"
+    if qc_path.exists():
+        try:
+            qc = json.loads(qc_path.read_text(encoding="utf-8"))
+            total = len(qc)
+            pass_n = sum(1 for q in qc if q.get("qc_ok"))
+            if total > 0 and pass_n / total < 0.5:
+                print(f"[step4_night] FATAL: image QC pass {pass_n}/{total} < 50%, abort compile")
+                sys.exit(2)
+            print(f"[step4_night] image QC pass {pass_n}/{total} OK")
+        except Exception as e:
+            print(f"[step4_night] WARN: quality.json read failed: {e}")
+
     # ★ SRT を確保 (無ければ生成)、その後 MAX_VIDEO_SEC でキャップ
     srt_path = ensure_subtitle(tid)
     if srt_path.exists():
         cap_srt_at(srt_path, MAX_VIDEO_SEC)
 
+    # ★ うっちー様明示「テロップナシダメ」: 字幕無しなら fail-fast
+    if not (srt_path.exists() and srt_path.stat().st_size > 0):
+        print(f"[step4_night] FATAL: subtitle MUST be present ({srt_path}). "
+              f"テロップナシは publish 不可. step1-2 を再実行して字幕生成してください.")
+        sys.exit(3)
+
     pre_path = compile_clipped_video(tid)
 
-    if srt_path.exists() and srt_path.stat().st_size > 0:
+    # ★ 字幕焼込みも MUST: 失敗時は no-subs フォールバックせず exit
+    try:
+        burn_subtitles(pre_path, srt_path, out_path)
         try:
-            burn_subtitles(pre_path, srt_path, out_path)
-            try:
-                pre_path.unlink()
-            except Exception:
-                pass
-        except Exception as e:
-            print(f"[step4_night] WARN: subtitle burn failed ({e}); fall back to no-subs")
-            shutil.move(str(pre_path), str(out_path))
-    else:
-        print(f"[step4_night] WARN: {srt_path} not found, skip subtitle burn")
-        shutil.move(str(pre_path), str(out_path))
+            pre_path.unlink()
+        except Exception:
+            pass
+    except Exception as e:
+        print(f"[step4_night] FATAL: subtitle burn failed ({e}). "
+              f"テロップ焼込みは MUST のため publish 不可.")
+        # pre_path は残しておいて再実行で活用できるようにする
+        sys.exit(4)
 
     print(f"[step4_night] FINAL: {out_path} ({out_path.stat().st_size/1024/1024:.1f}MB)")
 

@@ -1,7 +1,8 @@
 @echo off
 chcp 65001 >nul
 REM Windows Task Scheduler に 「otona_youtube_night」を 21:00 JST 毎日登録
-REM Local 実行: run_pipeline_night.py (VOICEVOX + Pixabay video clips)
+REM Local 実行: run_pipeline_night.py (Google Cloud TTS Neural2-B + Pixabay video clips)
+REM [2026-05-19] VOICEVOX local 依存廃止、完全 cloud / 完全無料化軸
 
 setlocal
 set TASK_NAME=otona_youtube_night

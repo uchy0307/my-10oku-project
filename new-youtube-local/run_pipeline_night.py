@@ -1,10 +1,14 @@
 """run_pipeline_night.py
-B案（夜版）ローカルパイプライン:
-  step0_gemini → step1_load → step2_voicevox → step3_video_clips →
+B案（夜版）パイプライン:
+  step0_gemini → step1_load → step2_voice_google_tts → step3_video_clips →
   step3b_thumbnail → step4_compile_night → step5_upload → verify_uploaded
 
-local 実行（Windows Task Scheduler 21:00 JST 毎日）想定。
-VOICEVOX エンジンが http://localhost:50021 で動作している必要あり。
+[2026-05-19] VOICEVOX local 依存を廃止し、Google Cloud TTS Neural2-B
+（無料枠 1M chars/月）に統一。 完全 cloud / 完全無料軸。
+従来の `step2_voice_voicevox.py` は実装維持・パイプラインから除外。
+
+実行環境はそのまま Windows Task Scheduler 21:00 JST 毎日想定。
+必要な env: GEMINI_API_KEY または GOOGLE_API_KEY (TTS 兼用)。
 """
 import os, sys, subprocess, time
 from pathlib import Path
@@ -27,14 +31,14 @@ if ENV_FILE.exists():
             os.environ[k] = v
 
 STEPS = [
-    ("step0_gemini.py",         "Gemini script"),
-    ("step1_load.py",           "Load & validate"),
-    ("step2_voice_voicevox.py", "VOICEVOX synth (冥鳴ひまり)"),
-    ("step3_video_clips.py",    "Pixabay video clips"),
-    ("step3b_thumbnail.py",     "Gemini Imagen thumbnail"),
-    ("step4_compile_night.py",  "MoviePy clip compose + subtitle burn"),
-    ("step5_upload.py",         "YouTube upload"),
-    ("verify_uploaded.py",      "Atom feed verify"),
+    ("step0_gemini.py",           "Gemini script"),
+    ("step1_load.py",             "Load & validate"),
+    ("step2_voice_google_tts.py", "Google Cloud TTS synth (ja-JP-Neural2-B)"),
+    ("step3_video_clips.py",      "Pixabay video clips"),
+    ("step3b_thumbnail.py",       "Gemini Imagen thumbnail"),
+    ("step4_compile_night.py",    "MoviePy clip compose + subtitle burn"),
+    ("step5_upload.py",           "YouTube upload"),
+    ("verify_uploaded.py",        "Atom feed verify"),
 ]
 
 
@@ -67,19 +71,15 @@ def main():
     print(f"[run_pipeline_night] start at {time.strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"[run_pipeline_night] test_mode={test_mode} skip={sorted(skip)}")
 
-    # VOICEVOX 起動確認 (step2 skip 時は不要)
+    # TTS env preflight (step2 skip 時は不要)
     if 2 not in skip:
-        import urllib.request
-        try:
-            with urllib.request.urlopen(os.environ.get("VOICEVOX_URL", "http://localhost:50021") + "/version", timeout=5) as r:
-                ver = r.read().decode("utf-8")
-                print(f"[run_pipeline_night] VOICEVOX OK: {ver.strip()[:60]}")
-        except Exception as e:
-            print(f"[run_pipeline_night] FATAL: VOICEVOX not reachable: {e}")
-            print("  → VOICEVOX アプリを起動してから再実行してください")
+        if not (os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")):
+            print("[run_pipeline_night] FATAL: GOOGLE_API_KEY / GEMINI_API_KEY env not set")
+            print("  → .env か Task Scheduler 環境に key をセットしてから再実行してください")
             sys.exit(2)
+        print("[run_pipeline_night] TTS env OK: Google Cloud TTS (Neural2-B)")
     else:
-        print("[run_pipeline_night] step2 skipped → VOICEVOX check bypassed")
+        print("[run_pipeline_night] step2 skipped → TTS env check bypassed")
 
     for i, (name, label) in enumerate(STEPS):
         if i in skip:

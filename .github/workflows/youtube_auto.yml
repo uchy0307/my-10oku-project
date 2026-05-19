@@ -34,6 +34,13 @@ jobs:
       GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
       ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
       ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
+      # 2026-05-19: 完全無料化軸 → Gemini flash Free Tier 使用
+      GEMINI_MODEL: "gemini-2.5-flash"
+      # 2026-05-19: 完全無料化軸 → Google TTS Neural2-B 無料枠 (1M chars/月) 使用
+      USE_ELEVENLABS: "false"
+      GOOGLE_TTS_VOICE: "ja-JP-Neural2-B"
+      GOOGLE_TTS_SPEAKING_RATE: "0.95"
+      GOOGLE_TTS_PITCH: "0.0"
       # Phase D: workflow_dispatch の target を generate_script に渡す
       TARGET_TOPIC_ID: ${{ inputs.target }}
     steps:

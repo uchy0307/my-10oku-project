@@ -21,10 +21,13 @@ const TOPICS_FILE = path.join(ROOT, 'topics.json');
 const STATE_FILE = path.join(OUTPUT_DIR, 'state.json');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-// 2026-05-19: 完全無料化軸 → default を flash に変更（Free Tier 1500req/day）
+// 2026-05-19: 完全無料化軸 → default を flash に変更（Free Tier RPD 多）
 // gemini-2.5-pro は Free Tier 制限が厳しく即429。env で上書きする場合のみ pro 使用可
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+// 2026-05-19: 429 quota exhaust 対策・確認済み正しいモデル名のみ
+const GEMINI_FALLBACK_MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-2.5-flash-lite'];
+const _gemini_endpoint = (model) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+const GEMINI_ENDPOINT = _gemini_endpoint(GEMINI_MODEL);
 
 // 章本文の最低文字数（これを下回ったら章単位で再生成）
 const CHAPTER_MIN_CHARS = 8000;

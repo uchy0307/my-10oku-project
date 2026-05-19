@@ -2,7 +2,8 @@
   "processed": [
     "pBDYbuiCzHY",
     "DWk2UL8z3OQ",
-    "dLOHK7U1vJc"
+    "dLOHK7U1vJc",
+    "YToADkccEAM"
   ],
   "records": [
     {
@@ -25,13 +26,20 @@
       "shortsUrl": "https://www.youtube.com/shorts/KES2RgtT1Ak",
       "title": "【侍の美学】武田信玄 風林火山の哲学",
       "uploadedAt": "2026-05-18T16:16:32.597Z"
+    },
+    {
+      "sourceVideoId": "YToADkccEAM",
+      "shortsVideoId": "PpNAROcK0H8",
+      "shortsUrl": "https://www.youtube.com/shorts/PpNAROcK0H8",
+      "title": "【侍の美学】真田幸村 日本一の兵",
+      "uploadedAt": "2026-05-19T23:59:26.317Z"
     }
   ],
   "lastUpload": {
-    "sourceVideoId": "dLOHK7U1vJc",
-    "shortsVideoId": "KES2RgtT1Ak",
-    "shortsUrl": "https://www.youtube.com/shorts/KES2RgtT1Ak",
-    "at": "2026-05-18T16:16:32.597Z"
+    "sourceVideoId": "YToADkccEAM",
+    "shortsVideoId": "PpNAROcK0H8",
+    "shortsUrl": "https://www.youtube.com/shorts/PpNAROcK0H8",
+    "at": "2026-05-19T23:59:26.317Z"
   },
   "deadVideos": [
     "m7kXLSL0jxg"

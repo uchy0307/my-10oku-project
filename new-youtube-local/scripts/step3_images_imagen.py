@@ -25,14 +25,17 @@ TARGET_H = int(os.environ.get("VIDEO_H", "720"))
 GEMINI_IMG_MODEL = os.environ.get("GEMINI_IMG_MODEL", "")
 
 CANDIDATE_MODELS = [
+    # 2026-05-20: Nano Banana (gemini-2.5-flash-image) を primary に昇格
+    # 理由: Imagen 4 系は Free Tier 非対応で 403 → fallback solid 化が連発 (Run #49)
+    "gemini-2.5-flash-image",
+    "gemini-2.5-flash-image-preview",
+    "gemini-2.0-flash-preview-image-generation",
+    "gemini-2.0-flash-exp-image-generation",
+    # 以下は paid tier の場合のみ通る (free key だと 403)
     "imagen-4.0-fast-generate-001",
     "imagen-4.0-generate-001",
     "imagen-3.0-generate-001",
     "imagen-3.0-fast-generate-001",
-    "gemini-2.0-flash-preview-image-generation",
-    "gemini-2.0-flash-exp-image-generation",
-    "gemini-2.5-flash-image",
-    "gemini-2.5-flash-image-preview",
 ]
 if GEMINI_IMG_MODEL and GEMINI_IMG_MODEL not in CANDIDATE_MODELS:
     CANDIDATE_MODELS.insert(0, GEMINI_IMG_MODEL)

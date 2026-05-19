@@ -4,22 +4,11 @@ name: new-youtube auto pipeline
 # UTC 22:00 = JST 07:00 / UTC 04:00 = JST 13:00 / UTC 10:00 = JST 19:00
 on:
   schedule:
-    # 1日3本 (each slot has 4 backup times for cron unreliability)
-    # 07:00 JST slot
-    - cron: "0 22 * * *"
-    - cron: "10 22 * * *"
-    - cron: "20 22 * * *"
-    - cron: "30 22 * * *"
-    # 13:00 JST slot
-    - cron: "0 4 * * *"
-    - cron: "10 4 * * *"
-    - cron: "20 4 * * *"
-    - cron: "30 4 * * *"
-    # 19:00 JST slot
-    - cron: "0 10 * * *"
-    - cron: "10 10 * * *"
-    - cron: "20 10 * * *"
-    - cron: "30 10 * * *"
+    # 2026-05-20: 多重 cron による Run #47/#48 同時起動を防ぐため
+    # 各 slot 1 行のみに統合 (1日3本 / 07/13/19 JST)
+    - cron: "0 22 * * *"   # 07:00 JST
+    - cron: "0 4 * * *"    # 13:00 JST
+    - cron: "0 10 * * *"   # 19:00 JST
   repository_dispatch:
     types: [external-cron-newyt]
   workflow_dispatch:
@@ -31,6 +20,11 @@ on:
         description: "アップロードをスキップ (true/false)"
         required: false
         default: "false"
+
+concurrency:
+  # 2026-05-20: schedule / repository_dispatch / workflow_dispatch の同時起動防止
+  group: new-youtube-auto-pipeline
+  cancel-in-progress: false
 
 jobs:
   generate-and-upload:

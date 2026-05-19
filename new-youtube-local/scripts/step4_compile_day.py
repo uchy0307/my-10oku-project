@@ -11,8 +11,9 @@ ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = ROOT / "output"
 
 FPS = int(os.environ.get("VIDEO_FPS", "24"))
-W = int(os.environ.get("VIDEO_W", "1280"))
-H = int(os.environ.get("VIDEO_H", "720"))
+# 2026-05-20: 360p/720p から 1080p 化 (1920x1080)
+W = int(os.environ.get("VIDEO_W", "1920"))
+H = int(os.environ.get("VIDEO_H", "1080"))
 CROSSFADE = float(os.environ.get("CROSSFADE_SEC", "0.8"))
 SUB_FONT = os.environ.get("SUB_FONT", "Noto Sans CJK JP")
 SUB_FONT_SIZE = int(os.environ.get("SUB_FONT_SIZE", "32"))
@@ -58,9 +59,11 @@ def compile_silent_video(tid: str) -> Path:
     video = fx_resize(video, newsize=(W, H))
 
     pre_path = OUTPUT_DIR / f"{tid}_video_nosubs.mp4"
+    # 2026-05-20: 1080p 高画質化 (無料維持・preset medium / crf-equivalent ~6Mbps)
     video.write_videofile(
         str(pre_path), fps=FPS, codec="libx264", audio_codec="aac",
-        threads=4, preset="medium", bitrate="2500k",
+        threads=4, preset="medium", bitrate="6000k",
+        ffmpeg_params=["-pix_fmt", "yuv420p", "-profile:v", "high", "-level", "4.0"],
         temp_audiofile=str(OUTPUT_DIR / f"{tid}_tmp_audio.m4a"),
         remove_temp=True,
     )
@@ -85,10 +88,12 @@ def burn_subtitles(pre_path: Path, srt_path: Path, out_path: Path) -> None:
     srt_arg = str(srt_path).replace("\\", "/").replace(":", r"\:")
     vf = f"subtitles={srt_arg}:force_style='{force_style}'"
 
+    # 2026-05-20: 1080p 高画質化 (crf 19, preset medium, pix_fmt yuv420p)
     cmd = [
         "ffmpeg", "-y", "-i", str(pre_path),
         "-vf", vf,
-        "-c:v", "libx264", "-preset", "medium", "-crf", "20",
+        "-c:v", "libx264", "-preset", "medium", "-crf", "19",
+        "-pix_fmt", "yuv420p",
         "-c:a", "copy",
         str(out_path),
     ]

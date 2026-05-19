@@ -42,11 +42,12 @@ jobs:
       YOUTUBE_CATEGORY_ID: '22'
       GTTS_VOICE_NAME: ja-JP-Neural2-B
       GTTS_SPEAKING_RATE: '1.0'
-      VIDEO_W: '1280'
-      VIDEO_H: '720'
+      # 2026-05-20: 720p -> 1080p 高画質化 (無料維持・libx264)
+      VIDEO_W: '1920'
+      VIDEO_H: '1080'
       VIDEO_FPS: '24'
       SUB_FONT: 'Noto Sans CJK JP'
-      SUB_FONT_SIZE: '36'
+      SUB_FONT_SIZE: '48'
       TARGET_TOPIC_ID: ${{ inputs.target }}
       UPLOAD_FLAG: ${{ inputs.upload }}
 

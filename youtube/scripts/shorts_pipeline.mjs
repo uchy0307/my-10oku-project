@@ -59,38 +59,99 @@ function buildOauth() {
   return o;
 }
 
-async function pickSourceVideoId() {
-  if (SHORTS_VIDEO_ID && SHORTS_VIDEO_ID.trim()) return SHORTS_VIDEO_ID.trim();
+async function pickSourceCandidates() {
+  // 戻り値: 新しい順に並んだ candidate videoId 配列。fetchVideoMeta で 404 になる古い/削除済み動画を
+  //   1本に固執せず順次フォールバックできるようにする (Run #9〜#12 が `m7kXLSL0jxg not found` で
+  //   28h 連続失敗した実害を防ぐ恒久対応)。
+  if (SHORTS_VIDEO_ID && SHORTS_VIDEO_ID.trim()) return [SHORTS_VIDEO_ID.trim()];
+
   const state = await loadJson(STATE_FILE, {});
-  const shortsState = await loadJson(SHORTS_STATE_FILE, { processed: [] });
-  // candidates: state.processed[] uploaded video IDs。state.processed is topicIds, not videoIds.
-  // 過去 uploaded record から videoId を逆引き
-  // 最新の lastUploadResult.videoId が未 short 化なら採用
+  const shortsState = await loadJson(SHORTS_STATE_FILE, { processed: [], deadVideos: [] });
+  const processed = new Set(shortsState.processed || []);
+  const dead = new Set(shortsState.deadVideos || []);
+  const skip = (id) => !id || processed.has(id) || dead.has(id);
+
+  const candidates = [];
+  const seen = new Set();
+  const push = (id, when) => {
+    if (skip(id) || seen.has(id)) return;
+    seen.add(id);
+    candidates.push({ videoId: id, uploadedAt: when || '' });
+  };
+
+  // 1) state.lastUploadResult.videoId が一番新しい
   const last = state.lastUploadResult;
-  if (last && last.status === 'success' && last.videoId && !shortsState.processed.includes(last.videoId)) {
-    return last.videoId;
+  if (last && last.status === 'success' && last.videoId) {
+    push(last.videoId, state.lastUploadAt || last.uploadedAt);
   }
-  // フォールバック: youtube/output/*_uploaded.json を全探索
-  const files = (await fs.readdir(OUTPUT_DIR)).filter((f) => f.endsWith('_uploaded.json'));
+
+  // 2) youtube/output/*_uploaded.json (artifact から落ちてくる)
+  let files = [];
+  try {
+    files = (await fs.readdir(OUTPUT_DIR)).filter((f) => f.endsWith('_uploaded.json'));
+  } catch {}
   const records = [];
   for (const f of files) {
     try {
       const r = JSON.parse(await fs.readFile(path.join(OUTPUT_DIR, f), 'utf-8'));
-      if (r.videoId && !shortsState.processed.includes(r.videoId)) {
-        records.push({ ...r, file: f });
-      }
+      if (r && r.videoId) records.push({ ...r, file: f });
     } catch {}
   }
   records.sort((a, b) => (b.uploadedAt || '').localeCompare(a.uploadedAt || ''));
-  if (records.length === 0) throw new Error('No un-shortified video found in state / uploaded records');
-  return records[0].videoId;
+  for (const r of records) push(r.videoId, r.uploadedAt);
+
+  return candidates.map((c) => c.videoId);
 }
 
 async function fetchVideoMeta(youtube, videoId) {
   const r = await youtube.videos.list({ part: ['snippet'], id: [videoId] });
   const item = (r.data.items || [])[0];
-  if (!item) throw new Error(`Video ${videoId} not found on YouTube`);
+  if (!item) {
+    const err = new Error(`Video ${videoId} not found on YouTube`);
+    err.code = 'VIDEO_NOT_FOUND';
+    throw err;
+  }
   return item.snippet;
+}
+
+async function markVideoDead(videoId, reason) {
+  // shorts_state.json に deadVideos を追記して即 flush。
+  // 同じ削除済み video を毎日 fetch しないようにする。
+  try {
+    const s = await loadJson(SHORTS_STATE_FILE, { processed: [], records: [], deadVideos: [] });
+    s.deadVideos = Array.from(new Set([...(s.deadVideos || []), videoId]));
+    s.deadVideoLog = (s.deadVideoLog || []).concat([{ videoId, reason, at: new Date().toISOString() }]).slice(-50);
+    await saveJson(SHORTS_STATE_FILE, s);
+    console.warn(`[shorts] marked dead videoId=${videoId} reason=${reason}`);
+  } catch (e) {
+    console.warn('[shorts] markVideoDead failed:', e.message);
+  }
+}
+
+async function pickAndFetchSnippet(youtube) {
+  // candidate を 1 本ずつ試し、最初に YouTube に存在するものを採用。
+  const candidates = await pickSourceCandidates();
+  if (candidates.length === 0) {
+    throw new Error('No un-shortified video found in state / uploaded records');
+  }
+  console.log(`[shorts] candidates (newest first): ${candidates.join(', ')}`);
+  let lastErr = null;
+  for (const id of candidates) {
+    try {
+      const snippet = await fetchVideoMeta(youtube, id);
+      console.log(`[shorts] selected videoId=${id} title="${snippet.title}"`);
+      return { videoId: id, snippet };
+    } catch (e) {
+      lastErr = e;
+      if (e.code === 'VIDEO_NOT_FOUND') {
+        await markVideoDead(id, 'fetchVideoMeta 404');
+        continue; // 次の候補
+      }
+      // 404 以外の API エラー (quota / network) は即時 fail
+      throw e;
+    }
+  }
+  throw lastErr || new Error('All candidates failed YouTube fetch');
 }
 
 async function downloadSource(videoId, dest) {
@@ -193,10 +254,8 @@ async function main() {
   if (!oauth) throw new Error('OAuth env missing (YOUTUBE_CLIENT_ID/SECRET/REFRESH_TOKEN)');
   const youtube = google.youtube({ version: 'v3', auth: oauth });
 
-  const sourceVideoId = await pickSourceVideoId();
+  const { videoId: sourceVideoId, snippet } = await pickAndFetchSnippet(youtube);
   console.log(`[shorts] source videoId = ${sourceVideoId}`);
-
-  const snippet = await fetchVideoMeta(youtube, sourceVideoId);
   console.log(`[shorts] source title = "${snippet.title}"`);
 
   await fs.mkdir(OUTPUT_DIR, { recursive: true });

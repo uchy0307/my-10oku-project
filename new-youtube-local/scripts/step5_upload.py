@@ -41,20 +41,14 @@ SKIP_VIDEO_QC = os.environ.get("STEP5_SKIP_VIDEO_QC", "false").lower() == "true"
 
 
 def get_access_token():
-    data = urllib.parse.urlencode({
-        "client_id": CLIENT_ID,
-        "client_secret": CLIENT_SECRET,
-        "refresh_token": REFRESH_TOKEN,
-        "grant_type": "refresh_token",
-    }).encode("utf-8")
-    req = urllib.request.Request(
-        "https://oauth2.googleapis.com/token",
-        data=data, headers={"Content-Type": "application/x-www-form-urlencoded"},
-        method="POST",
-    )
-    with urllib.request.urlopen(req, timeout=60) as r:
-        body = json.loads(r.read().decode("utf-8"))
-    return body["access_token"]
+    # 2026-05-20: 共通モジュール oauth_refresh.refresh_access_token に集約
+    try:
+        from oauth_refresh import refresh_access_token  # type: ignore
+    except ImportError:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from oauth_refresh import refresh_access_token  # type: ignore
+    tok = refresh_access_token(CLIENT_ID, CLIENT_SECRET, REFRESH_TOKEN)
+    return tok["access_token"]
 
 
 def build_metadata(cur):

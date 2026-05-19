@@ -52,14 +52,20 @@ def _need(name: str) -> str:
 
 
 def _get_access_token() -> str:
-    r = requests.post(TOKEN_URL, data={
-        "client_id":     _need("NEW_YOUTUBE_CLIENT_ID"),
-        "client_secret": _need("NEW_YOUTUBE_CLIENT_SECRET"),
-        "refresh_token": _need("NEW_YOUTUBE_REFRESH_TOKEN"),
-        "grant_type": "refresh_token",
-    }, timeout=30)
-    r.raise_for_status()
-    return r.json()["access_token"]
+    # 2026-05-20: 共通モジュール oauth_refresh.refresh_access_token に集約
+    # (旧版は同梱の直書き requests.post 実装。挙動互換)
+    try:
+        from oauth_refresh import refresh_access_token  # type: ignore
+    except ImportError:
+        import sys as _sys
+        _sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from oauth_refresh import refresh_access_token  # type: ignore
+    tok = refresh_access_token(
+        _need("NEW_YOUTUBE_CLIENT_ID"),
+        _need("NEW_YOUTUBE_CLIENT_SECRET"),
+        _need("NEW_YOUTUBE_REFRESH_TOKEN"),
+    )
+    return tok["access_token"]
 
 
 def upload_thumbnail(token: str, video_id: str, thumb_path: Path) -> None:

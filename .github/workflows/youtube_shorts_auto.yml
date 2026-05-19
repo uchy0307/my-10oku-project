@@ -114,7 +114,9 @@ jobs:
           retention-days: 7
 
       - name: Commit shorts_state.json
-        if: success()
+        if: always()
+        # 削除済み video が deadVideos に追記された場合、upload 失敗でも次回 run が
+        # それを skip できるよう永続化したいので always() で commit する。
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

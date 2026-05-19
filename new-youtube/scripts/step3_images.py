@@ -178,43 +178,34 @@ def _try_together(full: str, seed, out: Path) -> bool:
 
 
 def _try_pillow_fallback(scene_prompt: str, out: Path) -> bool:
-    """Last-resort: black background + scene text. Never fails."""
+    """Last-resort: abstract gradient + bokeh dots. NO TEXT (was rendering AI prompt as visible text on YouTube thumbs).
+    2026-05-19: user 怒「サムネが AI プロンプトのテキストそのまま」→ テキスト描画を完全除去・抽象 gradient のみ。
+    """
     try:
+        import random
+        random.seed(hash(scene_prompt) & 0xFFFFFFFF)
         img = Image.new("RGB", (WIDTH, HEIGHT), (12, 12, 16))
         draw = ImageDraw.Draw(img)
-        try:
-            font = ImageFont.truetype("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", 36)
-        except Exception:
-            try:
-                font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 36)
-            except Exception:
-                font = ImageFont.load_default()
-        # word-wrap roughly 40 chars per line
-        text = scene_prompt
-        words = text.split(" ")
-        line = ""
-        lines_out: list[str] = []
-        for w in words:
-            tentative = (line + " " + w).strip()
-            if len(tentative) > 40:
-                lines_out.append(line)
-                line = w
-            else:
-                line = tentative
-        if line:
-            lines_out.append(line)
-        y = HEIGHT // 2 - (len(lines_out) * 50) // 2
-        for ln in lines_out[:8]:
-            try:
-                bbox = draw.textbbox((0, 0), ln, font=font)
-                tw = bbox[2] - bbox[0]
-            except Exception:
-                tw = len(ln) * 18
-            x = (WIDTH - tw) // 2
-            draw.text((x, y), ln, font=font, fill=(220, 220, 220))
-            y += 50
+        # vertical gradient bottom-half: 暗い青〜紫
+        for y in range(HEIGHT):
+            r = int(12 + (y / HEIGHT) * 18)
+            g = int(12 + (y / HEIGHT) * 14)
+            b = int(16 + (y / HEIGHT) * 38)
+            draw.line([(0, y), (WIDTH, y)], fill=(r, g, b))
+        # bokeh dots (random soft circles)
+        for _ in range(28):
+            cx = random.randint(0, WIDTH)
+            cy = random.randint(0, HEIGHT)
+            radius = random.randint(15, 80)
+            alpha = random.randint(20, 90)
+            color_choices = [(220, 200, 180), (200, 220, 240), (220, 180, 200), (180, 200, 220)]
+            color = random.choice(color_choices)
+            overlay = Image.new("RGBA", (radius * 2, radius * 2), (0, 0, 0, 0))
+            odraw = ImageDraw.Draw(overlay)
+            odraw.ellipse([0, 0, radius * 2, radius * 2], fill=(color[0], color[1], color[2], alpha))
+            img.paste(overlay, (cx - radius, cy - radius), overlay)
         img.save(out, "JPEG", quality=88)
-        print(f"[pillow-fallback] wrote placeholder: {out.name}")
+        print(f"[pillow-fallback] wrote abstract placeholder (NO TEXT): {out.name}")
         return True
     except Exception as e:
         print(f"[pillow-fallback] failed unexpectedly: {e}")

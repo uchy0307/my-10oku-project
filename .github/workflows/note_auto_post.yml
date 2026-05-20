@@ -1,16 +1,16 @@
 name: note Auto Post (B-plan / slow & safe)
 
 # ⚠️ note.com の規約上、自動投稿はグレーゾーン。
-# 本workflowは「1日2本以下・ランダム遅延・人間操作シミュレート」で
-# BAN回避を試みる。利用者責任で運用すること。
+# 本workflowは「1日5本固定スロット・catch-upで欠落補填」で
+# BAN回避と確実な投稿の両立を試みる。利用者責任で運用すること。
 
 on:
   workflow_dispatch:
     inputs:
       max:
-        description: '1回の起動で投稿する最大件数'
+        description: '1回の起動で投稿する最大件数 (空欄なら catch-up 自動算出)'
         required: false
-        default: '1'
+        default: ''
       test_paid:
         description: 'true で publish:false でも 有料境界線/価格 を試行 (NOTE_TEST_PAID) '
         required: false
@@ -21,6 +21,8 @@ on:
         default: 'false'
   schedule:
     # 1日5本固定スロット (per uchy0307 directive 2026-05-18)
+    # GitHub Actions schedule は不安定なため、各発火時に Compute MAX ステップで
+    # 「本日経過済みスロット数 - 本日投稿済み数」を MAX として算出し、欠落スロットを自動補填する。
     - cron: '50 22 * * *'   # 07:50 JST
     - cron: '50 2 * * *'    # 11:50 JST
     - cron: '50 6 * * *'    # 15:50 JST
@@ -32,6 +34,11 @@ on:
 permissions:
   contents: write
   issues: write
+
+# 並走による queue.json / git push 競合・二重投稿を防止
+concurrency:
+  group: note-auto-post
+  cancel-in-progress: false
 
 jobs:
   post:
@@ -62,6 +69,28 @@ jobs:
         run: |
           node note-auto/sync-drafts.mjs
 
+      - name: Compute MAX (catch-up for missed cron slots)
+        id: maxcalc
+        run: |
+          MAX_INPUT="${{ github.event.inputs.max }}"
+          if [ -n "$MAX_INPUT" ]; then
+            MAX="$MAX_INPUT"
+            echo "trigger=manual MAX=$MAX"
+          else
+            NOW_HM=$(TZ=Asia/Tokyo date +"%H%M")
+            EXPECTED=0
+            for SLOT in 0750 1150 1550 1950 2250; do
+              if [ "$NOW_HM" -ge "$SLOT" ]; then EXPECTED=$((EXPECTED+1)); fi
+            done
+            TODAY=$(TZ=Asia/Tokyo date +"%Y-%m-%d")
+            POSTED=$(node -e "const fs=require('fs');const q=JSON.parse(fs.readFileSync('note-auto/queue.json','utf-8'));const today='$TODAY';const c=(q.items||[]).filter(i=>{if(!i.posted_at)return false;const d=new Date(i.posted_at);const jst=new Date(d.getTime()+9*3600*1000).toISOString().slice(0,10);return jst===today;}).length;process.stdout.write(String(c));")
+            MAX=$((EXPECTED - POSTED))
+            if [ "$MAX" -lt 1 ]; then MAX=1; fi
+            if [ "$MAX" -gt 3 ]; then MAX=3; fi
+            echo "trigger=auto NOW_JST=$NOW_HM EXPECTED=$EXPECTED POSTED_TODAY=$POSTED MAX=$MAX"
+          fi
+          echo "max=$MAX" >> $GITHUB_OUTPUT
+
       - name: Random pre-delay (0-15 min)
         if: ${{ github.event.inputs.skip_delay != 'true' }}
         run: |
@@ -75,9 +104,7 @@ jobs:
           NOTE_STORAGE_STATE: ${{ secrets.NOTE_STORAGE_STATE }}
           NOTE_TEST_PAID: ${{ github.event.inputs.test_paid }}
         run: |
-          MAX_INPUT="${{ github.event.inputs.max }}"
-          MAX="${MAX_INPUT:-1}"
-          node note-auto/post.mjs --max=$MAX
+          node note-auto/post.mjs --max=${{ steps.maxcalc.outputs.max }}
 
       - name: Verify published note articles (attach/price/boundary/link)
         if: always()

@@ -4,7 +4,8 @@
     "DWk2UL8z3OQ",
     "dLOHK7U1vJc",
     "YToADkccEAM",
-    "HtcdgPGQz74"
+    "HtcdgPGQz74",
+    "e-3bHqRlxZs"
   ],
   "records": [
     {
@@ -41,13 +42,20 @@
       "shortsUrl": "https://www.youtube.com/shorts/xIyTSqqrM-4",
       "title": "【侍の美学】明智光秀 謀反人の本心",
       "uploadedAt": "2026-05-20T05:06:06.782Z"
+    },
+    {
+      "sourceVideoId": "e-3bHqRlxZs",
+      "shortsVideoId": "Vlofclq5Va0",
+      "shortsUrl": "https://www.youtube.com/shorts/Vlofclq5Va0",
+      "title": "【侍の美学】上杉謙信 義に生きた軍神",
+      "uploadedAt": "2026-05-20T08:22:24.372Z"
     }
   ],
   "lastUpload": {
-    "sourceVideoId": "HtcdgPGQz74",
-    "shortsVideoId": "xIyTSqqrM-4",
-    "shortsUrl": "https://www.youtube.com/shorts/xIyTSqqrM-4",
-    "at": "2026-05-20T05:06:06.782Z"
+    "sourceVideoId": "e-3bHqRlxZs",
+    "shortsVideoId": "Vlofclq5Va0",
+    "shortsUrl": "https://www.youtube.com/shorts/Vlofclq5Va0",
+    "at": "2026-05-20T08:22:24.372Z"
   },
   "deadVideos": [
     "m7kXLSL0jxg"

@@ -1,0 +1,136 @@
+name: YouTube Auto Cycle v2 (NEW_YOUTUBE secrets)
+
+on:
+  workflow_dispatch:
+    inputs:
+      upload:
+        description: 'Upload generated video to YouTube'
+        type: boolean
+        default: true
+      target:
+        description: 'Target topic id (e.g. 011)'
+        type: string
+        required: false
+        default: '011'
+
+permissions:
+  contents: write
+concurrency:
+  group: youtube-auto-cycle-v2-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  cycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+      ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+      ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
+      GEMINI_MODEL: "gemini-2.5-flash"
+      USE_ELEVENLABS: "false"
+      GOOGLE_TTS_VOICE: "ja-JP-Neural2-B"
+      GOOGLE_TTS_SPEAKING_RATE: "0.95"
+      GOOGLE_TTS_PITCH: "0.0"
+      TARGET_TOPIC_ID: ${{ inputs.target }}
+      USE_PRESTOCK: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Python 3.11 (for edge-tts)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install edge-tts
+        run: pip install edge-tts
+
+      - name: Add 8GB swap
+        run: |
+          sudo swapoff -a || true
+          sudo rm -f /swapfile /mnt/swapfile
+          sudo fallocate -l 8G /mnt/swapfile
+          sudo chmod 600 /mnt/swapfile
+          sudo mkswap /mnt/swapfile
+          sudo swapon /mnt/swapfile
+
+      - name: Install ffmpeg
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ffmpeg fonts-noto-cjk
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Generate topics
+        run: npm run youtube:topics
+
+      - name: Generate script
+        run: npm run youtube:script
+
+      - name: Generate voice
+        run: npm run youtube:voice
+
+      - name: Generate images
+        run: npm run youtube:images
+
+      - name: Compile video
+        run: npm run youtube:compile
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: youtube-output-v2-${{ github.run_number }}
+          path: |
+            youtube/output/*.mp4
+            youtube/output/*_thumb.png
+            youtube/output/state.json
+            youtube/output/*_meta.json
+            youtube/output/*_subs.ass
+            youtube/output/*_subtitle.srt
+            youtube/output/*_voice_timings.json
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload to YouTube
+        if: inputs.upload == true
+        env:
+          YOUTUBE_CLIENT_ID: ${{ secrets.NEW_YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.NEW_YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.NEW_YOUTUBE_REFRESH_TOKEN }}
+          YOUTUBE_PLAYLIST_ALL_ID: PLDSFeBtTVyQ1A0BLUQpbv_JLdqEscfYJl
+        run: npm run youtube:upload
+
+      - name: Commit state changes
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ -f youtube/output/state.json ]; then
+            git add -f youtube/output/state.json
+          fi
+          if git diff --staged --quiet; then
+            echo "No state changes to commit."
+          else
+            git commit -m "chore(youtube-v2): update state.json [skip ci]"
+            git stash push --include-untracked -m "ci-state-stash" || true
+            git fetch origin main
+            if ! git rebase origin/main; then
+              git rebase --abort || true
+              git reset --soft origin/main || true
+              git add -f youtube/output/state.json || true
+              git commit -m "chore(youtube-v2): update state.json [skip ci]" || true
+            fi
+            git push origin main || git push origin main --force-with-lease
+            git stash drop || true
+          fi

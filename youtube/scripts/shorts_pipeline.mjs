@@ -59,13 +59,46 @@ function buildOauth() {
   return o;
 }
 
-async function pickSourceCandidates() {
+async function listChannelUploads(youtube) {
+  // 自分のチャンネル uploads playlist を取得 → 全動画 ID をリストアップ。
+  // *_uploaded.json が無い / 古い場合の最終フォールバック。
+  try {
+    const ch = await youtube.channels.list({ part: ['contentDetails'], mine: true });
+    const uploadsPl = ch.data.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
+    if (!uploadsPl) return [];
+    const out = [];
+    let pageToken;
+    for (let page = 0; page < 5; page++) {
+      const r = await youtube.playlistItems.list({
+        part: ['snippet', 'contentDetails'],
+        playlistId: uploadsPl,
+        maxResults: 50,
+        pageToken,
+      });
+      for (const it of (r.data.items || [])) {
+        const vid = it.contentDetails?.videoId;
+        const when = it.contentDetails?.videoPublishedAt || it.snippet?.publishedAt;
+        if (vid) out.push({ videoId: vid, uploadedAt: when || '' });
+      }
+      pageToken = r.data.nextPageToken;
+      if (!pageToken) break;
+    }
+    return out;
+  } catch (e) {
+    console.warn('[shorts] listChannelUploads failed:', e.message);
+    return [];
+  }
+}
+
+async function pickSourceCandidates(youtube) {
   if (SHORTS_VIDEO_ID && SHORTS_VIDEO_ID.trim()) return [SHORTS_VIDEO_ID.trim()];
   const state = await loadJson(STATE_FILE, {});
-  const shortsState = await loadJson(SHORTS_STATE_FILE, { processed: [], deadVideos: [] });
+  const shortsState = await loadJson(SHORTS_STATE_FILE, { processed: [], deadVideos: [], records: [] });
   const processed = new Set(shortsState.processed || []);
   const dead = new Set(shortsState.deadVideos || []);
-  const skip = (id) => !id || processed.has(id) || dead.has(id);
+  // 過去アップした自前 Shorts を source 候補から除外
+  const ownShorts = new Set((shortsState.records || []).map((r) => r.shortsVideoId).filter(Boolean));
+  const skip = (id) => !id || processed.has(id) || dead.has(id) || ownShorts.has(id);
   const candidates = [];
   const seen = new Set();
   const push = (id, when) => {
@@ -88,6 +121,11 @@ async function pickSourceCandidates() {
   }
   records.sort((a, b) => (b.uploadedAt || '').localeCompare(a.uploadedAt || ''));
   for (const r of records) push(r.videoId, r.uploadedAt);
+  // 最終フォールバック: 自チャンネル uploads 全件
+  const channelUploads = await listChannelUploads(youtube);
+  channelUploads.sort((a, b) => (b.uploadedAt || '').localeCompare(a.uploadedAt || ''));
+  console.log('[shorts] channel uploads found: ' + channelUploads.length);
+  for (const u of channelUploads) push(u.videoId, u.uploadedAt);
   return candidates.map((c) => c.videoId);
 }
 
@@ -114,15 +152,42 @@ async function markVideoDead(videoId, reason) {
   }
 }
 
+function parseIsoDurationSec(iso) {
+  // ISO 8601 PT#H#M#S → seconds (Shorts は通常 PT###S)
+  if (!iso) return null;
+  const m = /^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(iso);
+  if (!m) return null;
+  return (Number(m[1] || 0) * 3600) + (Number(m[2] || 0) * 60) + Number(m[3] || 0);
+}
+
+async function fetchVideoFull(youtube, videoId) {
+  // snippet + contentDetails をまとめて取得 (duration で Shorts 判定するため)
+  const r = await youtube.videos.list({ part: ['snippet', 'contentDetails'], id: [videoId] });
+  const item = (r.data.items || [])[0];
+  if (!item) {
+    const err = new Error('Video ' + videoId + ' not found on YouTube');
+    err.code = 'VIDEO_NOT_FOUND';
+    throw err;
+  }
+  return { snippet: item.snippet, contentDetails: item.contentDetails };
+}
+
 async function pickAndFetchSnippet(youtube) {
-  const candidates = await pickSourceCandidates();
+  const candidates = await pickSourceCandidates(youtube);
   if (candidates.length === 0) throw new Error('No un-shortified video found in state / uploaded records');
-  console.log('[shorts] candidates (newest first): ' + candidates.join(', '));
+  console.log('[shorts] candidates (newest first, first 10): ' + candidates.slice(0, 10).join(', ') + (candidates.length > 10 ? ` ... +${candidates.length - 10} more` : ''));
   let lastErr = null;
   for (const id of candidates) {
     try {
-      const snippet = await fetchVideoMeta(youtube, id);
-      console.log('[shorts] selected videoId=' + id + ' title="' + snippet.title + '"');
+      const { snippet, contentDetails } = await fetchVideoFull(youtube, id);
+      const durSec = parseIsoDurationSec(contentDetails?.duration);
+      if (durSec !== null && durSec < 70) {
+        // 既存 Shorts は source として不適切。skip して次の候補へ。
+        console.warn('[shorts] skipping ' + id + ' (too short for Shorts source: ' + durSec + 's, title="' + snippet.title + '")');
+        await markVideoDead(id, 'too short (' + durSec + 's, likely a Short itself)');
+        continue;
+      }
+      console.log('[shorts] selected videoId=' + id + ' duration=' + durSec + 's title="' + snippet.title + '"');
       return { videoId: id, snippet };
     } catch (e) {
       lastErr = e;

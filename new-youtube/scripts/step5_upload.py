@@ -34,6 +34,7 @@ if not hasattr(_flush_b, "_orig_print"):
 
 import os
 import json
+import subprocess
 from pathlib import Path
 from datetime import datetime, timezone
 import requests
@@ -42,6 +43,66 @@ TOKEN_URL = "https://oauth2.googleapis.com/token"
 UPLOAD_URL = "https://www.googleapis.com/upload/youtube/v3/videos"
 PLAYLIST_ITEMS_URL = "https://www.googleapis.com/youtube/v3/playlistItems"
 THUMB_UPLOAD_URL = "https://www.googleapis.com/upload/youtube/v3/thumbnails/set"
+
+# 2026-05-20: 本編=30分尺ナレ動画のみ、を強制するための duration gate.
+# ffprobe で読み取った format.duration が MIN_DURATION_SEC 未満なら upload を拒否する.
+# 環境変数 NEW_YOUTUBE_SKIP_DURATION_GATE=1 で一時的に bypass 可能 (本日特例の再 upload 等).
+MIN_DURATION_SEC = 1800  # 30 min
+
+
+def _probe_duration_sec(video_path: Path) -> float:
+    """ffprobe で対象 mp4 の duration (秒) を取得.
+    取得失敗時は RuntimeError を上げる (= upload 拒否扱い).
+    """
+    try:
+        out = subprocess.check_output(
+            [
+                "ffprobe", "-v", "error",
+                "-show_entries", "format=duration",
+                "-of", "csv=p=0",
+                str(video_path),
+            ],
+            stderr=subprocess.STDOUT,
+            timeout=60,
+        )
+    except FileNotFoundError as e:
+        raise RuntimeError(f"ffprobe not found on PATH: {e}") from e
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(
+            f"ffprobe failed for {video_path}: rc={e.returncode} out={e.output!r}"
+        ) from e
+    txt = out.decode("utf-8", errors="replace").strip()
+    if not txt:
+        raise RuntimeError(f"ffprobe returned empty duration for {video_path}")
+    try:
+        return float(txt.splitlines()[0])
+    except ValueError as e:
+        raise RuntimeError(f"ffprobe duration parse failed: {txt!r}") from e
+
+
+def _enforce_duration_gate(video_path: Path) -> float:
+    """duration < MIN_DURATION_SEC なら SystemExit で upload を拒否.
+    戻り値は秒数 (ログ用)."""
+    if os.environ.get("NEW_YOUTUBE_SKIP_DURATION_GATE") == "1":
+        print(f"[step5][gate] BYPASS via NEW_YOUTUBE_SKIP_DURATION_GATE=1 ({video_path})")
+        # bypass でも一応取得を試みる (失敗しても続行)
+        try:
+            return _probe_duration_sec(video_path)
+        except Exception as e:
+            print(f"[step5][gate] WARN probe failed during bypass: {e}")
+            return -1.0
+    dur = _probe_duration_sec(video_path)
+    mm = int(dur // 60)
+    ss = int(dur % 60)
+    if dur < MIN_DURATION_SEC:
+        raise SystemExit(
+            f"Duration <30min, abort upload "
+            f"(actual={mm:02d}:{ss:02d} = {dur:.1f}s, "
+            f"min={MIN_DURATION_SEC}s, path={video_path}). "
+            "Set NEW_YOUTUBE_SKIP_DURATION_GATE=1 to bypass (special-case only)."
+        )
+    print(f"[step5][gate] OK duration={mm:02d}:{ss:02d} ({dur:.1f}s >= {MIN_DURATION_SEC}s)")
+    return dur
 
 
 def _need(name: str) -> str:
@@ -101,6 +162,8 @@ def upload_video(video_path: Path, script: dict,
                  schedule_at_jst: datetime | None = None,
                  privacy: str = "private",
                  thumbnail_path: Path | None = None) -> str:
+    # 2026-05-20: duration gate (30min) を最優先で評価. 不合格なら SystemExit.
+    _enforce_duration_gate(video_path)
     token = _get_access_token()
     metadata = {
         "snippet": {

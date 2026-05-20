@@ -72,6 +72,65 @@ function run(cmd, args, opts = {}) {
   });
 }
 
+function runCapture(cmd, args) {
+  return new Promise((resolve, reject) => {
+    const p = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    let out = ''; let err = '';
+    p.stdout.on('data', (d) => { out += d.toString(); });
+    p.stderr.on('data', (d) => { err += d.toString(); });
+    p.on('exit', (code) => {
+      if (code === 0) resolve(out);
+      else reject(new Error(cmd + ' exit ' + code + ' stderr=' + err));
+    });
+  });
+}
+
+async function ffprobeDuration(filePath) {
+  const out = await runCapture('ffprobe', [
+    '-v', 'error', '-show_entries', 'format=duration',
+    '-of', 'default=noprint_wrappers=1:nokey=1', filePath,
+  ]);
+  const n = parseFloat((out || '').trim());
+  if (!Number.isFinite(n) || n <= 0) throw new Error('ffprobe returned invalid duration: ' + out);
+  return Math.floor(n);
+}
+
+async function deriveSnippetFromLocalFile(filePath) {
+  // baseName like "011_video" → topic id "011" → look up youtube/output/011_script.txt for title
+  const baseName = path.basename(filePath, path.extname(filePath));
+  const dir = path.dirname(filePath);
+  const idMatch = /^(\d+)_video$/.exec(baseName);
+  const topicId = idMatch ? idMatch[1] : null;
+  let title = null;
+  let category = null;
+  // try {id}_script.json with .title
+  if (topicId) {
+    const scriptJson = path.join(dir, topicId + '_script.json');
+    try {
+      const s = JSON.parse(await fs.readFile(scriptJson, 'utf-8'));
+      if (s && s.title) title = s.title;
+      if (s && s.category) category = s.category;
+    } catch {}
+  }
+  // try topics.json by id
+  if (!title && topicId) {
+    try {
+      const topics = JSON.parse(await fs.readFile(path.join(ROOT, 'topics.json'), 'utf-8'));
+      const t = topics.find((x) => x && x.id === topicId);
+      if (t) { title = t.title; category = category || t.category; }
+    } catch {}
+  }
+  if (!title) title = '日本史 厳選シーン';
+  const tags = ['日本史', '侍', 'samurai', '歴史', 'Shorts'];
+  if (category) tags.push(category);
+  return {
+    title,
+    description: (title + '\n\n──\n日本史をテーマにした厳選シーンです。\n#Shorts #日本史 #侍 #samurai'),
+    tags: Array.from(new Set(tags)).slice(0, 30),
+    categoryId: '27',
+  };
+}
+
 async function loadJson(p, dflt) {
   try { return JSON.parse(await fs.readFile(p, 'utf-8')); } catch { return dflt; }
 }
@@ -317,9 +376,13 @@ async function makeShortsVideo(srcPath, outPath, clipStart) {
 async function uploadShorts(youtube, videoPath, snippet, sourceVideoId, startSec) {
   const baseTitle = (snippet?.title || 'Shorts').slice(0, 80);
   const title = (baseTitle + ' #Shorts').slice(0, 100);
+  const isLocalSource = typeof sourceVideoId === 'string' && sourceVideoId.startsWith('local-');
+  const sourceLine = isLocalSource
+    ? '' // local source has no real YouTube videoId — omit 本編 URL
+    : '\n本編: https://www.youtube.com/watch?v=' + sourceVideoId;
   const description = (((snippet && snippet.description) || '')
     + '\n\n──'
-    + '\n本編: https://www.youtube.com/watch?v=' + sourceVideoId
+    + sourceLine
     + '\n切り出し: ' + startSec + 's〜'
     + '\n#Shorts #日本史 #侍 #samurai').slice(0, 4900);
   const tags = ((snippet?.tags) || []).concat(['Shorts', '日本史', '侍', 'samurai']).slice(0, 30);
@@ -376,7 +439,56 @@ async function main() {
   // ── pick source + startSec ────────────────────────────────────────────
   let sourceVideoId, snippet, durationSec, startSec;
 
-  if (SHORTS_VIDEO_ID && SHORTS_VIDEO_ID.trim()) {
+  // ── LOCAL FILE PATH (highest priority — fully bypasses yt-dlp) ───────
+  // SHORTS_LOCAL_FILE is set by the workflow when artifacts from the main
+  // pipeline contain a freshly-generated samurai-history mp4. Using it
+  // directly avoids yt-dlp entirely (which is bot-detected by YouTube).
+  const localFileEnv = (process.env.SHORTS_LOCAL_FILE || '').trim();
+  let useLocal = false;
+  let localFilePath = null;
+  if (localFileEnv) {
+    try {
+      const s = await fs.stat(localFileEnv);
+      if (s.size > 0) {
+        useLocal = true;
+        localFilePath = localFileEnv;
+        console.log('[shorts] LOCAL-FILE mode active: ' + localFileEnv
+          + ' (' + s.size + ' bytes) — yt-dlp will be skipped entirely');
+      } else {
+        console.warn('[shorts] SHORTS_LOCAL_FILE is empty (0 bytes): ' + localFileEnv);
+      }
+    } catch (e) {
+      console.warn('[shorts] SHORTS_LOCAL_FILE not usable (' + e.message + '), falling back');
+    }
+  }
+
+  if (useLocal) {
+    const baseName = path.basename(localFilePath, path.extname(localFilePath));
+    // 'local-<basename>' は YouTube videoId (11 char base64) と衝突しないので state 上で安全
+    sourceVideoId = 'local-' + baseName;
+    durationSec = await ffprobeDuration(localFilePath);
+    console.log('[shorts] local file duration: ' + durationSec + 's, derived sourceVideoId=' + sourceVideoId);
+    snippet = await deriveSnippetFromLocalFile(localFilePath);
+
+    const envStart = (SHORTS_CLIP_START || '').toString().trim();
+    if (envStart !== '') {
+      const parsed = Number(envStart);
+      if (!Number.isFinite(parsed) || parsed < 0) throw new Error('Invalid SHORTS_CLIP_START: ' + envStart);
+      if (parsed + CLIP_DURATION + TAIL_BUFFER > durationSec) {
+        throw new Error('SHORTS_CLIP_START + duration overflows local source (start=' + parsed + ', dur=' + durationSec + ')');
+      }
+      if (isDuplicateSegment(shortsState.usedSegments, sourceVideoId, parsed)) {
+        throw new Error('Duplicate gate: (' + sourceVideoId + ', ' + parsed + 's) already in usedSegments');
+      }
+      startSec = parsed;
+    } else {
+      const cand = [{ videoId: sourceVideoId, durationSec, uploadedAt: '' }];
+      const picked = pickUnusedComboPure(cand, shortsState.usedSegments);
+      if (!picked) throw new Error('No unused startSec slot for local source ' + sourceVideoId
+        + ' — try setting SHORTS_CLIP_START manually or clear usedSegments');
+      startSec = picked.startSec;
+    }
+  } else if (SHORTS_VIDEO_ID && SHORTS_VIDEO_ID.trim()) {
     // 手動 override path
     sourceVideoId = SHORTS_VIDEO_ID.trim();
     const meta = await fetchVideoMetaBatch(youtube, [sourceVideoId]);
@@ -458,29 +570,10 @@ async function main() {
   let srcPath = path.join(OUTPUT_DIR, 'shorts_src_' + sourceVideoId + '.mp4');
   const outPath = path.join(OUTPUT_DIR, 'shorts_' + sourceVideoId + '_' + startSec + 's.mp4');
 
-  // SHORTS_LOCAL_FILE: 直近 main pipeline がアップ前に生成した mp4 を再利用する経路。
-  // ただし「source videoId と無関係なローカル mp4 を使ってしまう」と内容ズレを起こすため、
-  // ファイル名に sourceVideoId を含むか、明示的に SHORTS_LOCAL_FILE_FORCE=1 のとき以外は使わない。
-  const localFile = process.env.SHORTS_LOCAL_FILE;
-  const localForce = process.env.SHORTS_LOCAL_FILE_FORCE === '1';
-  let useLocal = false;
-  if (localFile) {
-    try {
-      const s = await fs.stat(localFile);
-      const baseName = path.basename(localFile);
-      const matchesId = baseName.includes(sourceVideoId);
-      if (s.size > 0 && (matchesId || localForce)) {
-        console.log('[shorts] using local file: ' + localFile + ' (' + s.size + ' bytes, matchesId=' + matchesId + ', force=' + localForce + ')');
-        srcPath = localFile;
-        useLocal = true;
-      } else if (s.size > 0) {
-        console.warn('[shorts] SHORTS_LOCAL_FILE ignored (filename does not match sourceVideoId=' + sourceVideoId + '): ' + baseName);
-      }
-    } catch (e) {
-      console.warn('[shorts] SHORTS_LOCAL_FILE not usable: ' + e.message);
-    }
-  }
-  if (!useLocal) {
+  if (useLocal) {
+    srcPath = localFilePath;
+    console.log('[shorts] reusing local file as src, skipping yt-dlp: ' + srcPath);
+  } else {
     await downloadSource(sourceVideoId, srcPath);
   }
   await makeShortsVideo(srcPath, outPath, startSec);

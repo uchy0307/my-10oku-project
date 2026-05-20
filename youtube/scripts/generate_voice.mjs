@@ -71,8 +71,45 @@ export function probeDurationFromBuffer(buf) {
   });
 }
 
-// ──── Google Cloud TTS 1 chunk 合成 ────
-async function callGoogleTTSChunk(text) {
+// ──── Edge-TTS 1 chunk 合成 (2026-05-20 ROOT FIX) ────
+// Google Cloud TTS は GCP project 929041756811 で課金有効化が必要だったため
+// 完全無料軸維持のため Microsoft Edge Read-Aloud (edge-tts) に切替。
+// API キー不要・無料・無制限。voice は Edge 形式 (ja-JP-NanamiNeural 等)。
+async function callEdgeTTSChunk(text) {
+  const voice = process.env.EDGE_TTS_VOICE || 'ja-JP-NanamiNeural';
+  const rate = process.env.EDGE_TTS_RATE || '-5%';
+  const tmpTextFile = path.join(os.tmpdir(), `etts_in_${process.pid}_${Date.now()}_${Math.random().toString(36).slice(2)}.txt`);
+  const tmpOutFile = path.join(os.tmpdir(), `etts_out_${process.pid}_${Date.now()}_${Math.random().toString(36).slice(2)}.mp3`);
+  await fs.writeFile(tmpTextFile, text, 'utf-8');
+  return new Promise((resolve, reject) => {
+    const proc = spawn('python3', ['-m', 'edge_tts', '--voice', voice, '--rate', rate, '--file', tmpTextFile, '--write-media', tmpOutFile], { stdio: ['ignore', 'pipe', 'pipe'] });
+    let stderr = '';
+    proc.stderr.on('data', (d) => { stderr += d.toString(); });
+    proc.on('error', async (e) => {
+      await fs.unlink(tmpTextFile).catch(() => {});
+      await fs.unlink(tmpOutFile).catch(() => {});
+      reject(e);
+    });
+    proc.on('close', async (code) => {
+      await fs.unlink(tmpTextFile).catch(() => {});
+      if (code !== 0) {
+        await fs.unlink(tmpOutFile).catch(() => {});
+        return reject(new Error(`edge-tts exited ${code}: ${stderr.trim().slice(0, 500)}`));
+      }
+      try {
+        const buf = await fs.readFile(tmpOutFile);
+        await fs.unlink(tmpOutFile).catch(() => {});
+        if (buf.length === 0) return reject(new Error('edge-tts returned empty MP3'));
+        resolve(buf);
+      } catch (e) {
+        reject(e);
+      }
+    });
+  });
+}
+
+// 旧 Google Cloud TTS 関数（参考用、課金有効化後に復活可能）
+async function callGoogleCloudTTSChunk(text) {
   if (!GOOGLE_API_KEY) throw new Error('GOOGLE_API_KEY (or GEMINI_API_KEY) が未設定');
   const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${GOOGLE_API_KEY}`;
   const body = {
@@ -88,6 +125,14 @@ async function callGoogleTTSChunk(text) {
   const json = await res.json();
   if (!json.audioContent) throw new Error('Google TTS returned no audioContent');
   return Buffer.from(json.audioContent, 'base64');
+}
+
+// 統合エントリ: 環境変数 TTS_BACKEND=google で Google Cloud TTS、それ以外は edge-tts
+async function callGoogleTTSChunk(text) {
+  if ((process.env.TTS_BACKEND || 'edge').toLowerCase() === 'google') {
+    return callGoogleCloudTTSChunk(text);
+  }
+  return callEdgeTTSChunk(text);
 }
 
 // ──── Google TTS 全体: chunk 化 → 各 chunk 合成 → ffprobe で duration 実測 ────

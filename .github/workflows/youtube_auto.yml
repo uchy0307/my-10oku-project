@@ -56,6 +56,14 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Setup Python 3.11 (for edge-tts)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install edge-tts (2026-05-20 ROOT FIX — replaces GCP Cloud TTS)
+        run: pip install edge-tts
+
       - name: Add 8GB swap (ffmpeg compile safety net)
         run: |
           sudo swapoff -a || true

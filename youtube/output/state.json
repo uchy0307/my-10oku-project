@@ -12,49 +12,49 @@
     "010"
   ],
   "note_fix4": "2026-05-19 dispatch: actually removed #011 from processed (note_fix3 was comment-only). Workflow merge conflicts also resolved in youtube_auto.yml + generate_script.mjs + generate_voice.mjs + compile_video.mjs + step3_images_imagen.py.",
-  "lastRun": "2026-05-20T10:27:10.664Z",
+  "lastRun": "2026-05-20T10:42:30.578Z",
   "currentTopic": {
     "id": "011",
     "title": "長篠の戦い 鉄砲が変えた戦場",
     "category": "合戦軸"
   },
-  "lastScriptChars": 10828,
+  "lastScriptChars": 11927,
   "lastScriptChapters": [
     {
       "index": 1,
-      "title": "天正三年の風雲と長篠の包囲",
-      "chars": 2058
+      "title": "天正三年、長篠の戦いへの序章",
+      "chars": 1577
     },
     {
       "index": 2,
-      "title": "設楽原、鉄砲と馬防柵の陣形",
-      "chars": 2661
+      "title": "設楽原の鉄砲布陣と戦術",
+      "chars": 2316
     },
     {
       "index": 3,
-      "title": "激突、長篠の戦いと火縄の雨",
-      "chars": 2434
+      "title": "五月二十一日、長篠の戦いの激突",
+      "chars": 2339
     },
     {
       "index": 4,
-      "title": "騎馬軍団の落日、長篠の野",
-      "chars": 1914
+      "title": "崩壊する武田軍と長篠の情景",
+      "chars": 3235
     },
     {
       "index": 5,
-      "title": "長篠の戦い、戦術の革命",
-      "chars": 1661
+      "title": "鉄砲が変えた戦場の美学",
+      "chars": 2358
     }
   ],
-  "lastVoiceAt": "2026-05-18T01:30:19.355Z",
-  "lastImageGenAt": "2026-05-18T01:31:00.598Z",
+  "lastVoiceAt": "2026-05-20T10:45:40.523Z",
+  "lastImageGenAt": "2026-05-20T10:46:14.672Z",
   "videoStatus": "ready",
   "lastImageSources": [
     "https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Battle-of-Nagashino-Map-Folding-Screen-1575.png/3840px-Battle-of-Nagashino-Map-Folding-Screen-1575.png",
-    "https://upload.wikimedia.org/wikipedia/commons/c/ca/Battle_of_Changping.png",
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Nagasawa_Western_Castle%28%E9%95%B7%E6%B2%A2%E8%A5%BF%E5%9F%8E%E8%B7%A1%29.jpg/3840px-Nagasawa_Western_Castle%28%E9%95%B7%E6%B2%A2%E8%A5%BF%E5%9F%8E%E8%B7%A1%29.jpg",
-    "https://upload.wikimedia.org/wikipedia/commons/5/5e/Chinese_nationalist_troops_crossing_the_Three_Gorges_at_West_Hupei.jpg",
-    "https://upload.wikimedia.org/wikipedia/commons/9/9b/Battle_of_Nagashima.jpg"
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/Battle_of_Nagashino_historic_battleground_Aerial_Photograph.JPG/1280px-Battle_of_Nagashino_historic_battleground_Aerial_Photograph.JPG",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/Battle_of_Nagashino_word.svg/1280px-Battle_of_Nagashino_word.svg.png",
+    "https://upload.wikimedia.org/wikipedia/commons/a/a1/Six_fold_screen_of_The_Battle_of_Nagashino.png",
+    "https://upload.wikimedia.org/wikipedia/commons/c/ca/Battle_of_Changping.png"
   ],
   "note_fix": "Manual state recovery 2026-05-17 by dispatch: 009 Ã§ÂÂ³Ã§ÂÂ°Ã¤Â¸ÂÃ¦ÂÂ uploaded but state commit failed",
   "note_fix2": "Manual recovery 2026-05-17 for #010 Ã§ÂÂÃ§ÂÂ°Ã¥Â¹Â¸Ã¦ÂÂ upload (Upload to YouTube succeeded but state commit conflict)",
@@ -85,5 +85,7 @@
       "url": "https://www.youtube.com/watch?v=7R0jT5A23NI"
     }
   },
-  "lastUploadAt": "2026-05-18T01:37:07.897Z"
+  "lastUploadAt": "2026-05-18T01:37:07.897Z",
+  "lastVoiceTimingsPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/011_voice_timings.json",
+  "lastVoiceTotalSec": 2545.32
 }

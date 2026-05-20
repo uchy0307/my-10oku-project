@@ -357,7 +357,7 @@ async function main() {
   console.log(`[compile_video] subs: ${segments.length} cues -> ${assPath}${REBUILD_SUBTITLE ? ' (tight)' : ''}${timings ? ' (timings)' : ' (uniform)'}`);
 
   // 補助: verify_subtitles からも参照しやすい .srt スナップショット
-  const srtPath = path.join(OUTPUT_DIR, `${topic.id}_subtitle.srt`);
+  // 2026-05-20 ROOT FIX: srtPath は L312 で既に const 宣言済み — 二重宣言で SyntaxError 出ていた
   const srtContent = segments.map((s, i) => {
     const fmt = (sec) => {
       const h = Math.floor(sec / 3600);

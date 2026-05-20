@@ -12,48 +12,49 @@
     "010"
   ],
   "note_fix4": "2026-05-19 dispatch: actually removed #011 from processed (note_fix3 was comment-only). Workflow merge conflicts also resolved in youtube_auto.yml + generate_script.mjs + generate_voice.mjs + compile_video.mjs + step3_images_imagen.py.",
-  "lastRun": "2026-05-20T10:59:06.813Z",
+  "lastRun": "2026-05-20T15:42:49.576Z",
   "currentTopic": {
-    "id": "001",    "title": "長篠の戦い 鉄砲が変えた戦場",
+    "id": "011",
+    "title": "長篠の戦い 鉄砲が変えた戦場",
     "category": "合戦軸"
   },
-  "lastScriptChars": 11779,
+  "lastScriptChars": 11121,
   "lastScriptChapters": [
     {
       "index": 1,
-      "title": "長篠の戦い、包囲される三河の要衝",
-      "chars": 2460
+      "title": "激突の序曲、長篠の戦いへの道",
+      "chars": 2160
     },
     {
       "index": 2,
-      "title": "設楽原の設営と鉄砲の配備",
-      "chars": 2601
+      "title": "設楽原の馬防柵と鉄砲の備え",
+      "chars": 2216
     },
     {
       "index": 3,
-      "title": "五月二十一日、長篠の戦いの火蓋",
-      "chars": 1943
+      "title": "五月二十一日、長篠の戦いの咆哮",
+      "chars": 2043
     },
     {
       "index": 4,
-      "title": "鉄砲の連射と武田軍の壊滅",
-      "chars": 2452
+      "title": "武田軍の決死と長篠の戦いの結末",
+      "chars": 1874
     },
     {
       "index": 5,
-      "title": "長篠の戦いが刻んだ鉄砲の衝撃",
-      "chars": 2216
+      "title": "長篠の戦いが変えた戦場の美学",
+      "chars": 2719
     }
   ],
-  "lastVoiceAt": "2026-05-20T11:02:00.692Z",
-  "lastImageGenAt": "2026-05-20T11:02:35.524Z",
+  "lastVoiceAt": "2026-05-20T15:44:54.809Z",
+  "lastImageGenAt": "2026-05-20T15:45:22.945Z",
   "videoStatus": "ready",
   "lastImageSources": [
     "https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Battle-of-Nagashino-Map-Folding-Screen-1575.png/3840px-Battle-of-Nagashino-Map-Folding-Screen-1575.png",
     "https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/Battle_of_Nagashino_historic_battleground_Aerial_Photograph.JPG/1280px-Battle_of_Nagashino_historic_battleground_Aerial_Photograph.JPG",
     "https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/Battle_of_Nagashino_word.svg/1280px-Battle_of_Nagashino_word.svg.png",
-    "https://upload.wikimedia.org/wikipedia/commons/c/ca/Battle_of_Changping.png",
-    "https://upload.wikimedia.org/wikipedia/commons/a/a1/Six_fold_screen_of_The_Battle_of_Nagashino.png"
+    "https://upload.wikimedia.org/wikipedia/commons/a/a1/Six_fold_screen_of_The_Battle_of_Nagashino.png",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Battle-of-Nagashino-Map-Folding-Screen-1575.png/1280px-Battle-of-Nagashino-Map-Folding-Screen-1575.png"
   ],
   "note_fix": "Manual state recovery 2026-05-17 by dispatch: 009 Ã§ÂÂ³Ã§ÂÂ°Ã¤Â¸ÂÃ¦ÂÂ uploaded but state commit failed",
   "note_fix2": "Manual recovery 2026-05-17 for #010 Ã§ÂÂÃ§ÂÂ°Ã¥Â¹Â¸Ã¦ÂÂ upload (Upload to YouTube succeeded but state commit conflict)",
@@ -72,8 +73,8 @@
   "lastVideoPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/011_video.mp4",
   "lastAssPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/011_subs.ass",
   "lastSrtPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/011_subtitle.srt",
-  "lastSubsCount": 1241,
-  "lastCompileAt": "2026-05-18T01:36:57.349Z",
+  "lastSubsCount": 693,
+  "lastCompileAt": "2026-05-20T15:46:35.761Z",
   "lastUploadResult": null,
   "_invalidated_lastUploadResult_2026_05_19": {
     "reason": "videoId 7R0jT5A23NI (#011 武田信玄汚染) was deleted from YouTube by user. Shorts pipeline kept failing 'Video not found' because it picks from lastUploadResult.videoId. Set to null so Shorts falls back to *_uploaded.json scan.",
@@ -86,5 +87,7 @@
   },
   "lastUploadAt": "2026-05-18T01:37:07.897Z",
   "lastVoiceTimingsPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/011_voice_timings.json",
-  "lastVoiceTotalSec": 2526.528
+  "lastVoiceTotalSec": 2319.36,
+  "lastScriptSource": "prestocked",
+  "lastSubsSource": "voice_timings"
 }

@@ -24,15 +24,15 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 // 2026-05-19: 完全無料化軸 → default を flash に変更（Free Tier RPD 多）
 // gemini-2.5-pro は Free Tier 制限が厳しく即429。env で上書きする場合のみ pro 使用可
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-// 2026-05-20: ROOT FIX - removed dead 1.5 models (404 on current API), added live free-tier ones
-// Order: tried in sequence; each 429 instantly falls to next. Total 6 distinct quota pools.
+// 2026-05-20 (rev2): removed gemma-3-27b-it and gemma-3-12b-it because they
+// return 404 NOT_FOUND on generateContent endpoint (confirmed in run #80 log).
+// Order: tried in sequence; each 429/short-response falls to next.
 const GEMINI_FALLBACK_MODELS = [
   'gemini-2.0-flash',
   'gemini-2.0-flash-lite',
   'gemini-2.5-flash-lite',
   'gemini-flash-latest',
-  'gemma-3-27b-it',
-  'gemma-3-12b-it',
+  'gemini-flash-lite-latest',
 ];
 const _gemini_endpoint = (model) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 const GEMINI_ENDPOINT = _gemini_endpoint(GEMINI_MODEL);

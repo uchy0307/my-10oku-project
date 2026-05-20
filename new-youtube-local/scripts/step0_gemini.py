@@ -15,7 +15,17 @@ STATE_FILE = OUTPUT_DIR / "state.json"
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
-GEMINI_ENDPOINT = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
+# 2026-05-20 ROOT FIX: model fallback chain (was: blind retry on same model -> infinite 429).
+# Order: primary first, then live free-tier models. Each 429/UNAVAILABLE falls to next pool.
+GEMINI_FALLBACK_MODELS = [
+    GEMINI_MODEL,
+    "gemini-2.0-flash",
+    "gemini-2.0-flash-lite",
+    "gemini-2.5-flash-lite",
+    "gemini-flash-latest",
+    "gemini-flash-lite-latest",
+]
+GEMINI_ENDPOINT_TMPL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 
 # 10分動画想定: 各章 1500-2000字（合計 約8000-10000字）
 CHAR_MIN = int(os.environ.get("CHAPTER_CHAR_MIN", "1500"))
@@ -113,11 +123,9 @@ def pick_next_topic(topics, state, force_id=None):
             return t
     return None
 
-def call_gemini(prompt: str, attempt=1) -> str:
-    if not GEMINI_API_KEY:
-        print("[step0] WARN: GEMINI_API_KEY not set — emitting stub")
-        return f"[STUB]\n{prompt[:200]}\n\n--- ここに本文が入ります ---\n" + ("ダミー本文。" * 200)
-    url = f"{GEMINI_ENDPOINT}?key={GEMINI_API_KEY}"
+def _call_one_model(model: str, prompt: str) -> str:
+    """Single model call. Returns text or raises (HTTPError / RuntimeError)."""
+    url = f"{GEMINI_ENDPOINT_TMPL.format(model=model)}?key={GEMINI_API_KEY}"
     body = {
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {
@@ -139,24 +147,50 @@ def call_gemini(prompt: str, attempt=1) -> str:
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-    try:
-        with urllib.request.urlopen(req, timeout=180) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-        cands = data.get("candidates", [])
-        if not cands:
-            raise RuntimeError(f"no candidates: {data}")
-        parts = cands[0].get("content", {}).get("parts", [])
-        text = "".join(p.get("text", "") for p in parts).strip()
-        if not text:
-            raise RuntimeError(f"empty text: {data}")
-        return text
-    except urllib.error.HTTPError as e:
-        body = e.read().decode("utf-8", errors="ignore")
-        print(f"[step0] HTTPError {e.code}: {body[:300]}")
-        if attempt < 3:
-            time.sleep(2 ** attempt)
-            return call_gemini(prompt, attempt + 1)
-        raise
+    with urllib.request.urlopen(req, timeout=180) as resp:
+        data = json.loads(resp.read().decode("utf-8"))
+    cands = data.get("candidates", [])
+    if not cands:
+        raise RuntimeError(f"no candidates: {data}")
+    parts = cands[0].get("content", {}).get("parts", [])
+    text = "".join(p.get("text", "") for p in parts).strip()
+    if not text:
+        raise RuntimeError(f"empty text: {data}")
+    return text
+
+
+def call_gemini(prompt: str, attempt: int = 1) -> str:
+    """Try each model in GEMINI_FALLBACK_MODELS once.
+    2026-05-20 ROOT FIX: previous version recursively retried the SAME model on 429,
+    causing infinite quota errors. Now: 429/503 → try next model, no blind retry.
+    `attempt` param kept for backwards compat with any external callers; unused.
+    """
+    if not GEMINI_API_KEY:
+        print("[step0] WARN: GEMINI_API_KEY not set — emitting stub")
+        return f"[STUB]\n{prompt[:200]}\n\n--- ここに本文が入ります ---\n" + ("ダミー本文。" * 200)
+    last_err = None
+    for model in GEMINI_FALLBACK_MODELS:
+        try:
+            print(f"[step0] try model={model}")
+            return _call_one_model(model, prompt)
+        except urllib.error.HTTPError as e:
+            body = e.read().decode("utf-8", errors="ignore")
+            print(f"[step0] model={model} HTTPError {e.code}: {body[:200]}")
+            last_err = e
+            # On 429/503/UNAVAILABLE: try next model immediately (no sleep, no retry)
+            if e.code in (429, 503, 500):
+                continue
+            # On 404 (model unsupported): try next model
+            if e.code == 404:
+                continue
+            # Other HTTP errors (4xx auth, 5xx) — fail fast
+            raise
+        except (urllib.error.URLError, RuntimeError) as e:
+            print(f"[step0] model={model} error: {e}")
+            last_err = e
+            continue
+    # All models exhausted
+    raise RuntimeError(f"[step0] all {len(GEMINI_FALLBACK_MODELS)} models exhausted; last_err={last_err}")
 
 def clean_text(t: str) -> str:
     t = re.sub(r"[#*_`]+", "", t)

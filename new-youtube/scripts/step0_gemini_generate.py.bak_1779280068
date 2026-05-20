@@ -275,45 +275,4 @@ def pick_topic(topics_path: Path, mode: str = "next") -> str:
     t = topics[idx % len(topics)]
     state.write_text(
         json.dumps({"topic_idx": (idx + 1) % len(topics)},
-                   ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
-    return t
-
-
-if __name__ == "__main__":
-    import argparse
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--topic", help="指定したトピックで生成")
-    ap.add_argument("--topics-file", default="inputs/topics.json")
-    ap.add_argument("--mode", choices=["next", "random"], default="next")
-    ap.add_argument("--out-dir", default="inputs")
-    args = ap.parse_args()
-
-    topic = args.topic or pick_topic(Path(args.topics_file), args.mode)
-    print(f"topic: {topic}")
-    generate_script(topic, Path(args.out_dir))
- 0
-    if state.exists():
-        idx = json.loads(state.read_text(encoding="utf-8")).get("topic_idx", 0)
-    t = topics[idx % len(topics)]
-    state.write_text(
-        json.dumps({"topic_idx": (idx + 1) % len(topics)},
-                   ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
-    return t
-
-
-if __name__ == "__main__":
-    import argparse
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--topic", help="指定したトピックで生成")
-    ap.add_argument("--topics-file", default="inputs/topics.json")
-    ap.add_argument("--mode", choices=["next", "random"], default="next")
-    ap.add_argument("--out-dir", default="inputs")
-    args = ap.parse_args()
-
-    topic = args.topic or pick_topic(Path(args.topics_file), args.mode)
-    print(f"topic: {topic}")
-    generate_script(topic, Path(args.out_dir))
+     

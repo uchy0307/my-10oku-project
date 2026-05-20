@@ -12,38 +12,38 @@
     "010"
   ],
   "note_fix4": "2026-05-19 dispatch: actually removed #011 from processed (note_fix3 was comment-only). Workflow merge conflicts also resolved in youtube_auto.yml + generate_script.mjs + generate_voice.mjs + compile_video.mjs + step3_images_imagen.py.",
-  "lastRun": "2026-05-20T10:02:51.378Z",
+  "lastRun": "2026-05-20T10:27:10.664Z",
   "currentTopic": {
     "id": "011",
     "title": "長篠の戦い 鉄砲が変えた戦場",
     "category": "合戦軸"
   },
-  "lastScriptChars": 10956,
+  "lastScriptChars": 10828,
   "lastScriptChapters": [
     {
       "index": 1,
-      "title": "長篠の戦い、包囲される三河の要衝",
-      "chars": 2305
+      "title": "天正三年の風雲と長篠の包囲",
+      "chars": 2058
     },
     {
       "index": 2,
-      "title": "設楽原の防壁と鉄砲の準備",
-      "chars": 2210
+      "title": "設楽原、鉄砲と馬防柵の陣形",
+      "chars": 2661
     },
     {
       "index": 3,
-      "title": "長篠の戦い、激突する鉄砲と騎馬",
-      "chars": 2565
+      "title": "激突、長篠の戦いと火縄の雨",
+      "chars": 2434
     },
     {
       "index": 4,
-      "title": "鉄砲が蹂躙した長篠の野",
-      "chars": 1863
+      "title": "騎馬軍団の落日、長篠の野",
+      "chars": 1914
     },
     {
       "index": 5,
-      "title": "武田の敗走と長篠の戦いの結末",
-      "chars": 1907
+      "title": "長篠の戦い、戦術の革命",
+      "chars": 1661
     }
   ],
   "lastVoiceAt": "2026-05-18T01:30:19.355Z",

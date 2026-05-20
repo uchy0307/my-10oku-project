@@ -255,3 +255,4 @@ if __name__ == "__main__":
     script = read_script(sys.argv[1])
     vp = Path(sys.argv[2])
     upload_video(vp, script, privacy="private")
+

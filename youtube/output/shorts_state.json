@@ -1,70 +1,8 @@
 {
-  "processed": [
-    "pBDYbuiCzHY",
-    "DWk2UL8z3OQ",
-    "dLOHK7U1vJc",
-    "YToADkccEAM",
-    "HtcdgPGQz74",
-    "e-3bHqRlxZs",
-    "SGCeujVdRIg"
-  ],
-  "records": [
-    {
-      "sourceVideoId": "pBDYbuiCzHY",
-      "shortsVideoId": "t5-GxsJqp3s",
-      "shortsUrl": "https://www.youtube.com/shorts/t5-GxsJqp3s",
-      "title": "【侍の美学】伊達政宗 独眼竜の野望",
-      "uploadedAt": "2026-05-18T08:31:58.710Z"
-    },
-    {
-      "sourceVideoId": "DWk2UL8z3OQ",
-      "shortsVideoId": "LRQ5ez0hNFI",
-      "shortsUrl": "https://www.youtube.com/shorts/LRQ5ez0hNFI",
-      "title": "【侍の美学】石田三成 義のために散った男",
-      "uploadedAt": "2026-05-18T10:52:39.305Z"
-    },
-    {
-      "sourceVideoId": "dLOHK7U1vJc",
-      "shortsVideoId": "KES2RgtT1Ak",
-      "shortsUrl": "https://www.youtube.com/shorts/KES2RgtT1Ak",
-      "title": "【侍の美学】武田信玄 風林火山の哲学",
-      "uploadedAt": "2026-05-18T16:16:32.597Z"
-    },
-    {
-      "sourceVideoId": "YToADkccEAM",
-      "shortsVideoId": "PpNAROcK0H8",
-      "shortsUrl": "https://www.youtube.com/shorts/PpNAROcK0H8",
-      "title": "【侍の美学】真田幸村 日本一の兵",
-      "uploadedAt": "2026-05-19T23:59:26.317Z"
-    },
-    {
-      "sourceVideoId": "HtcdgPGQz74",
-      "shortsVideoId": "xIyTSqqrM-4",
-      "shortsUrl": "https://www.youtube.com/shorts/xIyTSqqrM-4",
-      "title": "【侍の美学】明智光秀 謀反人の本心",
-      "uploadedAt": "2026-05-20T05:06:06.782Z"
-    },
-    {
-      "sourceVideoId": "e-3bHqRlxZs",
-      "shortsVideoId": "Vlofclq5Va0",
-      "shortsUrl": "https://www.youtube.com/shorts/Vlofclq5Va0",
-      "title": "【侍の美学】上杉謙信 義に生きた軍神",
-      "uploadedAt": "2026-05-20T08:22:24.372Z"
-    },
-    {
-      "sourceVideoId": "SGCeujVdRIg",
-      "shortsVideoId": "-27kdJ5mJls",
-      "shortsUrl": "https://www.youtube.com/shorts/-27kdJ5mJls",
-      "title": "【侍の美学】徳川家康 七十五年の忍耐",
-      "uploadedAt": "2026-05-20T12:14:08.862Z"
-    }
-  ],
-  "lastUpload": {
-    "sourceVideoId": "SGCeujVdRIg",
-    "shortsVideoId": "-27kdJ5mJls",
-    "shortsUrl": "https://www.youtube.com/shorts/-27kdJ5mJls",
-    "at": "2026-05-20T12:14:08.862Z"
-  },
+  "processed": [],
+  "records": [],
+  "usedSegments": [],
+  "lastUpload": null,
   "deadVideos": [
     "m7kXLSL0jxg",
     "HhiwetefdsU",

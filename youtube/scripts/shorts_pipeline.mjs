@@ -1,17 +1,23 @@
 // youtube/scripts/shorts_pipeline.mjs
 // 60秒 YouTube Shorts を既存 long video から生成→upload。
 //
-// 設計 (2026-05-20 全面改訂):
-//   source = 自チャンネルにアップ済の 30分本編動画。topics.json で 1:1 固定するのではなく
-//   channelUploads (full archive) を rotation する。
+// 設計 (2026-05-20 全面改訂・user 明示):
+//   source = 侍チャンネル (@japanese.samurai.channel) に既にアップ済の 30 分本編動画群。
+//   topics.json で 1:1 固定するのではなく、自チャンネル uploads playlist の full archive を
+//   YouTube Data API で取得して rotation する。
+//
 //   永続 state (shorts_state.json#usedSegments) に (sourceVideoId, startSec) を記録し、
 //   毎 Run 「未使用の (videoId, startSec) 組合せ」を選ぶことで、
 //   同じ素材・同じ秒位置の重複 upload を構造的に防ぐ。
 //
+//   ★ 古い video から優先して rotation する。
+//     最新の長尺動画 (真田幸村など) は当面 Short 化せず、
+//     まだ Short 化していない古い video から順に消化する。
+//
 // 工程:
 //   1) channelUploads を YouTube Data API で全件取得 + duration を batch fetch
 //   2) shorts_state.usedSegments と照合し未使用の (videoId, startSec) を 1 つ確定
-//      (rotation: startSec 外 × videoId 内 で「まず別動画」を優先)
+//      (rotation: startSec 外 × videoId 内 = まず別動画を優先 / videoId は 古い順)
 //   3) その時点で state に予約 (reservedAt 付き) commit
 //   4) yt-dlp で source mp4 取得 → ffmpeg で 60s × 1080x1920 縦長 crop
 //   5) YouTube upload as Shorts → state を upload 結果で確定
@@ -55,7 +61,7 @@ export const CLIP_DURATION = Math.min(Number(SHORTS_CLIP_DURATION || 58), 59);
 export const START_GRID = [60, 300, 600, 900, 1500, 1800, 2400];
 // 重複検知の許容差 (秒)。これ以下の差は「ほぼ同じシーン」とみなして拒否する。
 export const DUP_TOLERANCE_SEC = 5;
-// source 末尾の余裕 (秒)。startSec + CLIP_DURATION + TAIL_BUFFER ≤ durationSec を要求。
+// source 末尾の余裕 (秒)。startSec + CLIP_DURATION + TAIL_BUFFER <= durationSec を要求。
 export const TAIL_BUFFER = 30;
 
 function run(cmd, args, opts = {}) {
@@ -82,7 +88,7 @@ function buildOauth() {
 }
 
 function parseIsoDurationSec(iso) {
-  // ISO 8601 PT#H#M#S → seconds
+  // ISO 8601 PT#H#M#S -> seconds
   if (!iso) return null;
   const m = /^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(iso);
   if (!m) return null;
@@ -95,7 +101,7 @@ function parseIsoDurationSec(iso) {
 
 /**
  * 既存 usedSegments と (sourceVideoId, startSec) 候補が衝突するか判定。
- * 同 videoId かつ startSec の差が DUP_TOLERANCE_SEC 以下なら衝突 = true。
+ * 同 videoId かつ startSec の差が tolerance 以下なら衝突 = true。
  */
 export function isDuplicateSegment(usedSegments, sourceVideoId, startSec, tolerance = DUP_TOLERANCE_SEC) {
   if (!Array.isArray(usedSegments)) return false;
@@ -110,15 +116,11 @@ export function isDuplicateSegment(usedSegments, sourceVideoId, startSec, tolera
 
 /**
  * channel video 群 + usedSegments から未使用の (videoId, startSec) 組合せを 1 つ返す。
+ * candidates は事前に「古い順」(oldest first) でソート済の前提。
  *
  * @param {Array<{videoId: string, durationSec: number, uploadedAt?: string}>} candidates
- *        最新順 (newest first) でソート済の候補。
- * @param {Array} usedSegments  shorts_state.usedSegments
+ * @param {Array} usedSegments
  * @param {object} opts
- *   clipDuration: 切り出し長 (秒)
- *   tailBuffer: source 末尾余裕 (秒)
- *   startGrid: 試す開始秒の配列 (例 [60, 300, ...])
- *   tolerance: 重複判定の許容差 (秒)
  * @returns {{sourceVideoId: string, startSec: number} | null}
  */
 export function pickUnusedComboPure(candidates, usedSegments, opts = {}) {
@@ -130,6 +132,7 @@ export function pickUnusedComboPure(candidates, usedSegments, opts = {}) {
   // rotation: startSec 外 × videoId 内。
   //   → Run N と Run N+1 では同じ startSec でも 別の videoId が選ばれ、映像が変わる。
   //   → 全 videoId を 1 巡してから 次の startSec へ進む。
+  //   → candidates は「古い順」なので、まだ Short 化していない古い video から消化される。
   for (const startSec of grid) {
     for (const c of candidates) {
       if (!c || !c.videoId) continue;
@@ -152,12 +155,12 @@ export function backfillUsedSegments(shortsState, legacyStartSec = 30) {
   out.usedSegments = Array.isArray(out.usedSegments) ? [...out.usedSegments] : [];
   const seen = new Set(out.usedSegments
     .filter((s) => s && s.sourceVideoId != null && typeof s.startSec === 'number')
-    .map((s) => `${s.sourceVideoId}:${s.startSec}`));
+    .map((s) => s.sourceVideoId + ':' + s.startSec));
   let changed = false;
   for (const r of (out.records || [])) {
     if (!r || !r.sourceVideoId) continue;
     const startSec = typeof r.startSec === 'number' ? r.startSec : legacyStartSec;
-    const k = `${r.sourceVideoId}:${startSec}`;
+    const k = r.sourceVideoId + ':' + startSec;
     if (seen.has(k)) continue;
     out.usedSegments.push({
       sourceVideoId: r.sourceVideoId,
@@ -231,9 +234,10 @@ async function buildCandidatePool(youtube, shortsState) {
   console.log('[shorts] channel uploads total: ' + uploads.length);
   if (uploads.length === 0) throw new Error('listChannelUploadsAll returned 0 items');
 
+  // ★ 古い順 (ASC) でソート → まだ Short 化していない古い動画から優先消化。
   const filtered = uploads
     .filter((u) => u && u.videoId && !dead.has(u.videoId) && !ownShorts.has(u.videoId))
-    .sort((a, b) => (b.uploadedAt || '').localeCompare(a.uploadedAt || ''));
+    .sort((a, b) => (a.uploadedAt || '').localeCompare(b.uploadedAt || ''));
   const ids = filtered.map((u) => u.videoId);
   if (ids.length === 0) throw new Error('No live channel uploads remain after dead/own-shorts filter');
 
@@ -254,7 +258,8 @@ async function buildCandidatePool(youtube, shortsState) {
     });
   }
   if (candidates.length === 0) throw new Error('No long-form candidates (all skipped as too short)');
-  console.log('[shorts] long-form candidate pool: ' + candidates.length);
+  console.log('[shorts] long-form candidate pool: ' + candidates.length + ' (oldest first)');
+  console.log('[shorts] top 5 oldest: ' + candidates.slice(0, 5).map((c) => c.videoId + '@' + (c.uploadedAt || '?')).join(', '));
   return candidates;
 }
 
@@ -311,7 +316,6 @@ async function makeShortsVideo(srcPath, outPath, clipStart) {
 
 async function uploadShorts(youtube, videoPath, snippet, sourceVideoId, startSec) {
   const baseTitle = (snippet?.title || 'Shorts').slice(0, 80);
-  // 開始秒も含めると同 source でも別 Short と一目で分かる
   const title = (baseTitle + ' #Shorts').slice(0, 100);
   const description = (((snippet && snippet.description) || '')
     + '\n\n──'
@@ -388,7 +392,6 @@ async function main() {
     snippet = m.snippet;
     durationSec = m.durationSec;
 
-    // startSec: env 指定があればそれ、無ければ未使用 grid 値を 1 つ選ぶ
     const envStart = (SHORTS_CLIP_START || '').toString().trim();
     if (envStart !== '') {
       const parsed = Number(envStart);
@@ -404,10 +407,9 @@ async function main() {
       startSec = picked.startSec;
     }
   } else {
-    // 自動 rotation path
+    // 自動 rotation path (古い順)
     const candidates = await buildCandidatePool(youtube, shortsState);
 
-    // env で startSec 明示指定された場合のみ、その startSec で未使用な videoId を最新順に探す
     const envStart = (SHORTS_CLIP_START || '').toString().trim();
     if (envStart !== '') {
       const parsed = Number(envStart);
@@ -443,8 +445,6 @@ async function main() {
     + ' title="' + (snippet?.title || '') + '"');
 
   // ── reserve slot in state BEFORE download/upload ─────────────────────
-  // 万一 download/ffmpeg/upload が失敗しても、同じ (videoId, startSec) を次 Run で
-  // 再選択して同じ失敗を繰り返す事故を防ぐ。
   shortsState.usedSegments.push({
     sourceVideoId,
     startSec,
@@ -455,7 +455,6 @@ async function main() {
 
   // ── download + ffmpeg ────────────────────────────────────────────────
   await fs.mkdir(OUTPUT_DIR, { recursive: true });
-  // 同じ source を別 startSec で再利用する可能性があるので、出力名に startSec を含める
   let srcPath = path.join(OUTPUT_DIR, 'shorts_src_' + sourceVideoId + '.mp4');
   const outPath = path.join(OUTPUT_DIR, 'shorts_' + sourceVideoId + '_' + startSec + 's.mp4');
 
@@ -505,7 +504,6 @@ async function main() {
   }
 
   // ── finalize state ────────────────────────────────────────────────────
-  // 別プロセスが間に state を更新した可能性もあるので再読込してマージ。
   const finalState = await loadJson(SHORTS_STATE_FILE, shortsState);
   if (!Array.isArray(finalState.usedSegments)) finalState.usedSegments = [];
   const segRecord = {
@@ -535,7 +533,6 @@ async function main() {
   finalState.lastUpload = { sourceVideoId, startSec, shortsVideoId, shortsUrl, at: new Date().toISOString() };
   await saveJson(SHORTS_STATE_FILE, finalState);
 
-  // cleanup
   try { if (!useLocal) await fs.unlink(srcPath); } catch {}
   try { await fs.unlink(outPath); } catch {}
   console.log('[shorts] DONE');

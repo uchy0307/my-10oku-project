@@ -12,10 +12,10 @@ on:
         required: false
         default: ''
       clip_start:
-        description: 'Clip start sec (default 30)'
+        description: 'Clip start sec (empty = auto-pick unused slot from START_GRID via state)'
         type: string
         required: false
-        default: '30'
+        default: ''
       clip_duration:
         description: 'Clip duration sec (max 59)'
         type: string

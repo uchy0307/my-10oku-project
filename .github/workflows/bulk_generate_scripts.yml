@@ -17,6 +17,10 @@ on:
         type: string
         required: false
         default: ''
+  schedule:
+    # auto-stock loop: GitHub Actions cron min interval is 5min; we use 10min to be quota-friendly.
+    # bulk_generate_scripts.mjs exits 0 gracefully when 100/100 reached, so this is a safe forever-rule.
+    - cron: '*/10 * * * *'
 
 permissions:
   contents: write

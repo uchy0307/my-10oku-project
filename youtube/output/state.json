@@ -14,8 +14,7 @@
   "note_fix4": "2026-05-19 dispatch: actually removed #011 from processed (note_fix3 was comment-only). Workflow merge conflicts also resolved in youtube_auto.yml + generate_script.mjs + generate_voice.mjs + compile_video.mjs + step3_images_imagen.py.",
   "lastRun": "2026-05-20T10:59:06.813Z",
   "currentTopic": {
-    "id": "011",
-    "title": "長篠の戦い 鉄砲が変えた戦場",
+    "id": "001",    "title": "長篠の戦い 鉄砲が変えた戦場",
     "category": "合戦軸"
   },
   "lastScriptChars": 11779,

@@ -1,14 +1,26 @@
 name: Self-Heal Auto-Retry on Failure
 
 # 失敗した上流 workflow を検知 → 自動で workflow_dispatch を再trigger
-# 連続3回失敗で初めて GitHub Issue 起票
+# 連続3回失敗で GitHub Issue 起票
 on:
   workflow_run:
     workflows:
       - "YouTube Auto Cycle"
       - "note Auto Post (B-plan / slow & safe)"
       - "new-youtube auto pipeline"
+      - "Otona YouTube Auto - Day (AI Images)"
+      - "YouTube Shorts Auto"
+      - "Bulk Generate 100 Scripts (Pre-stock)"
+      - "Otona Retro Thumbnail"
+      - "Retro Thumbnails"
+      - "Preprocess Articles"
     types: [completed]
+  workflow_dispatch:
+    inputs:
+      target_workflow:
+        description: "Workflow file (e.g. youtube_auto.yml) — manual test"
+        required: false
+        default: "youtube_auto.yml"
 
 permissions:
   contents: read
@@ -17,58 +29,124 @@ permissions:
 
 jobs:
   auto-retry:
-    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    # workflow_run の場合は failure のみ起動、workflow_dispatch は常時起動（手動テスト用）
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'failure' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
     steps:
-      - name: Inspect retry attempts
+      - name: Resolve target workflow
+        id: resolve
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          WF_NAME_FROM_RUN: ${{ github.event.workflow_run.name }}
+          WF_PATH_FROM_RUN: ${{ github.event.workflow_run.path }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          DISPATCH_TARGET: ${{ github.event.inputs.target_workflow }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            WF_FILE="$DISPATCH_TARGET"
+            WF_NAME="(manual dispatch) $WF_FILE"
+            URL=""
+          else
+            # workflow_run.path is ".github/workflows/foo.yml"
+            WF_FILE="$(basename "$WF_PATH_FROM_RUN")"
+            WF_NAME="$WF_NAME_FROM_RUN"
+            URL="$RUN_URL"
+          fi
+          echo "wf_file=$WF_FILE" >> "$GITHUB_OUTPUT"
+          echo "wf_name=$WF_NAME" >> "$GITHUB_OUTPUT"
+          echo "run_url=$URL" >> "$GITHUB_OUTPUT"
+          echo "Target workflow: $WF_NAME ($WF_FILE)"
+
+      - name: Inspect recent failure count
         id: count
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
-          WORKFLOW_PATH: ${{ github.event.workflow_run.path }}
+          WF_FILE: ${{ steps.resolve.outputs.wf_file }}
         run: |
-          echo "Failed workflow: $WORKFLOW_NAME ($WORKFLOW_PATH)"
-          # Count recent failures (last 1 hour) for this workflow
-          RUNS=$(gh run list --workflow="$WORKFLOW_PATH" --limit 6 --json conclusion,createdAt -q '.[] | select(.conclusion == "failure") | .createdAt' | wc -l)
-          echo "Recent failures: $RUNS"
-          echo "fail_count=$RUNS" >> $GITHUB_OUTPUT
+          set -euo pipefail
+          # 直近6件のうち failure を数える（--repo を明示して git 依存を回避）
+          RAW=$(gh run list \
+                  --repo "$REPO" \
+                  --workflow "$WF_FILE" \
+                  --limit 6 \
+                  --json conclusion \
+                  -q '.[] | select(.conclusion == "failure") | .conclusion' \
+                | wc -l | tr -d ' \n')
+          : "${RAW:=0}"
+          echo "fail_count=$RAW" >> "$GITHUB_OUTPUT"
+          echo "Recent failure count for $WF_FILE: $RAW"
 
       - name: Wait 5 minutes (let transient API issues clear)
-        if: ${{ steps.count.outputs.fail_count != '' && fromJSON(steps.count.outputs.fail_count) < 3 }}
+        if: ${{ fromJSON(steps.count.outputs.fail_count) < 3 }}
         run: sleep 300
 
       - name: Re-trigger failed workflow
-        if: ${{ steps.count.outputs.fail_count != '' && fromJSON(steps.count.outputs.fail_count) < 3 }}
+        if: ${{ fromJSON(steps.count.outputs.fail_count) < 3 }}
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          WORKFLOW_PATH: ${{ github.event.workflow_run.path }}
-          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+          WF: ${{ steps.resolve.outputs.wf_file }}
         run: |
-          # Workflow path is .github/workflows/xxx.yml — extract filename
-          WF=$(basename "$WORKFLOW_PATH")
-          echo "Re-triggering: $WF"
-          # Set inputs based on workflow
+          set -euo pipefail
+          echo "Re-triggering: $WF (repo=$REPO)"
           case "$WF" in
             youtube_auto.yml)
-              gh workflow run "$WF" -f upload=true
+              gh workflow run --repo "$REPO" "$WF" -f upload=true
               ;;
             new_youtube_auto.yml)
-              gh workflow run "$WF" -f no_upload=false
+              gh workflow run --repo "$REPO" "$WF" -f no_upload=false
               ;;
             *)
-              gh workflow run "$WF"
+              gh workflow run --repo "$REPO" "$WF"
               ;;
           esac
 
       - name: Open issue on persistent failure
-        if: ${{ steps.count.outputs.fail_count != '' && fromJSON(steps.count.outputs.fail_count) >= 3 }}
+        if: ${{ fromJSON(steps.count.outputs.fail_count) >= 3 }}
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
-          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          WF_NAME: ${{ steps.resolve.outputs.wf_name }}
+          RUN_URL: ${{ steps.resolve.outputs.run_url }}
+          FAIL_COUNT: ${{ steps.count.outputs.fail_count }}
         run: |
+          set -euo pipefail
+          BODY_FILE="$(mktemp)"
+          {
+            echo "Workflow: $WF_NAME"
+            echo "Run URL: $RUN_URL"
+            echo "直近6件中の failure 数: $FAIL_COUNT"
+            echo ""
+            echo "Auto-retry を3回試したが回復せず。手動調査が必要。"
+            echo ""
+            echo "このIssueは self-heal workflow により自動起票されました。"
+          } > "$BODY_FILE"
           gh issue create \
-            --title "🚨 Self-Heal: $WORKFLOW_NAME が3回連続失敗" \
-            --body "Run URL: $RUN_URL\n\nAuto-retry を3回試したが回復せず。手動調査が必要。" \
-            --label "self-heal,repeated-failure"
+            --repo "$REPO" \
+            --title "🚨 Self-Heal: $WF_NAME が3回連続失敗" \
+            --body-file "$BODY_FILE" \
+            --label "self-heal" \
+            --label "repeated-failure"
+
+      - name: Open issue on manual dispatch (smoke test)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          WF_NAME: ${{ steps.resolve.outputs.wf_name }}
+          FAIL_COUNT: ${{ steps.count.outputs.fail_count }}
+        run: |
+          set -euo pipefail
+          BODY_FILE="$(mktemp)"
+          {
+            echo "Self-Heal smoke test (workflow_dispatch)"
+            echo ""
+            echo "Target: $WF_NAME"
+            echo "Recent failure count: $FAIL_COUNT"
+            echo ""
+            echo "This issue verifies the Self-Heal pipeline can open issues end-to-end."
+          } > "$BODY_FILE"
+          gh issue create \
+            --repo "$REPO" \
+            --title "🧪 Self-Heal smoke test: $WF_NAME" \
+            --body-file "$BODY_FILE" \
+            --label "self-heal" \
+            --label "smoke-test"

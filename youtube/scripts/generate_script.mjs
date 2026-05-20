@@ -532,11 +532,3 @@ if (isMain) {
 
 // テストから getCategoryGuidance / pickNextTopic / parseOutline を再利用
 export { OUTLINE_PROMPT, CHAPTER_PROMPT };
- {
-    console.error('[generate_script] FAILED:', err);
-    process.exit(1);
-  });
-}
-
-// テストから getCategoryGuidance / pickNextTopic / parseOutline を再利用
-export { OUTLINE_PROMPT, CHAPTER_PROMPT };

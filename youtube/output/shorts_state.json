@@ -3,7 +3,8 @@
     "pBDYbuiCzHY",
     "DWk2UL8z3OQ",
     "dLOHK7U1vJc",
-    "YToADkccEAM"
+    "YToADkccEAM",
+    "HtcdgPGQz74"
   ],
   "records": [
     {
@@ -33,13 +34,20 @@
       "shortsUrl": "https://www.youtube.com/shorts/PpNAROcK0H8",
       "title": "【侍の美学】真田幸村 日本一の兵",
       "uploadedAt": "2026-05-19T23:59:26.317Z"
+    },
+    {
+      "sourceVideoId": "HtcdgPGQz74",
+      "shortsVideoId": "xIyTSqqrM-4",
+      "shortsUrl": "https://www.youtube.com/shorts/xIyTSqqrM-4",
+      "title": "【侍の美学】明智光秀 謀反人の本心",
+      "uploadedAt": "2026-05-20T05:06:06.782Z"
     }
   ],
   "lastUpload": {
-    "sourceVideoId": "YToADkccEAM",
-    "shortsVideoId": "PpNAROcK0H8",
-    "shortsUrl": "https://www.youtube.com/shorts/PpNAROcK0H8",
-    "at": "2026-05-19T23:59:26.317Z"
+    "sourceVideoId": "HtcdgPGQz74",
+    "shortsVideoId": "xIyTSqqrM-4",
+    "shortsUrl": "https://www.youtube.com/shorts/xIyTSqqrM-4",
+    "at": "2026-05-20T05:06:06.782Z"
   },
   "deadVideos": [
     "m7kXLSL0jxg"

@@ -1,7 +1,7 @@
 name: Shorts v2 (samurai clean pipeline)
 
 # 新規 clean Shorts pipeline (2026-05-21). 既存 youtube_shorts_auto.yml には依存しない。
-# stock 済の youtube/shorts_v2/scripts/short_${SHORT_INDEX}.json を元に edge-tts + ffmpeg で
+# stock 済の youtube/shorts_v2/scripts/short_${SHORT_INDEX}.json を元に gtts + ffmpeg で
 # 9:16 動画を生成して @japanese.samurai.channel に upload する。
 
 on:
@@ -48,11 +48,11 @@ jobs:
           ffmpeg -version | head -n 1
           fc-list | grep -i 'noto sans cjk jp' | head -3 || echo "noto cjk jp font check"
 
-      - name: Install edge-tts
+      - name: Install gtts (Google Translate TTS)
         run: |
           python -m pip install --upgrade pip
-          pip install edge-tts==6.1.10
-          edge-tts --help | head -3
+          pip install gTTS==2.5.4
+          gtts-cli --help | head -3
 
       - name: Install npm deps (googleapis only needed)
         run: npm install --no-audit --no-fund googleapis@144

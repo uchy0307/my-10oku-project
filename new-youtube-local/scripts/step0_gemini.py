@@ -1,5 +1,5 @@
 """step0_gemini.py
-otona_no_psychology 夜19:00枠用 台本JSON生成
+otona_psychology 夜19:00枠用 台本JSON生成
 - 5章構成・各章 6000-8000字（10分動画では各章1500-2000字に短縮可）
 - A案と同方針のtone・エロ度（大人の心理学・恋愛/性愛/対人/裏側系、攻めた表現OK）
 - 出力: output/<id>_script.json
@@ -21,7 +21,7 @@ GEMINI_ENDPOINT = f"https://generativelanguage.googleapis.com/v1beta/models/{GEM
 CHAR_MIN = int(os.environ.get("CHAPTER_CHAR_MIN", "1500"))
 CHAR_MAX = int(os.environ.get("CHAPTER_CHAR_MAX", "2000"))
 
-OUTLINE_PROMPT = """あなたは大人向け心理学チャンネル「otona_no_psychology」の構成作家。
+OUTLINE_PROMPT = """あなたは大人向け心理学チャンネル「otona_psychology」の構成作家。
 以下のテーマで10分のYouTube動画の章立て（5章構成）を作成せよ。
 
 【テーマ】{title}
@@ -43,7 +43,7 @@ OUTLINE_PROMPT = """あなたは大人向け心理学チャンネル「otona_no_
 
 それでは執筆を開始せよ。"""
 
-CHAPTER_PROMPT = """あなたは大人向け心理学チャンネル「otona_no_psychology」のナレーション作家。
+CHAPTER_PROMPT = """あなたは大人向け心理学チャンネル「otona_psychology」のナレーション作家。
 全5章構成・10分動画の「第{idx}章」本文を執筆せよ。
 
 【動画テーマ】{title}

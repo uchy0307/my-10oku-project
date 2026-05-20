@@ -68,10 +68,10 @@ def build_metadata(cur):
         desc_lines.append(f"  {c['title']}")
     desc_lines += [
         "",
-        "#大人の心理学 #恋愛心理 #otona_no_psychology",
+        "#大人の心理学 #恋愛心理 #otona_psychology",
     ]
     description = "\n".join(desc_lines)
-    tags = ["大人の心理学", "心理学", "恋愛心理", "otona_no_psychology", cur["category"]]
+    tags = ["大人の心理学", "心理学", "恋愛心理", "otona_psychology", cur["category"]]
     return {
         "snippet": {
             "title": title,

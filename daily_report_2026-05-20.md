@@ -43,7 +43,7 @@
 
 ---
 
-## 【新YouTube（大人の心理学 / @otona_no_psychology）】
+## 【新YouTube（大人の心理学 / @otona_psychology）】
 
 該当ワークフロー候補:
 - `new-youtube auto pipeline` (new_youtube_auto.yml) — cron 07:00-07:30 / 13:00-13:30 / 19:00-19:30 JST（多重スケジュール）

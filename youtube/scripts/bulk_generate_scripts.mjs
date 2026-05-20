@@ -28,13 +28,14 @@ const SCRIPTS_DIR = path.join(ROOT, 'inputs', 'scripts');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+// 2026-05-20 (root fix): removed gemma-3-* models (404 NOT_FOUND on v1beta
+// generateContent — confirmed in run #80 stderr). Aligned with generate_script.mjs.
 const GEMINI_FALLBACK_MODELS = [
   'gemini-2.0-flash',
   'gemini-2.0-flash-lite',
   'gemini-2.5-flash-lite',
   'gemini-flash-latest',
-  'gemma-3-27b-it',
-  'gemma-3-12b-it',
+  'gemini-flash-lite-latest',
 ];
 const _gemini_endpoint = (m) => `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`;
 

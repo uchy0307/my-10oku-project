@@ -23,13 +23,15 @@ const STATE_FILE = path.join(OUTPUT_DIR, 'state.json');
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 // 2026-05-20 ROOT FIX: removed dead 1.5 models (404 on current API), added live free-tier ones
+// 2026-05-20 (root fix): removed gemma-3-27b-it / gemma-3-12b-it because they
+// return 404 NOT_FOUND on v1beta generateContent endpoint (confirmed run #80 stderr).
+// Aligned with generate_script.mjs fallback chain.
 const GEMINI_FALLBACK_MODELS = [
   'gemini-2.0-flash',
   'gemini-2.0-flash-lite',
   'gemini-2.5-flash-lite',
   'gemini-flash-latest',
-  'gemma-3-27b-it',
-  'gemma-3-12b-it',
+  'gemini-flash-lite-latest',
 ];
 const _gemini_endpoint = (model) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 const GEMINI_ENDPOINT = _gemini_endpoint(GEMINI_MODEL);

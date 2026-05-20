@@ -45,6 +45,8 @@ jobs:
       GOOGLE_TTS_PITCH: "0.0"
       # Phase D: workflow_dispatch の target を generate_script に渡す
       TARGET_TOPIC_ID: ${{ inputs.target }}
+      # 2026-05-20: Gemini Free Tier 完全枯渇のため pre-stock JSON のみ消費する hard gate
+      USE_PRESTOCK: "1"
     steps:
       - name: Checkout
         uses: actions/checkout@v4

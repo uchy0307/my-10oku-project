@@ -410,7 +410,13 @@ async function main() {
   console.log(`[generate_script] Selected topic: [${topic.id}] ${topic.title} (${topic.category})`);
 
   // === PRE-STOCK FAST PATH (2026-05-20 root fix) ===
+  // USE_PRESTOCK=1 を設定すると Gemini を一切呼ばず prestock JSON が無ければ即 fail。
+  // Gemini 完全枯渇日のため env で hard gate しておく。
+  const USE_PRESTOCK = String(process.env.USE_PRESTOCK || '').trim() === '1';
   const pre = await tryLoadPrestockedScript(topic.id);
+  if (USE_PRESTOCK && !pre) {
+    throw new Error(`[generate_script] USE_PRESTOCK=1 but no pre-stocked JSON for topic id=${topic.id} at ${INPUTS_SCRIPTS_DIR}/script_${topic.id}.json`);
+  }
   if (pre) {
     console.log(`[generate_script] PRE-STOCKED script found: ${pre.path} — consuming JSON, skipping Gemini calls`);
     const sectionsFromJson = pre.data.chapters.map((c, i) => ({

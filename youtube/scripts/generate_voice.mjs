@@ -82,7 +82,9 @@ async function callEdgeTTSChunk(text) {
   const tmpOutFile = path.join(os.tmpdir(), `etts_out_${process.pid}_${Date.now()}_${Math.random().toString(36).slice(2)}.mp3`);
   await fs.writeFile(tmpTextFile, text, 'utf-8');
   return new Promise((resolve, reject) => {
-    const proc = spawn('python3', ['-m', 'edge_tts', '--voice', voice, '--rate', rate, '--file', tmpTextFile, '--write-media', tmpOutFile], { stdio: ['ignore', 'pipe', 'pipe'] });
+    // argparse は `--rate -5%` を「`-5%` は別フラグ」と誤認するため `--rate=-5%` 形式で渡す。
+    // voice も念のため `--voice=...` に統一して将来のオプション衝突を避ける。
+    const proc = spawn('python3', ['-m', 'edge_tts', `--voice=${voice}`, `--rate=${rate}`, '--file', tmpTextFile, '--write-media', tmpOutFile], { stdio: ['ignore', 'pipe', 'pipe'] });
     let stderr = '';
     proc.stderr.on('data', (d) => { stderr += d.toString(); });
     proc.on('error', async (e) => {

@@ -115,3 +115,57 @@ function splitOversize(text, maxBytes) {
   if (buf) out.push(buf);
   return out;
 }
+
+
+/**
+ * voice_timings.json (chunk配列) から ASS/SRT 用 subtitle segments を構築する。
+ * 2026-05-21 ROOT FIX (Run #102): compile_video.mjs が import しているのに
+ * このファイルに export が無く SyntaxError で死んでいた真因の修正。
+ */
+export function buildSegmentsFromTimings(timings, opts = {}) {
+  if (!Array.isArray(timings)) throw new TypeError('buildSegmentsFromTimings: timings must be an array');
+  const minLen = opts.tight ? 14 : 28;
+  const segments = [];
+  for (const chunk of timings) {
+    const chunkStart = Number(chunk.startSec) || 0;
+    const chunkEnd = Number(chunk.endSec) || 0;
+    const chunkDur = chunkEnd - chunkStart;
+    const chunkText = String(chunk.text || '').trim();
+    if (!chunkText || chunkDur <= 0) continue;
+    const paragraphs = chunkText.split(/\n+/);
+    const sentences = [];
+    for (const para of paragraphs) {
+      if (!para.trim()) continue;
+      const parts = para.split(/(?<=[。！？])/).map((s) => s.trim()).filter(Boolean);
+      let buf = '';
+      for (const p of parts) {
+        buf += p;
+        if (buf.length >= minLen) { sentences.push(buf); buf = ''; }
+      }
+      if (buf) sentences.push(buf);
+    }
+    if (sentences.length === 0) { segments.push({ start: chunkStart, end: chunkEnd, text: chunkText }); continue; }
+    const totalChars = sentences.reduce((s, t) => s + t.length, 0) || 1;
+    let cursor = chunkStart;
+    for (const sent of sentences) {
+      const portion = sent.length / totalChars;
+      const dur = chunkDur * portion;
+      const start = cursor;
+      const end = cursor + dur;
+      cursor = end;
+      if (dur > 5) {
+        const subCount = Math.ceil(dur / 4);
+        const subDur = dur / subCount;
+        const subLen = Math.ceil(sent.length / subCount);
+        for (let i = 0; i < subCount; i++) {
+          const text = sent.slice(i * subLen, (i + 1) * subLen);
+          if (!text) continue;
+          segments.push({ start: start + i * subDur, end: start + (i + 1) * subDur, text });
+        }
+      } else {
+        segments.push({ start, end, text: sent });
+      }
+    }
+  }
+  return segments;
+}

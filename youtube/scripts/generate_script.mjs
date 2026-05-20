@@ -260,19 +260,21 @@ export async function loadTopics() {
 }
 
 // Phase D: currentTopic が明示されていれば優先（workflow_dispatch input.target で上書き可能）
+// 2026-05-20 ROOT FIX: TARGET_TOPIC_ID を最優先に。state.currentTopic が processed に無い時
+// (即ち通常運用時) も target が無視されていた priority bug を修正。
 export function pickNextTopic(topics, state) {
-  // 1) state.currentTopic.id が processed に無く topics に存在すれば優先
+  // 1) TARGET_TOPIC_ID env が指定されていれば最優先（workflow_dispatch input.target）
+  const target = (process.env.TARGET_TOPIC_ID || '').trim();
+  if (target) {
+    const tgt = topics.find(t => String(t.id) === target);
+    if (tgt) return tgt;
+  }
+  // 2) state.currentTopic.id が processed に無く topics に存在すれば次優先
   if (state.currentTopic && state.currentTopic.id) {
     const explicit = topics.find(t => String(t.id) === String(state.currentTopic.id));
     if (explicit && !(state.processed || []).includes(String(explicit.id))) {
       return explicit;
     }
-  }
-  // 2) TARGET_TOPIC_ID env も尊重（workflow_dispatch input → env で渡る）
-  const target = (process.env.TARGET_TOPIC_ID || '').trim();
-  if (target) {
-    const tgt = topics.find(t => String(t.id) === target);
-    if (tgt) return tgt;
   }
   // 3) processed に無い最初の topic を fallback
   const processed = new Set((state.processed || []).map(String));
@@ -523,6 +525,14 @@ const isMain = import.meta.url === `file://${process.argv[1]}` ||
                import.meta.url.endsWith(path.basename(process.argv[1] || ''));
 if (isMain) {
   main().catch(err => {
+    console.error('[generate_script] FAILED:', err);
+    process.exit(1);
+  });
+}
+
+// テストから getCategoryGuidance / pickNextTopic / parseOutline を再利用
+export { OUTLINE_PROMPT, CHAPTER_PROMPT };
+ {
     console.error('[generate_script] FAILED:', err);
     process.exit(1);
   });

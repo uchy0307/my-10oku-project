@@ -5,7 +5,8 @@
     "dLOHK7U1vJc",
     "YToADkccEAM",
     "HtcdgPGQz74",
-    "e-3bHqRlxZs"
+    "e-3bHqRlxZs",
+    "SGCeujVdRIg"
   ],
   "records": [
     {
@@ -49,22 +50,41 @@
       "shortsUrl": "https://www.youtube.com/shorts/Vlofclq5Va0",
       "title": "【侍の美学】上杉謙信 義に生きた軍神",
       "uploadedAt": "2026-05-20T08:22:24.372Z"
+    },
+    {
+      "sourceVideoId": "SGCeujVdRIg",
+      "shortsVideoId": "-27kdJ5mJls",
+      "shortsUrl": "https://www.youtube.com/shorts/-27kdJ5mJls",
+      "title": "【侍の美学】徳川家康 七十五年の忍耐",
+      "uploadedAt": "2026-05-20T12:14:08.862Z"
     }
   ],
   "lastUpload": {
-    "sourceVideoId": "e-3bHqRlxZs",
-    "shortsVideoId": "Vlofclq5Va0",
-    "shortsUrl": "https://www.youtube.com/shorts/Vlofclq5Va0",
-    "at": "2026-05-20T08:22:24.372Z"
+    "sourceVideoId": "SGCeujVdRIg",
+    "shortsVideoId": "-27kdJ5mJls",
+    "shortsUrl": "https://www.youtube.com/shorts/-27kdJ5mJls",
+    "at": "2026-05-20T12:14:08.862Z"
   },
   "deadVideos": [
-    "m7kXLSL0jxg"
+    "m7kXLSL0jxg",
+    "HhiwetefdsU",
+    "EuIGkOKjZ2E"
   ],
   "deadVideoLog": [
     {
       "videoId": "m7kXLSL0jxg",
       "reason": "fetchVideoMeta 404",
       "at": "2026-05-19T23:42:13.248Z"
+    },
+    {
+      "videoId": "HhiwetefdsU",
+      "reason": "too short (59s, likely a Short itself)",
+      "at": "2026-05-20T12:13:57.995Z"
+    },
+    {
+      "videoId": "EuIGkOKjZ2E",
+      "reason": "too short (59s, likely a Short itself)",
+      "at": "2026-05-20T12:13:58.088Z"
     }
   ]
 }

@@ -7,25 +7,13 @@
  *
  * Flow:
  *   1. Read youtube/history_v2/scripts/long_${LONG_INDEX}.json
- *      Format: { title, description, tags, chapters:[{title,text}], image_urls:[...] }
- *   2. For each chapter, gtts-cli ja -> chapter_N.mp3
- *      Then ffmpeg atempo=0.92 to slow slightly + concat with 4s silence between chapters.
- *      If total audio < 1810s, append silence at end to reach 1830s (real-image bg keeps showing).
- *   3. Fetch ALL image_urls. ABORT if fewer than 6 succeed (no black-bg fallback).
- *   4. Build ASS subtitles: split narration into 25-char chunks evenly across audio.
- *   5. ffmpeg compose 1920x1080 mp4 with image-slideshow background (each image 30-120s with crossfade)
- *      Burn in subtitles. Add narration audio.
- *   6. GATE: verify final mp4 duration >= 1800s via ffprobe csv=p=0. ABORT (exit 1) if not.
- *   7. Generate thumbnail 1280x720: portrait image + yellow washi background + red title text.
- *   8. Upload to YouTube (resumable) with title/description/tags.
- *   9. thumbnails.set with generated jpg.
- *  10. Emit video_url via GITHUB_OUTPUT.
- *
- * Required env:
- *   LONG_INDEX                   e.g. "001"
- *   YOUTUBE_CLIENT_ID
- *   YOUTUBE_CLIENT_SECRET
- *   YOUTUBE_REFRESH_TOKEN
+ *   2. For each chapter, gtts-cli ja -> chapter_N.mp3 + atempo 0.92
+ *   3. Fetch ALL image_urls (Wikimedia UA + retry + original-URL fallback). ABORT if < 6 succeed.
+ *   4. Build ASS subtitles
+ *   5. ffmpeg compose 1920x1080 mp4 with image-slideshow + burned subtitles
+ *   6. GATE: csv=p=0 duration check >= 1800s, else exit 1
+ *   7. Generate real-image thumbnail
+ *   8. Upload to YouTube + thumbnails.set
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -139,17 +127,47 @@ if (audioDur < TARGET_MIN_SEC) {
   log(`padded narration duration: ${audioDur.toFixed(1)}s`);
 }
 
-// ---------- 3. Fetch images ----------
-async function fetchImage(url, dst) {
-  log(`fetch ${url}`);
+// ---------- 3. Fetch images: Wikimedia-compliant UA + retry + original-URL fallback ----------
+const WIKI_UA = '10oku-history-bot/1.0 (https://github.com/uchy0307/my-10oku-project; uchiyamatakayuki0307@gmail.com) node-fetch';
+async function fetchOnce(url) {
   const res = await fetch(url, {
-    headers: { 'User-Agent': 'Mozilla/5.0 (10oku-history-v2-bot/1.0)' },
+    headers: {
+      'User-Agent': WIKI_UA,
+      'Accept': 'image/avif,image/webp,image/jpeg,image/*,*/*;q=0.8',
+      'Accept-Language': 'ja,en;q=0.8',
+    },
     redirect: 'follow',
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const buf = Buffer.from(await res.arrayBuffer());
-  if (buf.length < 3000) throw new Error(`image too small (${buf.length}B): ${url}`);
-  fs.writeFileSync(dst, buf);
+  if (buf.length < 3000) throw new Error(`image too small (${buf.length}B)`);
+  return buf;
+}
+function deriveOriginalUrl(thumbUrl) {
+  const m = thumbUrl.match(/^(https?:\/\/upload\.wikimedia\.org\/wikipedia\/[^/]+)\/thumb\/([^/]+\/[^/]+\/[^/]+)\/\d+px-/);
+  if (m) return `${m[1]}/${m[2]}`;
+  return null;
+}
+async function fetchImage(url, dst) {
+  log(`fetch ${url}`);
+  const tries = [url];
+  const orig = deriveOriginalUrl(url);
+  if (orig) tries.push(orig);
+  let lastErr;
+  for (const u of tries) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const buf = await fetchOnce(u);
+        fs.writeFileSync(dst, buf);
+        if (u !== url) log(`(fallback to original) ${u}`);
+        return;
+      } catch (e) {
+        lastErr = e;
+        await new Promise(r => setTimeout(r, 400 + attempt * 600));
+      }
+    }
+  }
+  throw lastErr;
 }
 
 const imagePaths = [];
@@ -158,6 +176,7 @@ for (let i = 0; i < image_urls.length; i++) {
   try {
     await fetchImage(image_urls[i], dst);
     imagePaths.push(dst);
+    await new Promise(r => setTimeout(r, 350));
   } catch (e) {
     console.warn(`[pipeline] image ${i} failed: ${e.message}`);
   }
@@ -269,7 +288,7 @@ execSync(
   { stdio: 'inherit', cwd: WORK }
 );
 
-// ---------- 6. GATE: STRICT duration enforcement (user mandate 2026-05-21) ----------
+// ---------- 6. GATE: STRICT duration enforcement ----------
 const gateProbe = execSync(
   `ffprobe -v error -show_entries format=duration -of csv=p=0 ${JSON.stringify(outMp4)}`
 ).toString().trim();

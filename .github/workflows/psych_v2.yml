@@ -1,0 +1,82 @@
+name: Psych v2 (long-form clean pipeline)
+
+# 新規 clean long-form pipeline (2026-05-21).
+# 既存 otona_youtube_auto_day.yml / new_youtube_auto.yml 等には一切依存しない。
+# stock 済の youtube/psych_v2/scripts/psych_${PSYCH_INDEX}.json を元に
+# 章分割 gtts + ffmpeg で 16:9 / 1920x1080 / duration >= 1800s の動画を生成して
+# NEW_YOUTUBE_* secrets が紐づく YouTube channel (心理学チャンネル) に upload する。
+
+on:
+  workflow_dispatch:
+    inputs:
+      psych_index:
+        description: 'Psych index (001-003)'
+        type: string
+        required: true
+        default: '001'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      PSYCH_INDEX: ${{ inputs.psych_index }}
+      YOUTUBE_CLIENT_ID: ${{ secrets.NEW_YOUTUBE_CLIENT_ID }}
+      YOUTUBE_CLIENT_SECRET: ${{ secrets.NEW_YOUTUBE_CLIENT_SECRET }}
+      YOUTUBE_REFRESH_TOKEN: ${{ secrets.NEW_YOUTUBE_REFRESH_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install ffmpeg + fonts-noto-cjk
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ffmpeg fonts-noto-cjk fonts-noto-cjk-extra
+          fc-cache -f
+          ffmpeg -version | head -n 1
+          ls /usr/share/fonts/opentype/noto/ | head -20 || true
+          fc-list | grep -i 'noto sans cjk jp' | head -3 || echo "noto cjk jp font check"
+
+      - name: Install gTTS + Pillow
+        run: |
+          python -m pip install --upgrade pip
+          pip install gTTS==2.5.4 Pillow==10.4.0
+          gtts-cli --help | head -3
+          python -c "from PIL import Image, ImageDraw, ImageFont, ImageFilter; print('Pillow ok')"
+
+      - name: Install npm deps (googleapis only)
+        run: npm install --no-audit --no-fund googleapis@144
+
+      - name: Validate script exists
+        run: |
+          test -f "youtube/psych_v2/scripts/psych_${PSYCH_INDEX}.json" \
+            || (echo "missing script: youtube/psych_v2/scripts/psych_${PSYCH_INDEX}.json" && exit 1)
+          echo "script ok: youtube/psych_v2/scripts/psych_${PSYCH_INDEX}.json"
+
+      - name: Run psych_v2 pipeline
+        id: pipe
+        run: node youtube/psych_v2/pipeline.mjs
+
+      - name: Report
+        if: always()
+        run: |
+          if [ -n "${{ steps.pipe.outputs.video_url }}" ]; then
+            echo "::notice title=Psych v2 SUCCESS::index=${PSYCH_INDEX} duration=${{ steps.pipe.outputs.final_duration }}s url=${{ steps.pipe.outputs.video_url }}"
+          else
+            echo "::error title=Psych v2 FAILED::index=${PSYCH_INDEX} - no video_url emitted"
+            exit 1
+          fi

@@ -1,0 +1,96 @@
+name: Retro Thumbs (history_v2 - yellow/red spec)
+
+# Thumbnail-only re-upload for already-published history_v2 videos.
+# Generates yellow background + red large wrapped text thumbnail
+# via youtube/history_v2/scripts/make_thumb.py and applies it via
+# youtube.thumbnails().set. Does NOT touch video content / metadata.
+
+on:
+  workflow_dispatch:
+    inputs:
+      video_ids:
+        description: 'Comma-separated YouTube video IDs (in order, matching script_ids)'
+        type: string
+        required: true
+        default: 'DwigfOEHpeA,LteeQRRyjyI,RJ_FiAKyOPo'
+      script_ids:
+        description: 'Comma-separated script IDs (e.g. 001,002,003)'
+        type: string
+        required: true
+        default: '001,002,003'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  retro:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+      YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+      YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+      VIDEO_IDS: ${{ inputs.video_ids }}
+      SCRIPT_IDS: ${{ inputs.script_ids }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install fonts-noto-cjk
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y fonts-noto-cjk
+          fc-cache -f
+          ls /usr/share/fonts/opentype/noto/ | grep -i cjk | head -5
+
+      - name: Install Pillow
+        run: pip install --upgrade Pillow
+
+      - name: Install googleapis
+        run: npm install --no-audit --no-fund googleapis@144
+
+      - name: Validate inputs
+        run: |
+          echo "VIDEO_IDS=$VIDEO_IDS"
+          echo "SCRIPT_IDS=$SCRIPT_IDS"
+          IFS=',' read -ra V <<< "$VIDEO_IDS"
+          IFS=',' read -ra S <<< "$SCRIPT_IDS"
+          if [ "${#V[@]}" -ne "${#S[@]}" ]; then
+            echo "::error::VIDEO_IDS and SCRIPT_IDS length mismatch"
+            exit 1
+          fi
+          for sid in "${S[@]}"; do
+            test -f "youtube/history_v2/scripts/long_${sid}.json" \
+              || (echo "::error::missing script long_${sid}.json" && exit 1)
+          done
+          echo "validation ok"
+
+      - name: Apply retro thumbnails
+        id: apply
+        run: node youtube/history_v2/scripts/retro_thumbs_apply.mjs
+
+      - name: Upload generated thumbs as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: retro-thumbs-history-v2-${{ github.run_number }}
+          path: youtube/history_v2/.work_retro/thumb_*.jpg
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Report
+        if: always()
+        run: |
+          echo "summary=${{ steps.apply.outputs.summary }}"
+          echo "ok_count=${{ steps.apply.outputs.ok_count }}/${{ steps.apply.outputs.total }}"

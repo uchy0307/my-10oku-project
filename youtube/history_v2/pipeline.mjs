@@ -7,25 +7,13 @@
  *
  * Flow:
  *   1. Read youtube/history_v2/scripts/long_${LONG_INDEX}.json
- *      Format: { title, description, tags, chapters:[{title,text}], image_urls:[...] }
- *   2. For each chapter, gtts-cli ja -> chapter_N.mp3
- *      Then ffmpeg atempo=0.92 to slow slightly + concat with 4s silence between chapters.
- *      If total audio < 1810s, append silence at end to reach 1830s (real-image bg keeps showing).
- *   3. Fetch ALL image_urls. ABORT if fewer than 6 succeed (no black-bg fallback).
- *   4. Build ASS subtitles: split narration into 25-char chunks evenly across audio.
- *   5. ffmpeg compose 1920x1080 mp4 with image-slideshow background (each image 30-120s with crossfade)
- *      Burn in subtitles. Add narration audio.
- *   6. Verify final mp4 duration >= 1800s. If not, abort.
- *   7. Generate thumbnail 1280x720: portrait image + yellow washi background + red title text.
- *   8. Upload to YouTube (resumable) with title/description/tags.
- *   9. thumbnails.set with generated jpg.
- *  10. Emit video_url via GITHUB_OUTPUT.
- *
- * Required env:
- *   LONG_INDEX                   e.g. "001"
- *   YOUTUBE_CLIENT_ID
- *   YOUTUBE_CLIENT_SECRET
- *   YOUTUBE_REFRESH_TOKEN
+ *   2. For each chapter, gtts-cli ja -> chapter_N.mp3 + atempo 0.92
+ *   3. Fetch ALL image_urls (Wikimedia UA + retry + original-URL fallback). ABORT if < 6 succeed.
+ *   4. Build ASS subtitles
+ *   5. ffmpeg compose 1920x1080 mp4 with image-slideshow + burned subtitles
+ *   6. GATE: csv=p=0 duration check >= 1800s, else exit 1
+ *   7. Generate real-image thumbnail
+ *   8. Upload to YouTube + thumbnails.set
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -67,11 +55,9 @@ for (let i = 0; i < chapters.length; i++) {
   const ch_mp3 = path.join(WORK, `chapter_${i}.mp3`);
   fs.writeFileSync(txtPath, ch.text, 'utf8');
   log(`TTS chapter ${i} (${ch.text.length} chars)`);
-  // gtts-cli will internally chunk long text
   const r = spawnSync('gtts-cli', ['--lang', 'ja', '--file', txtPath, '--output', rawMp3], { stdio: 'inherit' });
   if (r.status !== 0) fail(`gtts-cli failed for chapter ${i}`);
   if (!fs.existsSync(rawMp3) || fs.statSync(rawMp3).size < 5000) fail(`chapter ${i} mp3 empty`);
-  // Slow audio slightly with atempo=0.92 (more natural, fuller length)
   execSync(
     `ffmpeg -y -i ${JSON.stringify(rawMp3)} -filter:a "atempo=0.92" -c:a libmp3lame -b:a 128k ${JSON.stringify(ch_mp3)}`,
     { stdio: 'inherit' }
@@ -92,12 +78,12 @@ const silence8 = path.join(WORK, 'silence_8s.mp3');
 makeSilence(8, silence8);
 
 const concatList = [];
-concatList.push(silence8); // intro
+concatList.push(silence8);
 for (let i = 0; i < chapterMp3s.length; i++) {
   concatList.push(chapterMp3s[i]);
   if (i < chapterMp3s.length - 1) concatList.push(silence4);
 }
-concatList.push(silence8); // outro
+concatList.push(silence8);
 
 const concatListPath = path.join(WORK, 'concat_audio.txt');
 fs.writeFileSync(
@@ -123,7 +109,6 @@ function probeDuration(p) {
 let audioDur = probeDuration(narrationMp3);
 log(`narration duration: ${audioDur.toFixed(1)}s (${(audioDur/60).toFixed(2)}min)`);
 
-// If audio too short, append silence to reach 1830s
 const TARGET_MIN_SEC = 1830;
 if (audioDur < TARGET_MIN_SEC) {
   const padSec = Math.ceil(TARGET_MIN_SEC - audioDur + 5);
@@ -142,8 +127,7 @@ if (audioDur < TARGET_MIN_SEC) {
   log(`padded narration duration: ${audioDur.toFixed(1)}s`);
 }
 
-// ---------- 3. Fetch images (ABORT on too few successes) ----------
-// Wikimedia requires UA per https://meta.wikimedia.org/wiki/User-Agent_policy
+// ---------- 3. Fetch images: Wikimedia-compliant UA + retry + original-URL fallback ----------
 const WIKI_UA = '10oku-history-bot/1.0 (https://github.com/uchy0307/my-10oku-project; uchiyamatakayuki0307@gmail.com) node-fetch';
 async function fetchOnce(url) {
   const res = await fetch(url, {
@@ -160,7 +144,6 @@ async function fetchOnce(url) {
   return buf;
 }
 function deriveOriginalUrl(thumbUrl) {
-  // /wikipedia/commons/thumb/X/YY/Name.jpg/NNNpx-Name.jpg -> /wikipedia/commons/X/YY/Name.jpg
   const m = thumbUrl.match(/^(https?:\/\/upload\.wikimedia\.org\/wikipedia\/[^/]+)\/thumb\/([^/]+\/[^/]+\/[^/]+)\/\d+px-/);
   if (m) return `${m[1]}/${m[2]}`;
   return null;
@@ -180,7 +163,6 @@ async function fetchImage(url, dst) {
         return;
       } catch (e) {
         lastErr = e;
-        // brief backoff
         await new Promise(r => setTimeout(r, 400 + attempt * 600));
       }
     }
@@ -194,7 +176,6 @@ for (let i = 0; i < image_urls.length; i++) {
   try {
     await fetchImage(image_urls[i], dst);
     imagePaths.push(dst);
-    // Be polite to Wikimedia: 350ms between requests
     await new Promise(r => setTimeout(r, 350));
   } catch (e) {
     console.warn(`[pipeline] image ${i} failed: ${e.message}`);
@@ -205,7 +186,6 @@ if (imagePaths.length < 6) fail(`only ${imagePaths.length} images succeeded; nee
 
 // ---------- 4. Build ASS subtitles ----------
 function splitForSubs(text, maxChars = 28) {
-  // Split on Japanese punctuation, then re-group up to maxChars per line
   const sentences = text.split(/(?<=[ãï¼ï¼ã])/).filter(s => s.trim().length > 0);
   const chunks = [];
   let buf = '';
@@ -222,7 +202,7 @@ function splitForSubs(text, maxChars = 28) {
 }
 const allText = chapters.map(c => c.text).join('');
 const subChunks = splitForSubs(allText, 28);
-const subSlot = (audioDur - 16) / subChunks.length; // skip ~8s intro/outro silence
+const subSlot = (audioDur - 16) / subChunks.length;
 const subStart = 8;
 
 function fmtAssTime(sec) {
@@ -256,8 +236,7 @@ for (let i = 0; i < subChunks.length; i++) {
 const assPath = path.join(WORK, 'sub.ass');
 fs.writeFileSync(assPath, assText, 'utf8');
 
-// ---------- 5. Build video: image slideshow background, then mux audio + subs ----------
-// Each image shown for ~ audioDur / imagePaths.length seconds
+// ---------- 5. Build video ----------
 const segSec = Math.max(45, Math.floor(audioDur / imagePaths.length));
 log(`video: ${imagePaths.length} images x ${segSec}s each, target dur ${audioDur.toFixed(0)}s`);
 
@@ -265,7 +244,6 @@ const segMp4s = [];
 for (let i = 0; i < imagePaths.length; i++) {
   const out = path.join(WORK, `seg_${i}.mp4`);
   const frames = segSec * 24;
-  // Slow ken-burns zoom in/out alternating; 1920x1080 output
   const zoomExpr = i % 2 === 0
     ? `'min(1+0.00012*on,1.15)'`
     : `'max(1.15-0.00012*on,1.0)'`;
@@ -282,7 +260,6 @@ for (let i = 0; i < imagePaths.length; i++) {
   segMp4s.push(out);
 }
 
-// Loop image segments until they cover audioDur. Build concat list repeating until total >= audioDur
 let totalSec = 0;
 const concatVidList = [];
 let idx = 0;
@@ -290,7 +267,7 @@ while (totalSec < audioDur + 5) {
   concatVidList.push(segMp4s[idx % segMp4s.length]);
   totalSec += segSec;
   idx++;
-  if (idx > 200) break; // safety
+  if (idx > 200) break;
 }
 log(`concatenating ${concatVidList.length} segments (~${totalSec}s)`);
 const videoConcatListPath = path.join(WORK, 'concat_video.txt');
@@ -305,15 +282,13 @@ execSync(
   { stdio: 'inherit' }
 );
 
-// Final compose: bg + narration + subs, trim to audioDur
 const outMp4 = path.join(WORK, 'output.mp4');
 execSync(
   `ffmpeg -y -i ${JSON.stringify(bgMp4)} -i ${JSON.stringify(narrationMp3)} -vf "subtitles=sub.ass:fontsdir=/usr/share/fonts" -map 0:v:0 -map 1:a:0 -c:v libx264 -preset veryfast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${audioDur.toFixed(2)} ${JSON.stringify(outMp4)}`,
   { stdio: 'inherit', cwd: WORK }
 );
 
-// ---------- 6. GATE: STRICT duration enforcement (user mandate 2026-05-21) ----------
-// Use exact ffprobe form requested: csv=p=0
+// ---------- 6. GATE: STRICT duration enforcement ----------
 const gateProbe = execSync(
   `ffprobe -v error -show_entries format=duration -of csv=p=0 ${JSON.stringify(outMp4)}`
 ).toString().trim();
@@ -379,4 +354,34 @@ const upload = await youtube.videos.insert({
       defaultLanguage: 'ja',
       defaultAudioLanguage: 'ja',
     },
-    
+    status: {
+      privacyStatus: 'public',
+      selfDeclaredMadeForKids: false,
+      madeForKids: false,
+    },
+  },
+  media: { body: fs.createReadStream(outMp4) },
+}, { maxBodyLength: 2 * 1024 * 1024 * 1024 });
+
+const videoId = upload.data?.id;
+if (!videoId) fail(`upload failed: no videoId in response: ${JSON.stringify(upload.data)}`, 3);
+const videoUrl = `https://youtube.com/watch?v=${videoId}`;
+log(`uploaded! ${videoUrl}`);
+
+// ---------- 9. Set thumbnail ----------
+try {
+  log(`setting thumbnail for videoId=${videoId}`);
+  await youtube.thumbnails.set({
+    videoId,
+    media: { mimeType: 'image/jpeg', body: fs.createReadStream(thumbPath) },
+  });
+  log('thumbnail set');
+} catch (e) {
+  console.warn(`[pipeline] thumbnail set failed (non-fatal): ${e?.message || e}`);
+}
+
+// ---------- 10. Emit output ----------
+if (process.env.GITHUB_OUTPUT) {
+  fs.appendFileSync(process.env.GITHUB_OUTPUT, `video_url=${videoUrl}\nvideo_id=${videoId}\nduration_sec=${finalDurInt}\n`);
+}
+console.log(`\n::notice title=history_v2 upload OK::index=${LONG_INDEX} dur=${finalDurInt}s url=${videoUrl}\n`);

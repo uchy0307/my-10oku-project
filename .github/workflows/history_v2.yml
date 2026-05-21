@@ -1,0 +1,79 @@
+name: History v2 (samurai long-form 30min pipeline)
+
+# Brand-new clean long-form pipeline (2026-05-21). Does NOT depend on existing
+# youtube_auto.yml / shorts_v2.yml. Generates a >=30min video from
+# youtube/history_v2/scripts/long_${LONG_INDEX}.json and uploads to
+# @japanese.samurai.channel via the YOUTUBE_* OAuth refresh token.
+
+on:
+  workflow_dispatch:
+    inputs:
+      long_index:
+        description: 'Long-form index (001-003)'
+        type: string
+        required: true
+        default: '001'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      LONG_INDEX: ${{ inputs.long_index }}
+      YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+      YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+      YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install ffmpeg + fonts-noto-cjk
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ffmpeg fonts-noto-cjk
+          fc-cache -f
+          ffmpeg -version | head -n 1
+          ls /usr/share/fonts/opentype/noto/ | grep -i cjk | head -5 || echo "(noto cjk list)"
+
+      - name: Install gtts (Google Translate TTS)
+        run: |
+          python -m pip install --upgrade pip
+          pip install gTTS==2.5.4
+          gtts-cli --help | head -3
+
+      - name: Install npm deps (googleapis only)
+        run: npm install --no-audit --no-fund googleapis@144
+
+      - name: Validate script file exists
+        run: |
+          test -f "youtube/history_v2/scripts/long_${LONG_INDEX}.json" \
+            || (echo "missing script: youtube/history_v2/scripts/long_${LONG_INDEX}.json" && exit 1)
+          echo "script ok: youtube/history_v2/scripts/long_${LONG_INDEX}.json"
+
+      - name: Run history_v2 pipeline
+        id: pipe
+        run: node youtube/history_v2/pipeline.mjs
+
+      - name: Report
+        if: always()
+        run: |
+          if [ -n "${{ steps.pipe.outputs.video_url }}" ]; then
+            echo "::notice title=history_v2 SUCCESS::index=${LONG_INDEX} url=${{ steps.pipe.outputs.video_url }} dur=${{ steps.pipe.outputs.duration_sec }}s"
+          else
+            echo "::error title=history_v2 FAILED::index=${LONG_INDEX} - no video_url emitted"
+            exit 1
+          fi

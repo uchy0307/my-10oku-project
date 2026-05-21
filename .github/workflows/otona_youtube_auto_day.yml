@@ -12,11 +12,9 @@ on:
         description: 'Upload to YouTube (default false for dry-run)'
         type: boolean
         default: false
-  schedule:
-    # 朝08:00 JST = 23:00 UTC (前日)
-    - cron: '0 23 * * *'
-    # 昼13:00 JST = 04:00 UTC
-    - cron: '0 4 * * *'
+  # schedule: removed 2026-05-22 - broken (exit 1 since 5/19), replaced by new_youtube_auto.yml
+  # 旧 cron 退避: '0 23 * * *' (JST 08:00), '0 4 * * *' (JST 13:00)
+  # 復活させる場合は scripts/ 配下の day-pipeline を修復後、上の workflow_dispatch と同列に schedule: ブロックを再追加すること
 
 permissions:
   contents: write

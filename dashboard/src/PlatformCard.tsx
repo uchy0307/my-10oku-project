@@ -3,8 +3,8 @@ import { fmtJst } from "./time";
 
 type Props = {
   card: CardState;
-  patReady: boolean;
-  onRun: () => void;
+  patReady?: boolean;
+  onRun?: () => void;
 };
 
 function runBadge(card: CardState) {
@@ -97,15 +97,7 @@ export function PlatformCard({ card, patReady, onRun }: Props) {
         </span>
         <div className="flex items-center gap-2">
           {runBadge(card)}
-          <button
-            onClick={handleRun}
-            disabled={!patReady || run.status === "dispatching"}
-            className="rounded-lg bg-amber-500 text-slate-900 font-bold px-2.5 py-1 text-xs disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 active:scale-95 z-10"
-            aria-label={`${label} を実行`}
-            title={patReady ? "▶実行" : "⚙️で PAT 設定が必要"}
-          >
-            ▶実行
-          </button>
+          
         </div>
       </div>
       {run.runUrl && (

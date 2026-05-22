@@ -1,9 +1,12 @@
 export type FeedItem = {
-  id: string;
-  title: string;
-  url: string;
-  publishedAt: string;
-  durationSec?: number;
+    id: string;
+    title: string;
+    url: string;
+    publishedAt: string;
+    durationSec?: number;
+    price?: number;
+    attachmentCount?: number;
+    bodyText?: string;
 };
 
 export type PlatformKind = "note" | "samurai" | "otona" | "shorts";
@@ -11,31 +14,31 @@ export type PlatformKind = "note" | "samurai" | "otona" | "shorts";
 export type RunStatus = "idle" | "dispatching" | "queued" | "in_progress" | "completed" | "failure" | "cancelled";
 
 export type RunState = {
-  status: RunStatus;
-  runId?: number;
-  runUrl?: string;
-  conclusion?: string;
-  lastInputs?: Record<string, string>;
+    status: RunStatus;
+    runId?: number;
+    runUrl?: string;
+    conclusion?: string;
+    lastInputs?: Record<string, string>;
 };
 
 export type CardState = {
-  kind: PlatformKind;
-  label: string;
-  icon: string;
-  quota: number;
-  todayCount: number;
-  compliantCount: number;
-  latest?: FeedItem;
-  loading: boolean;
-  error?: string;
-  run: RunState;
+    kind: PlatformKind;
+    label: string;
+    icon: string;
+    quota: number;
+    todayCount: number;
+    compliantCount: number;
+    latest?: FeedItem;
+    loading: boolean;
+    error?: string;
+    run: RunState;
 };
 
 export type WorkflowSpec = {
-  file: string;
-  defaultInputs?: Record<string, string>;
-  cycleField?: string;
-  cycleMin?: number;
-  cycleMax?: number;
-  cyclePad?: number;
+    file: string;
+    defaultInputs?: Record<string, string>;
+    cycleField?: string;
+    cycleMin?: number;
+    cycleMax?: number;
+    cyclePad?: number;
 };

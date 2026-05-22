@@ -1,6 +1,6 @@
-Otona_Psychologyname: Otona Retro Thumbnail
+name: Otona Retro Thumbnail
 
-# 既存 @otonano_Psychology 動画にカスタムサムネ (Gemini Imagen + Pillow text) を後付け set。
+# 既存 @Otona_Psychology 動画にカスタムサムネ (Gemini Imagen + Pillow text) を後付け set。
 # 動画本体は再アップロードしない。thumbnails.set のみ。
 
 on:

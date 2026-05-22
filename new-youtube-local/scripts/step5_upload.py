@@ -1,4 +1,4 @@
-Otona_PsychologyOtona_Psychology"""step5_upload.py
+"""step5_upload.py
 YouTube Data API v3 で動画アップロード
 - refresh_token 方式（OAuth2）
 - NEW_YOUTUBE_CLIENT_ID / _SECRET / _REFRESH_TOKEN を流用
@@ -68,10 +68,10 @@ def build_metadata(cur):
         desc_lines.append(f"  {c['title']}")
     desc_lines += [
         "",
-        "#大人の心理学 #恋愛心理 #otonano_Psychology",
+        "#大人の心理学 #恋愛心理 #Otona_Psychology",
     ]
     description = "\n".join(desc_lines)
-    tags = ["大人の心理学", "心理学", "恋愛心理", "@otonano_Psychology", cur["category"]]
+    tags = ["大人の心理学", "心理学", "恋愛心理", "@Otona_Psychology", cur["category"]]
     return {
         "snippet": {
             "title": title,

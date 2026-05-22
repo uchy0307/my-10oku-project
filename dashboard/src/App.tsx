@@ -7,6 +7,7 @@ import { countToday, fmtNow, jstStartOfToday } from "./time";
 import { PlatformCard } from "./PlatformCard";
 import { SettingsDialog } from "./SettingsDialog";
 import { Toast } from "./Toast";
+import { RuleInjector } from "./RuleInjector";
 import { dispatchWorkflow, getPat, listRecentRuns, nextCycleIndex, padIndex } from "./github";
 
 const IDLE_RUN: RunState = { status: "idle" };
@@ -192,6 +193,10 @@ export default function App() {
 
   const order: PlatformKind[] = ["note", "samurai", "otona", "shorts"];
 
+  const showToast = useCallback((msg: string, tone?: "info" | "ok" | "error") => {
+    setToast({ msg, tone });
+  }, []);
+
   return (
     <div className="min-h-screen bg-ink text-slate-100 px-4 py-5 max-w-md mx-auto">
       <header className="flex items-center justify-between mb-4">
@@ -210,6 +215,8 @@ export default function App() {
           <PlatformCard key={k} card={cards[k]} />
         ))}
       </main>
+
+      <RuleInjector onToast={showToast} />
 
       <footer className="mt-6 text-[10px] text-slate-500 leading-relaxed">
         <p>このダッシュボードは読込専用です。Note / YouTube RSS の最新を ~30秒間隔で取得して表示します。</p>

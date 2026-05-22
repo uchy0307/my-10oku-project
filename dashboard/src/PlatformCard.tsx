@@ -56,16 +56,14 @@ export function PlatformCard({ card, patReady, onRun }: Props) {
     ? "border-amber-500/60 bg-amber-950/20"
     : "border-slate-700 bg-panel";
 
-  const handleRun = (e: React.MouseEvent) => {
+  const handleRun = (e: any) => {
     e.preventDefault();
     e.stopPropagation();
     onRun();
   };
 
   return (
-    <div
-      className={`relative flex flex-col rounded-2xl border ${tone} p-4 min-h-[170px]`}
-    >
+    <div className={`relative flex flex-col rounded-2xl border ${tone} p-4 min-h-[170px]`}>
       <a
         href={latest?.url ?? "#"}
         target="_blank"
@@ -83,11 +81,7 @@ export function PlatformCard({ card, patReady, onRun }: Props) {
           </div>
         </div>
       </div>
-
-      <div className="relative mt-2 text-sm font-semibold text-slate-200">
-        {label}
-      </div>
-
+      <div className="relative mt-2 text-sm font-semibold text-slate-200">{label}</div>
       <div className="relative mt-1 text-xs text-slate-400 line-clamp-2 min-h-[2.25rem]">
         {error
           ? `読込エラー: ${error}`
@@ -97,7 +91,6 @@ export function PlatformCard({ card, patReady, onRun }: Props) {
           ? latest.title
           : "本日の更新はまだ"}
       </div>
-
       <div className="relative mt-auto pt-2 flex items-center justify-between gap-2">
         <span className="text-[11px] text-slate-500">
           {latest ? fmtJst(latest.publishedAt) + " JST" : "—"}
@@ -106,14 +99,15 @@ export function PlatformCard({ card, patReady, onRun }: Props) {
           {runBadge(card)}
           <button
             onClick={handleRun}
-            disabled={!patReady || run.status === "dispatching"/}
+            disabled={!patReady || run.status === "dispatching"}
             className="rounded-lg bg-amber-500 text-slate-900 font-bold px-2.5 py-1 text-xs disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 active:scale-95 z-10"
-            aria-label={`${label} を宎行`}
-            title={patReady ? "▶実行" : "⚖️で PAT 設定が必要"}
-          >▶実行</button>
+            aria-label={`${label} を実行`}
+            title={patReady ? "▶実行" : "⚙️で PAT 設定が必要"}
+          >
+            ▶実行
+          </button>
         </div>
       </div>
-
       {run.runUrl && (
         <a
           href={run.runUrl}
@@ -121,8 +115,10 @@ export function PlatformCard({ card, patReady, onRun }: Props) {
           rel="noopener noreferrer"
           className="relative mt-1 text-[10px] text-slate-500 hover:text-slate-300 z-10 underline truncate"
           onClick={(e) => e.stopPropagation()}
-        >Ｐ⚱ Run #{run.runId} ℗</a>
-      )+}
+        >
+          ▶ Run #{run.runId} ↗
+        </a>
+      )}
     </div>
   );
 }

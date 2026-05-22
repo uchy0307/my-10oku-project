@@ -1,0 +1,230 @@
+name: Self-Heal Daily Quota (16/day physical gate)
+
+# 物理ゲート: 30分毎に当日カウントを取得し、16/日 (note 5 + samurai 長尺 3 + shorts 5 + otona 3)
+# の未達分を workflow_dispatch で自動補填する。dispatch 親や supervisor の判断・メモリ参照
+# には一切依存しない。GitHub Actions 内蔵 GITHUB_TOKEN で workflow_dispatch 可。
+#
+# 同一 workflow が既に in_progress / queued の場合は skip（重複 upload 防止）。
+# index は uploaded today count + 1 を採用（schedule 起動の default=001 と協調）。
+#
+# 関連: feedback_full_auto_zero_cost_principle.md / feedback_design_coherence_and_pushback.md
+# (ルール3 物理ゲートで楽逃げ封止) / feedback_note_cron_silent_failure.md /
+# reference_daily_output_targets.md
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'   # 30 分毎 (UTC)
+  workflow_dispatch: {}
+
+permissions:
+  actions: write   # workflow_dispatch via GITHUB_TOKEN
+  contents: read
+
+concurrency:
+  group: self-heal-quota
+  cancel-in-progress: false
+
+jobs:
+  heal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TZ: Asia/Tokyo
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
+      # 確定済 channel ID (2026-05-22 Chrome MCP で canonical link から取得)
+      SAMURAI_CH: UChsS2R5ao05wsptKmutSaoA
+      OTONA_CH:   UClMciBTt4e1QUV1q6l9qrWQ
+      NOTE_USER:  happy_happy_4649
+      # ターゲット (合計 16/日)
+      NOTE_TARGET: '5'
+      SAMURAI_LONG_TARGET: '3'
+      SAMURAI_SHORTS_TARGET: '5'
+      OTONA_TARGET: '3'
+      # YT Data API 有効なら samurai を長尺 vs shorts に分離。無効なら全部長尺扱い。
+      YT_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+
+    steps:
+      - name: Install jq
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq jq
+
+      - name: Compute today (JST)
+        id: t
+        run: echo "today=$(TZ=Asia/Tokyo date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      # -------- Note --------
+      - name: Count Note posts today
+        id: note
+        env:
+          TODAY: ${{ steps.t.outputs.today }}
+        run: |
+          set +e
+          n=$(curl -sSL --max-time 20 \
+            "https://note.com/api/v2/creators/${NOTE_USER}/contents?kind=note" \
+            | jq --arg t "$TODAY" \
+                '[.data.contents[]? | select(((.publishAt // .publish_at // "") | startswith($t)))] | length' \
+                2>/dev/null)
+          n=${n:-0}
+          echo "count=$n" >> "$GITHUB_OUTPUT"
+          echo "::notice title=Note quota::today=$TODAY count=$n / ${NOTE_TARGET}"
+
+      # -------- YouTube counts via keyless RSS --------
+      - name: Write RSS parser
+        run: |
+          cat > /tmp/parse_rss.py <<'PY'
+          import sys, os, xml.etree.ElementTree as ET
+          from datetime import datetime, timezone, timedelta
+          today = os.environ['TODAY']
+          jst = timezone(timedelta(hours=9))
+          data = sys.stdin.read()
+          try:
+              root = ET.fromstring(data)
+          except Exception:
+              sys.exit(0)
+          ns = {'a':'http://www.w3.org/2005/Atom','yt':'http://www.youtube.com/xml/schemas/2015'}
+          for e in root.findall('a:entry', ns):
+              pub_el = e.find('a:published', ns)
+              vid_el = e.find('yt:videoId', ns)
+              if pub_el is None or vid_el is None:
+                  continue
+              try:
+                  d = datetime.fromisoformat(pub_el.text.replace('Z','+00:00')).astimezone(jst)
+              except Exception:
+                  continue
+              if d.strftime('%Y-%m-%d') == today:
+                  print(vid_el.text)
+          PY
+
+      - name: Collect YT video IDs today (samurai / otona)
+        id: yt
+        env:
+          TODAY: ${{ steps.t.outputs.today }}
+        run: |
+          set +e
+          samurai_ids=$(curl -sSL --max-time 20 \
+            "https://www.youtube.com/feeds/videos.xml?channel_id=${SAMURAI_CH}" \
+            | python3 /tmp/parse_rss.py)
+          otona_ids=$(curl -sSL --max-time 20 \
+            "https://www.youtube.com/feeds/videos.xml?channel_id=${OTONA_CH}" \
+            | python3 /tmp/parse_rss.py)
+
+          samurai_total=$(printf '%s' "$samurai_ids" | grep -c . 2>/dev/null || true)
+          otona_total=$(printf '%s'   "$otona_ids"   | grep -c . 2>/dev/null || true)
+          samurai_total=${samurai_total:-0}
+          otona_total=${otona_total:-0}
+          samurai_csv=$(printf '%s' "$samurai_ids" | tr '\n' ',' | sed 's/,$//')
+
+          echo "samurai_total=$samurai_total" >> "$GITHUB_OUTPUT"
+          echo "otona_total=$otona_total"     >> "$GITHUB_OUTPUT"
+          echo "samurai_csv=$samurai_csv"     >> "$GITHUB_OUTPUT"
+          echo "::notice title=Samurai today::count=$samurai_total ids=$samurai_csv"
+          echo "::notice title=Otona   today::count=$otona_total"
+
+      # -------- Samurai 長尺 vs Shorts 分離 (best-effort) --------
+      - name: Split samurai long vs shorts via YT Data API
+        id: split
+        env:
+          IDS: ${{ steps.yt.outputs.samurai_csv }}
+          SAMURAI_TOTAL: ${{ steps.yt.outputs.samurai_total }}
+        run: |
+          set +e
+          if [ -z "$IDS" ] || [ -z "$YT_API_KEY" ]; then
+            echo "long=$SAMURAI_TOTAL" >> "$GITHUB_OUTPUT"
+            echo "shorts=0"            >> "$GITHUB_OUTPUT"
+            echo "::notice::YT API split skipped (key empty or no ids) -> treating all $SAMURAI_TOTAL as long"
+            exit 0
+          fi
+          resp=$(curl -sSL --max-time 20 \
+            "https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${IDS}&key=${YT_API_KEY}")
+          err=$(echo "$resp" | jq -r '.error.message // empty')
+          if [ -n "$err" ]; then
+            echo "long=$SAMURAI_TOTAL" >> "$GITHUB_OUTPUT"
+            echo "shorts=0"            >> "$GITHUB_OUTPUT"
+            echo "::warning::YT API error ($err) -> fallback all-long"
+            exit 0
+          fi
+          long=$(echo "$resp"   | jq '[.items[]?
+                | .contentDetails.duration
+                | capture("PT(?:(?<h>\\d+)H)?(?:(?<m>\\d+)M)?(?:(?<s>\\d+)S)?")
+                | ((.h // "0" | tonumber)*3600 + (.m // "0" | tonumber)*60 + (.s // "0" | tonumber))
+                | select(. >= 60)] | length' 2>/dev/null)
+          shorts=$(echo "$resp" | jq '[.items[]?
+                | .contentDetails.duration
+                | capture("PT(?:(?<h>\\d+)H)?(?:(?<m>\\d+)M)?(?:(?<s>\\d+)S)?")
+                | ((.h // "0" | tonumber)*3600 + (.m // "0" | tonumber)*60 + (.s // "0" | tonumber))
+                | select(. < 60)] | length' 2>/dev/null)
+          long=${long:-0}
+          shorts=${shorts:-0}
+          echo "long=$long"     >> "$GITHUB_OUTPUT"
+          echo "shorts=$shorts" >> "$GITHUB_OUTPUT"
+          echo "::notice title=Samurai split::long=$long shorts=$shorts"
+
+      # -------- Summary --------
+      - name: Print quota summary
+        run: |
+          echo "::notice title=QUOTA today=${{ steps.t.outputs.today }}::note=${{ steps.note.outputs.count }}/${NOTE_TARGET} | samurai_long=${{ steps.split.outputs.long }}/${SAMURAI_LONG_TARGET} | samurai_shorts=${{ steps.split.outputs.shorts }}/${SAMURAI_SHORTS_TARGET} | otona=${{ steps.yt.outputs.otona_total }}/${OTONA_TARGET}"
+
+      # -------- Heal triggers --------
+      # 共通: 既に in_progress / queued の同名 workflow があれば skip
+      # index は uploaded today count + 1 (3桁ゼロパディング)
+      - name: Heal — note (max=missing)
+        if: ${{ fromJSON(steps.note.outputs.count) < fromJSON(env.NOTE_TARGET) }}
+        run: |
+          set -e
+          miss=$(( NOTE_TARGET - ${{ steps.note.outputs.count }} ))
+          running=$(gh run list --repo "$REPO" --workflow note_auto_post.yml \
+            --status in_progress --status queued --limit 1 --json status -q 'length' 2>/dev/null || echo 0)
+          if [ "${running:-0}" -gt 0 ]; then
+            echo "::notice::note_auto_post already running/queued -> skip"
+            exit 0
+          fi
+          echo "::notice::dispatch note_auto_post.yml max=$miss"
+          gh workflow run note_auto_post.yml -R "$REPO" -f max="$miss"
+
+      - name: Heal — samurai long (history_v2)
+        if: ${{ fromJSON(steps.split.outputs.long) < fromJSON(env.SAMURAI_LONG_TARGET) }}
+        run: |
+          set -e
+          running=$(gh run list --repo "$REPO" --workflow history_v2.yml \
+            --status in_progress --status queued --limit 1 --json status -q 'length' 2>/dev/null || echo 0)
+          if [ "${running:-0}" -gt 0 ]; then
+            echo "::notice::history_v2 already running/queued -> skip"
+            exit 0
+          fi
+          done=${{ steps.split.outputs.long }}
+          next=$(( done + 1 ))
+          idx=$(printf '%03d' "$next")
+          echo "::notice::dispatch history_v2.yml long_index=$idx"
+          gh workflow run history_v2.yml -R "$REPO" -f long_index="$idx"
+
+      - name: Heal — samurai shorts (shorts_v2)
+        if: ${{ fromJSON(steps.split.outputs.shorts) < fromJSON(env.SAMURAI_SHORTS_TARGET) }}
+        run: |
+          set -e
+          running=$(gh run list --repo "$REPO" --workflow shorts_v2.yml \
+            --status in_progress --status queued --limit 1 --json status -q 'length' 2>/dev/null || echo 0)
+          if [ "${running:-0}" -gt 0 ]; then
+            echo "::notice::shorts_v2 already running/queued -> skip"
+            exit 0
+          fi
+          done=${{ steps.split.outputs.shorts }}
+          next=$(( done + 1 ))
+          idx=$(printf '%03d' "$next")
+          echo "::notice::dispatch shorts_v2.yml short_index=$idx"
+          gh workflow run shorts_v2.yml -R "$REPO" -f short_index="$idx"
+
+      - name: Heal — otona (psych_v2)
+        if: ${{ fromJSON(steps.yt.outputs.otona_total) < fromJSON(env.OTONA_TARGET) }}
+        run: |
+          set -e
+          running=$(gh run list --repo "$REPO" --workflow psych_v2.yml \
+            --status in_progress --status queued --limit 1 --json status -q 'length' 2>/dev/null || echo 0)
+          if [ "${running:-0}" -gt 0 ]; then
+            echo "::notice::psych_v2 already running/queued -> skip"
+            exit 0
+          fi
+          done=${{ steps.yt.outputs.otona_total }}
+          next=$(( done + 1 ))
+          idx=$(printf '%03d' "$next")
+          echo "::notice::dispatch psych_v2.yml psych_index=$idx"
+          gh workflow run psych_v2.yml -R "$REPO" -f psych_index="$idx"

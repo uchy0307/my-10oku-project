@@ -1,4 +1,4 @@
-Otona_Psychology# 📊 本日の進捗（2026-05-19）
+# 📊 本日の進捗（2026-05-19）
 
 > 自動生成レポート / 生成時刻: 2026-05-19 12:13 JST
 
@@ -36,7 +36,7 @@ Otona_Psychology# 📊 本日の進捗（2026-05-19）
 
 ---
 
-## 【大人の心理学YouTube（@otonano_Psychology）】
+## 【大人の心理学YouTube（@Otona_Psychology）】
 
 > ※ GitHub Actions ワークフロー名: `Otona YouTube Auto - Day (AI Images)`
 

@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       short_index:
-        description: 'Short index (001-005)'
+        description: 'Short index (001-010)'
         type: string
         required: true
         default: '001'
@@ -71,13 +71,13 @@ jobs:
         run: node youtube/shorts_v2/pipeline.mjs
 
       - name: Spec-compliance gate (post-pipeline Shorts duration)
-        # Surfaces spec violation as workflow failure if Shorts duration falls outside 15-60s window.
-        # YouTube Shorts は 60s 以下必須 / 15s 未満は短すぎ。TODO: split pipeline.mjs for pre-upload physical block.
+        # Verify duration on the actual mp4 written by pipeline.mjs (youtube/shorts_v2/.work/{INDEX}/output.mp4).
+        # Pipeline.mjs now also enforces this internally, so this is a redundant defensive gate.
         if: always()
         run: |
-          VIDEO_FILE="output/short_${SHORT_INDEX}.mp4"
+          VIDEO_FILE="youtube/shorts_v2/.work/${SHORT_INDEX}/output.mp4"
           if [ ! -f "$VIDEO_FILE" ]; then
-            echo "::warning::post-gate skipped — video not found at $VIDEO_FILE (pipeline may have failed earlier)"
+            echo "::warning::post-gate skipped — video not found at $VIDEO_FILE (pipeline likely exited before composing)"
             exit 0
           fi
           DURATION=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$VIDEO_FILE" | cut -d. -f1)
@@ -89,7 +89,12 @@ jobs:
             echo "::error title=spec-gate-shorts::Shorts duration=${DURATION}s < 15s。短すぎ"
             exit 1
           fi
-          echo "OK shorts_v2 spec-compliance gate passed: duration=${DURATION}s (15<=d<=60)"
+          SIZE=$(stat -c%s "$VIDEO_FILE")
+          if [ "$SIZE" -lt 500000 ]; then
+            echo "::error title=spec-gate-shorts::Shorts size=${SIZE} bytes < 500KB。中身が空 (画像取得失敗等) の疑い"
+            exit 1
+          fi
+          echo "OK shorts_v2 spec-compliance gate passed: duration=${DURATION}s size=${SIZE}B"
 
       - name: Report
         if: always()
@@ -98,4 +103,5 @@ jobs:
             echo "::notice title=Shorts v2 SUCCESS::index=${SHORT_INDEX} url=${{ steps.pipe.outputs.video_url }}"
           else
             echo "::error title=Shorts v2 FAILED::index=${SHORT_INDEX} - no video_url emitted"
+            exit 1
           fi

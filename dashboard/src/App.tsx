@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { isAfter } from "date-fns";
 import { CONFIG, WORKFLOWS } from "./config";
 import type { CardState, FeedItem, PlatformKind, RunState } from "./types";
 import { fetchNote, fetchYouTubeRss, filterShorts } from "./fetchers";
-import { countToday, fmtNow } from "./time";
+import { countToday, fmtNow, jstStartOfToday } from "./time";
 import { PlatformCard } from "./PlatformCard";
 import { SettingsDialog } from "./SettingsDialog";
 import { Toast } from "./Toast";
@@ -11,15 +12,44 @@ import { dispatchWorkflow, getPat, listRecentRuns, nextCycleIndex, padIndex } fr
 const IDLE_RUN: RunState = { status: "idle" };
 
 const INITIAL: Record<PlatformKind, CardState> = {
-  note: { kind: "note", label: "Note", icon: "📝", quota: CONFIG.DAILY_QUOTA.note, todayCount: 0, loading: true, run: IDLE_RUN },
-  samurai: { kind: "samurai", label: "歴史YT", icon: "⚔️", quota: CONFIG.DAILY_QUOTA.samurai, todayCount: 0, loading: true, run: IDLE_RUN },
-  otona: { kind: "otona", label: "大人YT", icon: "🧠", quota: CONFIG.DAILY_QUOTA.otona, todayCount: 0, loading: true, run: IDLE_RUN },
-  shorts: { kind: "shorts", label: "Shorts", icon: "⚡", quota: CONFIG.DAILY_QUOTA.shorts, todayCount: 0, loading: true, run: IDLE_RUN }
+  note: { kind: "note", label: "Note", icon: "\u{1F4DD}", quota: CONFIG.DAILY_QUOTA.note, todayCount: 0, compliantCount: 0, loading: true, run: IDLE_RUN },
+  samurai: { kind: "samurai", label: "歴史YT", icon: "⚔️", quota: CONFIG.DAILY_QUOTA.samurai, todayCount: 0, compliantCount: 0, loading: true, run: IDLE_RUN },
+  otona: { kind: "otona", label: "大人YT", icon: "\u{1F9E0}", quota: CONFIG.DAILY_QUOTA.otona, todayCount: 0, compliantCount: 0, loading: true, run: IDLE_RUN },
+  shorts: { kind: "shorts", label: "Shorts", icon: "⚡", quota: CONFIG.DAILY_QUOTA.shorts, todayCount: 0, compliantCount: 0, loading: true, run: IDLE_RUN }
 };
+
+function todayItems(items: FeedItem[]): FeedItem[] {
+  const cutoff = jstStartOfToday();
+  return items.filter((it) => !!it.publishedAt && isAfter(new Date(it.publishedAt), cutoff));
+}
+
+// 完全準拠 (完成品) 判定。判定不能なスペックは失敗作=ゼロ扱い。
+function countCompliant(kind: PlatformKind, items: FeedItem[]): number {
+  const today = todayItems(items);
+  if (kind === "note") {
+    // 価格100円 + アプリリンク/アクセスコード本文 + Word3本添付 + 47歳文面なしを RSS だけでは検証不能→ 0
+    return 0;
+  }
+  if (kind === "samurai" || kind === "otona") {
+    // 30分以上 + NanamiNeural音声 + 字幕同期等。RSSは durationSec 未取得のため事実上 0。
+    return today.filter((it) => (it.durationSec ?? 0) >= 1800).length;
+  }
+  // shorts: 再生可能 + タイトル重複なし
+  const counts = new Map<string, number>();
+  today.forEach((it) => counts.set(it.title, (counts.get(it.title) || 0) + 1));
+  return today.filter((it) => (counts.get(it.title) || 0) === 1).length;
+}
 
 function applyItems(prev: CardState, items: FeedItem[]): CardState {
   const sorted = [...items].sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
-  return { ...prev, loading: false, error: undefined, todayCount: countToday(sorted.map((i) => i.publishedAt)), latest: sorted[0] };
+  return {
+    ...prev,
+    loading: false,
+    error: undefined,
+    todayCount: countToday(sorted.map((i) => i.publishedAt)),
+    compliantCount: countCompliant(prev.kind, sorted),
+    latest: sorted[0]
+  };
 }
 
 function applyError(prev: CardState, msg: string): CardState {
@@ -162,7 +192,7 @@ export default function App() {
 
       <footer className="mt-6 text-[10px] text-slate-500 leading-relaxed">
         <p>このダッシュボードは読込専用です。Note / YouTube RSS の最新を ~30秒間隔で取得して表示します。</p>
-        <p className="mt-1">投稿の発火は GitHub Actions の cron（裏側）で完全自動。手動操作は不要です。</p>
+        <p className="mt-1">完成本数は、プラットフォームごとの「完全準拠」検査を通った本数です。判定できないものは失敗作扱い(0本)となります。</p>
       </footer>
 
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} onSaved={() => setPatReady(!!getPat())} />

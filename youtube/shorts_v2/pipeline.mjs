@@ -42,24 +42,65 @@ if (!Number.isFinite(audioDuration) || audioDuration <= 0) fail('bad audio durat
 console.log(`[pipeline] audio ${audioDuration.toFixed(2)}s`);
 const videoDuration = Math.min(audioDuration + 0.6, 58);
 
-// 3. fetch images
-async function fetchImage(url, dst) {
-  const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (10oku-shorts-bot/1.0)' }, redirect: 'follow' });
+// pre-spec gate: 15-60s window (Shorts spec)
+if (videoDuration < 15) fail(`video duration too short: ${videoDuration.toFixed(2)}s < 15s`, 6);
+if (videoDuration > 60) fail(`video duration too long: ${videoDuration.toFixed(2)}s > 60s`, 6);
+
+// 3. fetch images (Wikipedia API resolution + fail-fast)
+const UA = '10oku-shorts-bot/1.0 (https://github.com/uchy0307/my-10oku-project; contact: uchiyamatakayuki0307@gmail.com)';
+
+async function resolveWikipediaImage(url) {
+  // accepts thumb URL like .../commons/thumb/x/yy/Name.jpg/800px-Name.jpg
+  // or full URL like .../commons/x/yy/Name.jpg
+  // Strategy: extract filename, ask Commons API for canonical thumburl at 1080w.
+  if (!/wikimedia\.org/.test(url)) return url;
+  const m = url.match(/\/commons\/(?:thumb\/[^/]+\/[^/]+\/)?([^/]+?\.(?:jpe?g|png|gif|webp|svg))(?:\/|$)/i);
+  if (!m) return url;
+  const filename = decodeURIComponent(m[1]);
+  const api = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent('File:' + filename)}&prop=imageinfo&iiprop=url&iiurlwidth=1080&format=json&formatversion=2&origin=*`;
+  const r = await fetch(api, { headers: { 'User-Agent': UA } });
+  if (!r.ok) throw new Error(`commons api HTTP ${r.status}`);
+  const j = await r.json();
+  const page = j?.query?.pages?.[0];
+  if (page?.missing) throw new Error(`commons file missing: ${filename}`);
+  const ii = page?.imageinfo?.[0];
+  const resolved = ii?.thumburl || ii?.url;
+  if (!resolved) throw new Error(`commons no url for ${filename}`);
+  return resolved;
+}
+
+async function fetchImage(originalUrl, dst) {
+  let url = originalUrl;
+  try {
+    const resolved = await resolveWikipediaImage(originalUrl);
+    if (resolved !== originalUrl) {
+      console.log(`[pipeline] resolved wikimedia: ${originalUrl.split('/').slice(-1)[0]} -> ${resolved.split('/').slice(-1)[0]}`);
+      url = resolved;
+    }
+  } catch (e) {
+    throw new Error(`resolve failed: ${e.message}`);
+  }
+  const res = await fetch(url, { headers: { 'User-Agent': UA }, redirect: 'follow' });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const buf = Buffer.from(await res.arrayBuffer());
   if (buf.length < 1000) throw new Error('image too small');
   fs.writeFileSync(dst, buf);
 }
+
 const imagePaths = [];
+const imageErrors = [];
 for (let i = 0; i < image_urls.length; i++) {
   const dst = path.join(WORK_DIR, `img_${i}.jpg`);
-  try { await fetchImage(image_urls[i], dst); imagePaths.push(dst); }
-  catch (e) { console.warn(`[pipeline] image ${i} failed: ${e.message}`); }
+  try {
+    await fetchImage(image_urls[i], dst);
+    imagePaths.push(dst);
+  } catch (e) {
+    console.warn(`[pipeline] image ${i} failed: ${e.message}`);
+    imageErrors.push(`img ${i}: ${e.message}`);
+  }
 }
 if (imagePaths.length === 0) {
-  const fb = path.join(WORK_DIR, 'fb.png');
-  execSync(`ffmpeg -y -f lavfi -i color=c=0x1a1a2e:s=1080x1920 -frames:v 1 ${JSON.stringify(fb)}`, { stdio: 'inherit' });
-  imagePaths.push(fb);
+  fail(`all ${image_urls.length} images failed to fetch — refusing to upload solid-color placeholder. errors: ${imageErrors.join(' | ')}`, 7);
 }
 
 // 4. ASS subtitles
@@ -126,7 +167,12 @@ execSync(`ffmpeg -y -i ${JSON.stringify(concatMp4)} -i ${JSON.stringify(mp3Path)
 
 const outSize = fs.statSync(outMp4).size;
 console.log(`[pipeline] composed ${(outSize / 1024 / 1024).toFixed(2)} MB`);
-if (outSize < 50000) fail('output mp4 small');
+if (outSize < 500000) fail(`output mp4 suspiciously small: ${outSize} bytes — likely missing visuals`, 8);
+
+// post-compose duration gate
+const finalDur = parseFloat(execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 ${JSON.stringify(outMp4)}`).toString().trim());
+console.log(`[pipeline] final mp4 duration ${finalDur.toFixed(2)}s`);
+if (finalDur < 15 || finalDur > 60) fail(`final video duration outside 15-60s: ${finalDur.toFixed(2)}s`, 9);
 
 // 6. Upload
 const { YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET, YOUTUBE_REFRESH_TOKEN } = process.env;
@@ -138,6 +184,36 @@ const youtube = google.youtube({ version: 'v3', auth: oauth2 });
 const finalTitle = title.slice(0, 95);
 const finalDescription = `${description}\n\n#Shorts`.slice(0, 4500);
 const finalTags = (tags && tags.length ? tags : ['Shorts', '日本史']).slice(0, 15);
+
+// duplicate-title check: scan uploads playlist for exact title match
+console.log('[pipeline] checking duplicate title...');
+try {
+  const ch = await youtube.channels.list({ part: ['contentDetails'], mine: true });
+  const uploadsId = ch.data?.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
+  if (uploadsId) {
+    let pageToken = undefined;
+    let scanned = 0;
+    let found = null;
+    do {
+      const pl = await youtube.playlistItems.list({ part: ['snippet', 'status'], playlistId: uploadsId, maxResults: 50, pageToken });
+      for (const it of (pl.data?.items || [])) {
+        scanned++;
+        if (it.snippet?.title === finalTitle) {
+          found = it.snippet?.resourceId?.videoId || 'unknown';
+          break;
+        }
+      }
+      pageToken = pl.data?.nextPageToken;
+      if (found || scanned >= 500) break;
+    } while (pageToken);
+    if (found) fail(`duplicate title already on channel: "${finalTitle}" (existing videoId=${found})`, 10);
+    console.log(`[pipeline] duplicate-title check OK (scanned ${scanned})`);
+  } else {
+    console.warn('[pipeline] could not resolve uploads playlist — skipping duplicate check');
+  }
+} catch (e) {
+  fail(`duplicate-title check failed: ${e.message}`, 11);
+}
 
 console.log('[pipeline] uploading...');
 const up = await youtube.videos.insert({

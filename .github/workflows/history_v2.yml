@@ -15,7 +15,7 @@ on:
         default: '001'
   schedule:
     # 07:50 JST = 22:50 UTC (previous day) - morning cron
-    - cron: '50 22 * * *'    
+    - cron: '50 22 * * *'
 
 permissions:
   contents: read
@@ -67,9 +67,43 @@ jobs:
             || (echo "missing script: youtube/history_v2/scripts/long_${LONG_INDEX}.json" && exit 1)
           echo "script ok: youtube/history_v2/scripts/long_${LONG_INDEX}.json"
 
+      - name: Spec-compliance gate (pre-pipeline assets)
+        # Physical gate: blocks pipeline if pre-committed edge-tts NanamiNeural audio missing.
+        # Forces local-runner edge-tts workflow; blocks gTTS-only runs from reaching upload.
+        # Spec ref: feedback_yt_pipeline_quality_v2.md (5/21 final spec: edge-tts NanamiNeural / atempo=1.00).
+        run: |
+          AUDIO_FILE="youtube/history_v2/audio/${LONG_INDEX}.mp3"
+          if [ ! -f "$AUDIO_FILE" ]; then
+            echo "::error title=spec-gate-1::edge-tts NanamiNeural audio missing: $AUDIO_FILE"
+            echo "::error::Local runner で edge-tts NanamiNeural 生成 → commit 後に再実行してください。upload abort."
+            exit 1
+          fi
+          SAMPLE_RATE=$(ffprobe -v error -select_streams a -show_entries stream=sample_rate -of csv=p=0 "$AUDIO_FILE" || echo "0")
+          if [ "$SAMPLE_RATE" != "24000" ] && [ "$SAMPLE_RATE" != "44100" ] && [ "$SAMPLE_RATE" != "48000" ]; then
+            echo "::warning title=spec-gate-2::audio sample_rate=$SAMPLE_RATE Hz は edge-tts 標準 (24000/44100/48000) と乖離。要確認"
+          fi
+          echo "OK pre-pipeline gates passed: AUDIO=$AUDIO_FILE rate=$SAMPLE_RATE"
+
       - name: Run history_v2 pipeline
         id: pipe
         run: node youtube/history_v2/pipeline.mjs
+
+      - name: Spec-compliance gate (post-pipeline output)
+        # Surfaces spec violation as workflow failure even if pipeline already uploaded.
+        # TODO: split pipeline.mjs into generate+upload so this gate can be physically pre-upload.
+        if: always()
+        run: |
+          VIDEO_FILE="output/history_${LONG_INDEX}.mp4"
+          if [ ! -f "$VIDEO_FILE" ]; then
+            echo "::warning::post-gate skipped — video not found at $VIDEO_FILE (pipeline may have failed earlier)"
+            exit 0
+          fi
+          DURATION=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$VIDEO_FILE" | cut -d. -f1)
+          if [ "$DURATION" -lt 1800 ]; then
+            echo "::error title=spec-gate-3::video duration=${DURATION}s < 1800s required (history_v2 = 30min)"
+            exit 1
+          fi
+          echo "OK post-pipeline gate passed: duration=${DURATION}s >= 1800s"
 
       - name: Report
         if: always()

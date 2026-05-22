@@ -7,7 +7,7 @@
  *
  * Flow:
  *   1. Read youtube/psych_v2/scripts/psych_${PSYCH_INDEX}.json (chapters array)
- *   2. For each chapter: gtts-cli ja -> ch_N.mp3
+ *   2. Use pre-built mp3 at youtube/psych_v2/audio/${PSYCH_INDEX}.mp3 (edge-tts)
  *   3. Concat chapters with 4-sec silence padding -> narration.mp3
  *   4. Probe duration, ABORT if < 1800 seconds (30 min)
  *   5. Build ASS subtitles (chunks spread across audio timeline)
@@ -66,49 +66,28 @@ if (!Array.isArray(image_urls) || image_urls.length < 8) {
 }
 
 // =====================================================================
-// 1. Per-chapter TTS via gtts-cli (Google Translate TTS)
+// 1. Audio: require pre-built edge-tts mp3 (no in-CI generation)
 // =====================================================================
-log(`generating TTS for ${chapters.length} chapters`);
-const chapterMp3s = [];
-for (let i = 0; i < chapters.length; i++) {
-  const c = chapters[i];
-  if (!c.text || c.text.trim().length < 200) fail(`chapter ${i} text too short (<200 chars)`);
-  const txtPath = path.join(WORK_DIR, `ch_${i}.txt`);
-  const mp3Path = path.join(WORK_DIR, `ch_${i}.mp3`);
-  fs.writeFileSync(txtPath, c.text, 'utf8');
-  log(`  chapter ${i} (${c.text.length} chars): ${c.title || ''}`);
-  execSync(
-    `edge-tts --voice ja-JP-NanamiNeural --rate=+0% --pitch=+0Hz --file ${JSON.stringify(txtPath)} --write-media ${JSON.stringify(mp3Path)}`,
-    { stdio: 'inherit' }
-  );
-  if (!fs.existsSync(mp3Path) || fs.statSync(mp3Path).size < 1000) {
-    fail(`chapter ${i} TTS produced empty/tiny mp3`);
-  }
-  chapterMp3s.push(mp3Path);
+const audioSrc = path.join(__dirname, 'audio', `${PSYCH_INDEX}.mp3`);
+if (!fs.existsSync(audioSrc) || fs.statSync(audioSrc).size < 5000) {
+  fail(`audio file missing or empty: youtube/psych_v2/audio/${PSYCH_INDEX}.mp3 (edge-tts でローカル生成して push してください)`);
 }
-
-// 4-sec silence pause between chapters
-const silencePath = path.join(WORK_DIR, 'silence.mp3');
-execSync(
-  `ffmpeg -y -f lavfi -i anullsrc=r=24000:cl=mono -t 4 -q:a 9 -acodec libmp3lame ${JSON.stringify(silencePath)}`,
-  { stdio: 'inherit' }
-);
-
-const audioConcatList = path.join(WORK_DIR, 'audio_concat.txt');
-const audioConcatLines = [];
-for (let i = 0; i < chapterMp3s.length; i++) {
-  audioConcatLines.push(`file '${chapterMp3s[i].replace(/'/g, "'\\''")}'`);
-  if (i < chapterMp3s.length - 1) {
-    audioConcatLines.push(`file '${silencePath.replace(/'/g, "'\\''")}'`);
-  }
-}
-fs.writeFileSync(audioConcatList, audioConcatLines.join('\n'));
-
 const mergedMp3 = path.join(WORK_DIR, 'narration.mp3');
-execSync(
-  `ffmpeg -y -f concat -safe 0 -i ${JSON.stringify(audioConcatList)} -c:a libmp3lame -b:a 192k ${JSON.stringify(mergedMp3)}`,
-  { stdio: 'inherit' }
-);
+fs.copyFileSync(audioSrc, mergedMp3);
+log(`using pre-built narration: ${audioSrc}`);
+
+// =====================================================================
+// 1b. Images: require >= 10 pre-staged image files in youtube/psych_v2/images/${PSYCH_INDEX}/
+// =====================================================================
+const imagesDir = path.join(__dirname, 'images', PSYCH_INDEX);
+if (!fs.existsSync(imagesDir)) {
+  fail(`images dir missing: youtube/psych_v2/images/${PSYCH_INDEX}/ (10 枚以上の画像を置いて push してください)`);
+}
+const stagedImages = fs.readdirSync(imagesDir).filter(f => /\.(jpe?g|png|webp)$/i.test(f));
+if (stagedImages.length < 10) {
+  fail(`images dir has only ${stagedImages.length} files, need >= 10 in youtube/psych_v2/images/${PSYCH_INDEX}/`);
+}
+log(`staged images: ${stagedImages.length} files in ${imagesDir}`);
 
 // =====================================================================
 // 2. Probe duration; ABORT if < 1800 sec (= 30 min)

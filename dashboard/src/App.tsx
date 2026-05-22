@@ -145,8 +145,8 @@ export default function App() {
     <div className="min-h-screen bg-ink text-slate-100 px-4 py-5 max-w-md mx-auto">
       <header className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-lg font-bold tracking-tight">うっちー Tasks</h1>
-          <p className="text-[11px] text-slate-400">Phase B · 実行可 · {lastSync ? `更新 ${lastSync}` : "初回読み込み中"}</p>
+          <h1 className="text-lg font-bold tracking-tight">うっちー様 Tasks</h1>
+          <p className="text-[11px] text-slate-400">Phase B · 読込専用 · {lastSync ? `更新 ${lastSync}` : "初回読み込み中"}</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setSettingsOpen(true)} className="rounded-xl border border-slate-600 px-3 py-1.5 text-xs hover:bg-slate-800" aria-label="設定" title="設定">⚙️</button>
@@ -156,13 +156,13 @@ export default function App() {
 
       <main className="grid grid-cols-2 gap-3">
         {order.map((k) => (
-          <PlatformCard key={k} card={cards[k]} patReady={patReady} onRun={() => handleRun(k)} />
+          <PlatformCard key={k} card={cards[k]} />
         ))}
       </main>
 
       <footer className="mt-6 text-[10px] text-slate-500 leading-relaxed">
-        <p>▶実行ボタンで GitHub Actions の workflow_dispatch を発火。状態は ~5秒間隔でポーリングして表示。 </p>
-        <p className="mt-1">PAT は localStorage 保存（端末内のみ）。URL は公開しないでください。</p>
+        <p>このダッシュボードは読込専用です。Note / YouTube RSS の最新を ~30秒間隔で取得して表示します。</p>
+        <p className="mt-1">投稿の発火は GitHub Actions の cron（裏側）で完全自動。手動操作は不要です。</p>
       </footer>
 
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} onSaved={() => setPatReady(!!getPat())} />

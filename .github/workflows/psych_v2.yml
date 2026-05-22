@@ -68,9 +68,47 @@ jobs:
             || (echo "missing script: youtube/psych_v2/scripts/psych_${PSYCH_INDEX}.json" && exit 1)
           echo "script ok: youtube/psych_v2/scripts/psych_${PSYCH_INDEX}.json"
 
+      - name: Spec-compliance gate (pre-pipeline assets)
+        # Physical gate (大人YT pipeline):
+        # - Gate 1: edge-tts NanamiNeural pre-committed audio mandatory
+        # - Gate 2: 画像 >= 10 枚必須 (spec: feedback_yt_pipeline_quality_v2.md)
+        # Blocks gTTS-only / 画像不足 runs from reaching upload.
+        run: |
+          AUDIO_FILE="youtube/psych_v2/audio/${PSYCH_INDEX}.mp3"
+          if [ ! -f "$AUDIO_FILE" ]; then
+            echo "::error title=spec-gate-1::edge-tts NanamiNeural audio missing: $AUDIO_FILE"
+            echo "::error::Local runner で edge-tts NanamiNeural 生成 → commit 後に再実行。upload abort."
+            exit 1
+          fi
+          IMG_DIR="youtube/psych_v2/images/${PSYCH_INDEX}"
+          IMAGE_COUNT=$(find "$IMG_DIR" -type f \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" -o -name "*.webp" \) 2>/dev/null | wc -l)
+          if [ "$IMAGE_COUNT" -lt 10 ]; then
+            echo "::error title=spec-gate-2::大人YT 画像が $IMAGE_COUNT 枚 < 10 枚必須 ($IMG_DIR)"
+            echo "::error::画像 10-15 枚を pre-commit してください。upload abort."
+            exit 1
+          fi
+          echo "OK pre-pipeline gates passed: AUDIO=$AUDIO_FILE IMG_COUNT=$IMAGE_COUNT"
+
       - name: Run psych_v2 pipeline
         id: pipe
         run: node youtube/psych_v2/pipeline.mjs
+
+      - name: Spec-compliance gate (post-pipeline output)
+        # Surfaces spec violation as workflow failure even if pipeline already uploaded.
+        # TODO: split pipeline.mjs into generate+upload so this gate can be physically pre-upload.
+        if: always()
+        run: |
+          VIDEO_FILE="output/psych_${PSYCH_INDEX}.mp4"
+          if [ ! -f "$VIDEO_FILE" ]; then
+            echo "::warning::post-gate skipped — video not found at $VIDEO_FILE (pipeline may have failed earlier)"
+            exit 0
+          fi
+          DURATION=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$VIDEO_FILE" | cut -d. -f1)
+          if [ "$DURATION" -lt 900 ]; then
+            echo "::error title=spec-gate-3::大人YT duration=${DURATION}s < 900s required (本編尺最低 15min)"
+            exit 1
+          fi
+          echo "OK post-pipeline gate passed: duration=${DURATION}s >= 900s"
 
       - name: Report
         if: always()

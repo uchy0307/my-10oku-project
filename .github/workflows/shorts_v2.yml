@@ -14,7 +14,7 @@ on:
         default: '001'
   schedule:
     # 10:30 JST = 01:30 UTC - morning cron
-    - cron: '30 1 * * *'    
+    - cron: '30 1 * * *'
 
 permissions:
   contents: read
@@ -69,6 +69,27 @@ jobs:
       - name: Run shorts_v2 pipeline
         id: pipe
         run: node youtube/shorts_v2/pipeline.mjs
+
+      - name: Spec-compliance gate (post-pipeline Shorts duration)
+        # Surfaces spec violation as workflow failure if Shorts duration falls outside 15-60s window.
+        # YouTube Shorts は 60s 以下必須 / 15s 未満は短すぎ。TODO: split pipeline.mjs for pre-upload physical block.
+        if: always()
+        run: |
+          VIDEO_FILE="output/short_${SHORT_INDEX}.mp4"
+          if [ ! -f "$VIDEO_FILE" ]; then
+            echo "::warning::post-gate skipped — video not found at $VIDEO_FILE (pipeline may have failed earlier)"
+            exit 0
+          fi
+          DURATION=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$VIDEO_FILE" | cut -d. -f1)
+          if [ "$DURATION" -gt 60 ]; then
+            echo "::error title=spec-gate-shorts::Shorts duration=${DURATION}s > 60s。Shorts として認識されない"
+            exit 1
+          fi
+          if [ "$DURATION" -lt 15 ]; then
+            echo "::error title=spec-gate-shorts::Shorts duration=${DURATION}s < 15s。短すぎ"
+            exit 1
+          fi
+          echo "OK shorts_v2 spec-compliance gate passed: duration=${DURATION}s (15<=d<=60)"
 
       - name: Report
         if: always()

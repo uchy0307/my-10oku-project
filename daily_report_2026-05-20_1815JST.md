@@ -58,9 +58,9 @@
 
 ---
 
-## 【新YouTube（大人の心理学 / @otona_psychology）】
+## 【新YouTube（大人の心理学 / @otonano_Psychology）】
 
-> ハンドル正は `@otona_psychology`（タスク指示文の `@otona_no_psychology` は typo）
+> ハンドル正は `@otonano_Psychology`（タスク指示文の `@@otonano_Psychology` は typo）
 
 ワークフロー: `new-youtube auto pipeline` (new_youtube_auto.yml) + `Otona YouTube Auto - Day` (otona_youtube_auto_day.yml)
 

@@ -1,4 +1,4 @@
-Otona_Psychology# 📊 本日の進捗（2026-05-20）
+# 📊 本日の進捗（2026-05-20）
 
 > 自動生成レポート / 生成時刻: 2026-05-20 03:15 JST
 > 注: 本レポートは 03:15 JST 時点のスナップショット。本日の主要cronスロット（朝7時台以降）はまだ到来していません。
@@ -43,7 +43,7 @@ Otona_Psychology# 📊 本日の進捗（2026-05-20）
 
 ---
 
-## 【新YouTube（大人の心理学 / @otonano_Psychology）】
+## 【新YouTube（大人の心理学 / @Otona_Psychology）】
 
 該当ワークフロー候補:
 - `new-youtube auto pipeline` (new_youtube_auto.yml) — cron 07:00-07:30 / 13:00-13:30 / 19:00-19:30 JST（多重スケジュール）

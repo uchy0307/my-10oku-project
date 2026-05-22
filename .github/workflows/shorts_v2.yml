@@ -13,8 +13,16 @@ on:
         required: true
         default: '001'
   schedule:
-    # 10:30 JST = 01:30 UTC - morning cron
-    - cron: '30 1 * * *'
+    # 09:00 JST = 00:00 UTC → short_index=001
+    - cron: '0 0 * * *'
+    # 12:00 JST = 03:00 UTC → short_index=002
+    - cron: '0 3 * * *'
+    # 15:00 JST = 06:00 UTC → short_index=003
+    - cron: '0 6 * * *'
+    # 18:00 JST = 09:00 UTC → short_index=004
+    - cron: '0 9 * * *'
+    # 21:00 JST = 12:00 UTC → short_index=005
+    - cron: '0 12 * * *'
 
 permissions:
   contents: read
@@ -25,11 +33,29 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      SHORT_INDEX: ${{ inputs.short_index }}
       YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
       YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
       YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
     steps:
+      - name: Determine SHORT_INDEX
+        run: |
+          if [ -n "${{ inputs.short_index }}" ]; then
+            echo "SHORT_INDEX=${{ inputs.short_index }}" >> $GITHUB_ENV
+          elif [ "${{ github.event.schedule }}" = "0 0 * * *" ]; then
+            echo "SHORT_INDEX=001" >> $GITHUB_ENV
+          elif [ "${{ github.event.schedule }}" = "0 3 * * *" ]; then
+            echo "SHORT_INDEX=002" >> $GITHUB_ENV
+          elif [ "${{ github.event.schedule }}" = "0 6 * * *" ]; then
+            echo "SHORT_INDEX=003" >> $GITHUB_ENV
+          elif [ "${{ github.event.schedule }}" = "0 9 * * *" ]; then
+            echo "SHORT_INDEX=004" >> $GITHUB_ENV
+          elif [ "${{ github.event.schedule }}" = "0 12 * * *" ]; then
+            echo "SHORT_INDEX=005" >> $GITHUB_ENV
+          else
+            echo "SHORT_INDEX=001" >> $GITHUB_ENV
+          fi
+          echo "Resolved SHORT_INDEX for this run"
+
       - name: Checkout
         uses: actions/checkout@v4
 

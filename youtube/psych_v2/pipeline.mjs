@@ -78,7 +78,7 @@ for (let i = 0; i < chapters.length; i++) {
   fs.writeFileSync(txtPath, c.text, 'utf8');
   log(`  chapter ${i} (${c.text.length} chars): ${c.title || ''}`);
   execSync(
-    `gtts-cli --lang ja --file ${JSON.stringify(txtPath)} --output ${JSON.stringify(mp3Path)}`,
+    `edge-tts --voice ja-JP-NanamiNeural --rate=+0% --pitch=+0Hz --file ${JSON.stringify(txtPath)} --write-media ${JSON.stringify(mp3Path)}`,
     { stdio: 'inherit' }
   );
   if (!fs.existsSync(mp3Path) || fs.statSync(mp3Path).size < 1000) {

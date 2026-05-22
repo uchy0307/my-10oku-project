@@ -7,7 +7,7 @@
  *
  * Flow:
  *   1. Read youtube/history_v2/scripts/long_${LONG_INDEX}.json
- *   2. For each chapter, gtts-cli ja -> chapter_N.mp3 + atempo 0.92
+ *   2. Use pre-built mp3 at youtube/history_v2/audio/${LONG_INDEX}.mp3 (edge-tts)
  *   3. Fetch ALL image_urls (Wikimedia UA + retry + original-URL fallback). ABORT if < 6 succeed.
  *   4. Build ASS subtitles
  *   5. ffmpeg compose 1920x1080 mp4 with image-slideshow + burned subtitles
@@ -45,57 +45,22 @@ if (!title) fail('script JSON missing title');
 if (!Array.isArray(chapters) || chapters.length < 3) fail('chapters array must have at least 3 items');
 if (!Array.isArray(image_urls) || image_urls.length < 6) fail('image_urls must have at least 6 entries');
 
-// ---------- 1. TTS per chapter ----------
-const chapterMp3s = [];
-for (let i = 0; i < chapters.length; i++) {
-  const ch = chapters[i];
-  if (!ch.text || ch.text.length < 200) fail(`chapter ${i} text too short`);
-  const txtPath = path.join(WORK, `chapter_${i}.txt`);
-  const rawMp3 = path.join(WORK, `chapter_${i}_raw.mp3`);
-  const ch_mp3 = path.join(WORK, `chapter_${i}.mp3`);
-  fs.writeFileSync(txtPath, ch.text, 'utf8');
-  log(`TTS chapter ${i} (${ch.text.length} chars)`);
-  const r = spawnSync('gtts-cli', ['--lang', 'ja', '--file', txtPath, '--output', rawMp3], { stdio: 'inherit' });
-  if (r.status !== 0) fail(`gtts-cli failed for chapter ${i}`);
-  if (!fs.existsSync(rawMp3) || fs.statSync(rawMp3).size < 5000) fail(`chapter ${i} mp3 empty`);
-  execSync(
-    `ffmpeg -y -i ${JSON.stringify(rawMp3)} -filter:a "atempo=0.92" -c:a libmp3lame -b:a 128k ${JSON.stringify(ch_mp3)}`,
-    { stdio: 'inherit' }
-  );
-  chapterMp3s.push(ch_mp3);
+// ---------- 1. Audio (edge-tts pre-built mp3 required) ----------
+const audioSrc = path.join(__dirname, 'audio', `${LONG_INDEX}.mp3`);
+if (!fs.existsSync(audioSrc) || fs.statSync(audioSrc).size < 5000) {
+  fail(`audio file missing or empty: youtube/history_v2/audio/${LONG_INDEX}.mp3 (edge-tts でローカル生成して push してください)`);
 }
+const narrationMp3 = path.join(WORK, 'narration.mp3');
+fs.copyFileSync(audioSrc, narrationMp3);
+log(`using pre-built narration: ${audioSrc}`);
 
-// ---------- 2. Build silence + concat ----------
+// ---------- 2. Silence helper (used for end-padding) ----------
 function makeSilence(sec, out) {
   execSync(
     `ffmpeg -y -f lavfi -i anullsrc=channel_layout=mono:sample_rate=24000 -t ${sec} -c:a libmp3lame -b:a 128k ${JSON.stringify(out)}`,
     { stdio: 'inherit' }
   );
 }
-const silence4 = path.join(WORK, 'silence_4s.mp3');
-makeSilence(4, silence4);
-const silence8 = path.join(WORK, 'silence_8s.mp3');
-makeSilence(8, silence8);
-
-const concatList = [];
-concatList.push(silence8);
-for (let i = 0; i < chapterMp3s.length; i++) {
-  concatList.push(chapterMp3s[i]);
-  if (i < chapterMp3s.length - 1) concatList.push(silence4);
-}
-concatList.push(silence8);
-
-const concatListPath = path.join(WORK, 'concat_audio.txt');
-fs.writeFileSync(
-  concatListPath,
-  concatList.map(p => `file '${p.replace(/'/g, "'\\''")}'`).join('\n'),
-  'utf8'
-);
-const narrationMp3 = path.join(WORK, 'narration.mp3');
-execSync(
-  `ffmpeg -y -f concat -safe 0 -i ${JSON.stringify(concatListPath)} -c:a libmp3lame -b:a 128k ${JSON.stringify(narrationMp3)}`,
-  { stdio: 'inherit' }
-);
 
 function probeDuration(p) {
   const out = execSync(

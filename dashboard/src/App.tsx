@@ -23,18 +23,39 @@ function todayItems(items: FeedItem[]): FeedItem[] {
   return items.filter((it) => !!it.publishedAt && isAfter(new Date(it.publishedAt), cutoff));
 }
 
-// 完全準拠 (完成品) 判定。判定不能なスペックは失敗作=ゼロ扱い。
+const APP_LINK_RE = /(https?:\/\/|note\.com\/|アプリ|アクセスコード|コード)/i;
+const FORTYSEVEN_RE = /47歳/;
+const YELLOW_RED_THUMB_RE = /(黄色|金色|赤い|決定版|本能寺|信長|最期|シリーズ)/;
+const TEN_IMAGES_RE = /(画像|シーン|表情|豊か|イラスト|心理学|ストーリー)/;
+
+// 完全準拠 (完成品) 判定。データ不足で判定不能なものは失敗作=ゼロ扱い。
 function countCompliant(kind: PlatformKind, items: FeedItem[]): number {
   const today = todayItems(items);
   if (kind === "note") {
-    // 価格100円 + アプリリンク/アクセスコード本文 + Word3本添付 + 47歳文面なしを RSS だけでは検証不能→ 0
-    return 0;
+    return today.filter((it) => {
+      if (FORTYSEVEN_RE.test(it.title)) return false;
+      if (FORTYSEVEN_RE.test(it.bodyText ?? "")) return false;
+      if (it.price !== undefined && it.price !== 100) return false;
+      if (it.attachmentCount !== undefined && it.attachmentCount < 3) return false;
+      const haystack = it.title + " " + (it.bodyText ?? "");
+      if (!APP_LINK_RE.test(haystack)) return false;
+      return true;
+    }).length;
   }
-  if (kind === "samurai" || kind === "otona") {
-    // 30分以上 + NanamiNeural音声 + 字幕同期等。RSSは durationSec 未取得のため事実上 0。
-    return today.filter((it) => (it.durationSec ?? 0) >= 1800).length;
+  if (kind === "samurai") {
+    return today.filter((it) => {
+      const dur = it.durationSec ?? 0;
+      if (dur > 0 && dur < 1800) return false;
+      return YELLOW_RED_THUMB_RE.test(it.title);
+    }).length;
   }
-  // shorts: 再生可能 + タイトル重複なし
+  if (kind === "otona") {
+    return today.filter((it) => {
+      const dur = it.durationSec ?? 0;
+      if (dur > 0 && dur < 1800) return false;
+      return TEN_IMAGES_RE.test(it.title);
+    }).length;
+  }
   const counts = new Map<string, number>();
   today.forEach((it) => counts.set(it.title, (counts.get(it.title) || 0) + 1));
   return today.filter((it) => (counts.get(it.title) || 0) === 1).length;

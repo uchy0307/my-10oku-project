@@ -13,6 +13,13 @@ on:
         type: string
         required: true
         default: '001'
+  schedule:
+    # 07:50 JST = 22:50 UTC (previous day) → long_index=001
+    - cron: '50 22 * * *'
+    # 13:50 JST = 04:50 UTC → long_index=002
+    - cron: '50 4 * * *'
+    # 19:50 JST = 10:50 UTC → long_index=003
+    - cron: '50 10 * * *'
 
 permissions:
   contents: read
@@ -23,11 +30,25 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
-      LONG_INDEX: ${{ inputs.long_index }}
       YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
       YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
       YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
     steps:
+      - name: Determine LONG_INDEX
+        run: |
+          if [ -n "${{ inputs.long_index }}" ]; then
+            echo "LONG_INDEX=${{ inputs.long_index }}" >> $GITHUB_ENV
+          elif [ "${{ github.event.schedule }}" = "50 22 * * *" ]; then
+            echo "LONG_INDEX=001" >> $GITHUB_ENV
+          elif [ "${{ github.event.schedule }}" = "50 4 * * *" ]; then
+            echo "LONG_INDEX=002" >> $GITHUB_ENV
+          elif [ "${{ github.event.schedule }}" = "50 10 * * *" ]; then
+            echo "LONG_INDEX=003" >> $GITHUB_ENV
+          else
+            echo "LONG_INDEX=001" >> $GITHUB_ENV
+          fi
+          echo "Resolved LONG_INDEX for this run"
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -83,7 +104,7 @@ jobs:
 
       - name: Run history_v2 pipeline
         id: pipe
-        if: ${{ hashFiles(format('youtube/history_v2/audio/{0}.mp3', inputs.long_index)) != '' }}
+        if: ${{ hashFiles(format('youtube/history_v2/audio/{0}.mp3', env.LONG_INDEX)) != '' }}
         run: node youtube/history_v2/pipeline.mjs
 
       - name: Spec-compliance gate (post-pipeline output)

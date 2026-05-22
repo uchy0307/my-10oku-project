@@ -59,7 +59,7 @@ export function PlatformCard({ card, patReady, onRun }: Props) {
   const handleRun = (e: any) => {
     e.preventDefault();
     e.stopPropagation();
-    onRun();
+    onRun?.();
   };
 
   return (

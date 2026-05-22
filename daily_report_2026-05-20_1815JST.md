@@ -1,4 +1,4 @@
-Otona_PsychologyOtona_Psychology# 📊 本日の進捗（2026-05-20）
+# 📊 本日の進捗（2026-05-20）
 
 > 取りまとめ: 2026-05-20 18:15 JST（午後 cron 一部到来後）
 > 前回スナップショット: 15:10 JST（daily_report_2026-05-20_1510JST.md）
@@ -58,9 +58,9 @@ Otona_PsychologyOtona_Psychology# 📊 本日の進捗（2026-05-20）
 
 ---
 
-## 【新YouTube（大人の心理学 / @otonano_Psychology）】
+## 【新YouTube（大人の心理学 / @Otona_Psychology）】
 
-> ハンドル正は `@otonano_Psychology`（タスク指示文の `@@otonano_Psychology` は typo）
+> ハンドル正は `@Otona_Psychology`（タスク指示文の `@@Otona_Psychology` は typo）
 
 ワークフロー: `new-youtube auto pipeline` (new_youtube_auto.yml) + `Otona YouTube Auto - Day` (otona_youtube_auto_day.yml)
 

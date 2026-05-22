@@ -14,13 +14,15 @@ on:
         type: string
         required: true
         default: '001'
-  schedule:
+# === schedule 一時停止 (2026-05-23) ===
+# mp3(NanamiNeural) と画像(>=10枚)が repo に commit されてから schedule を再開すること.
+  # schedule:
     # 07:00 JST = 22:00 UTC (previous day) → psych_index=001
-    - cron: '0 22 * * *'
+    # - cron: '0 22 * * *'
     # 13:00 JST = 04:00 UTC → psych_index=002
-    - cron: '0 4 * * *'
+    # - cron: '0 4 * * *'
     # 19:00 JST = 10:00 UTC → psych_index=003
-    - cron: '0 10 * * *'
+    # - cron: '0 10 * * *'
 
 permissions:
   contents: read

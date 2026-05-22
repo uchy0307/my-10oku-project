@@ -1,10 +1,10 @@
-Otona_Psychologyname: Psych v2 (long-form clean pipeline)
+name: Psych v2 (long-form clean pipeline)
 
 # 新規 clean long-form pipeline (2026-05-21).
 # 既存 otona_youtube_auto_day.yml / new_youtube_auto.yml 等には一切依存しない。
 # stock 済の youtube/psych_v2/scripts/psych_${PSYCH_INDEX}.json を元に
 # 章分割 edge-tts (NanamiNeural) + ffmpeg で 16:9 / 1920x1080 / duration >= 1800s の動画を生成して
-# NEW_YOUTUBE_* secrets が紐づく YouTube channel (@otonano_Psychology) に upload する。
+# NEW_YOUTUBE_* secrets が紐づく YouTube channel (@Otona_Psychology) に upload する。
 
 on:
   workflow_dispatch:

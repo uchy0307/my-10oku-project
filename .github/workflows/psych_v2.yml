@@ -4,7 +4,7 @@ name: Psych v2 (long-form clean pipeline)
 # 既存 otona_youtube_auto_day.yml / new_youtube_auto.yml 等には一切依存しない。
 # stock 済の youtube/psych_v2/scripts/psych_${PSYCH_INDEX}.json を元に
 # 章分割 edge-tts (NanamiNeural) + ffmpeg で 16:9 / 1920x1080 / duration >= 1800s の動画を生成して
-# NEW_YOUTUBE_* secrets が紐づく YouTube channel (心理学チャンネル) に upload する。
+# NEW_YOUTUBE_* secrets が紐づく YouTube channel (@otonano_Psychology) に upload する。
 
 on:
   workflow_dispatch:
@@ -14,6 +14,13 @@ on:
         type: string
         required: true
         default: '001'
+  schedule:
+    # 07:00 JST = 22:00 UTC (previous day) → psych_index=001
+    - cron: '0 22 * * *'
+    # 13:00 JST = 04:00 UTC → psych_index=002
+    - cron: '0 4 * * *'
+    # 19:00 JST = 10:00 UTC → psych_index=003
+    - cron: '0 10 * * *'
 
 permissions:
   contents: read
@@ -24,11 +31,25 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 180
     env:
-      PSYCH_INDEX: ${{ inputs.psych_index }}
       YOUTUBE_CLIENT_ID: ${{ secrets.NEW_YOUTUBE_CLIENT_ID }}
       YOUTUBE_CLIENT_SECRET: ${{ secrets.NEW_YOUTUBE_CLIENT_SECRET }}
       YOUTUBE_REFRESH_TOKEN: ${{ secrets.NEW_YOUTUBE_REFRESH_TOKEN }}
     steps:
+      - name: Determine PSYCH_INDEX
+        run: |
+          if [ -n "${{ inputs.psych_index }}" ]; then
+            echo "PSYCH_INDEX=${{ inputs.psych_index }}" >> $GITHUB_ENV
+          elif [ "${{ github.event.schedule }}" = "0 22 * * *" ]; then
+            echo "PSYCH_INDEX=001" >> $GITHUB_ENV
+          elif [ "${{ github.event.schedule }}" = "0 4 * * *" ]; then
+            echo "PSYCH_INDEX=002" >> $GITHUB_ENV
+          elif [ "${{ github.event.schedule }}" = "0 10 * * *" ]; then
+            echo "PSYCH_INDEX=003" >> $GITHUB_ENV
+          else
+            echo "PSYCH_INDEX=001" >> $GITHUB_ENV
+          fi
+          echo "Resolved PSYCH_INDEX for this run"
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -90,7 +111,7 @@ jobs:
 
       - name: Run psych_v2 pipeline
         id: pipe
-        if: ${{ hashFiles(format('youtube/psych_v2/audio/{0}.mp3', inputs.psych_index)) != '' && hashFiles(format('youtube/psych_v2/images/{0}/**', inputs.psych_index)) != '' }}
+        if: ${{ hashFiles(format('youtube/psych_v2/audio/{0}.mp3', env.PSYCH_INDEX)) != '' && hashFiles(format('youtube/psych_v2/images/{0}/**', env.PSYCH_INDEX)) != '' }}
         run: node youtube/psych_v2/pipeline.mjs
 
       - name: Spec-compliance gate (post-pipeline output)

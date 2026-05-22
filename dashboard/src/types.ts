@@ -24,6 +24,7 @@ export type CardState = {
   icon: string;
   quota: number;
   todayCount: number;
+  compliantCount: number;
   latest?: FeedItem;
   loading: boolean;
   error?: string;

@@ -46,11 +46,11 @@ function runBadge(card: CardState) {
 }
 
 export function PlatformCard({ card, patReady, onRun }: Props) {
-  const { quota, todayCount, latest, loading, error, icon, label, run } = card;
-  const ratio = quota > 0 ? todayCount / quota : 0;
+  const { quota, todayCount, compliantCount, latest, loading, error, icon, label, run } = card;
+  const ratio = quota > 0 ? compliantCount / quota : 0;
   const tone = error
     ? "border-red-500/60 bg-red-950/40"
-    : todayCount >= quota
+    : compliantCount >= quota
     ? "border-emerald-500/60 bg-emerald-950/30"
     : ratio >= 0.5
     ? "border-amber-500/60 bg-amber-950/20"
@@ -74,11 +74,10 @@ export function PlatformCard({ card, patReady, onRun }: Props) {
       <div className="relative flex items-start justify-between">
         <div className="text-3xl leading-none">{icon}</div>
         <div className="text-right">
-          <div className="text-xs text-slate-400">本日</div>
-          <div className="text-xl font-bold">
-            {loading ? "…" : `${todayCount}/${quota}`}
-            {!loading && todayCount >= quota ? " ✅" : ""}
-          </div>
+          <div className="text-[10px] text-slate-400 leading-none">公開</div>
+          <div className="text-xl font-bold leading-tight">{loading ? "…" : `${todayCount} 本`}</div>
+          <div className="text-[10px] text-slate-400 leading-none mt-1">完成</div>
+          <div className={`text-sm font-semibold leading-tight ${compliantCount > 0 ? "text-emerald-400" : "text-slate-500"}`}>{loading ? "…" : `${compliantCount} 本`}{!loading && compliantCount >= quota && quota > 0 ? " ✅" : ""}</div>
         </div>
       </div>
       <div className="relative mt-2 text-sm font-semibold text-slate-200">{label}</div>
@@ -97,7 +96,7 @@ export function PlatformCard({ card, patReady, onRun }: Props) {
         </span>
         <div className="flex items-center gap-2">
           {runBadge(card)}
-          
+
         </div>
       </div>
       {run.runUrl && (

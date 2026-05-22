@@ -1,4 +1,4 @@
-"""step5_upload.py
+Otona_PsychologyOtona_Psychology"""step5_upload.py
 YouTube Data API v3 で動画アップロード
 - refresh_token 方式（OAuth2）
 - NEW_YOUTUBE_CLIENT_ID / _SECRET / _REFRESH_TOKEN を流用

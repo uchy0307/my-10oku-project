@@ -1,4 +1,4 @@
-# 📊 本日の進捗（2026-05-20）
+Otona_PsychologyOtona_Psychology# 📊 本日の進捗（2026-05-20）
 
 > 取りまとめ: 2026-05-20 18:15 JST（午後 cron 一部到来後）
 > 前回スナップショット: 15:10 JST（daily_report_2026-05-20_1510JST.md）

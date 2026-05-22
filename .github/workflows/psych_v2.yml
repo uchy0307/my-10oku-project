@@ -1,4 +1,4 @@
-name: Psych v2 (long-form clean pipeline)
+Otona_Psychologyname: Psych v2 (long-form clean pipeline)
 
 # 新規 clean long-form pipeline (2026-05-21).
 # 既存 otona_youtube_auto_day.yml / new_youtube_auto.yml 等には一切依存しない。

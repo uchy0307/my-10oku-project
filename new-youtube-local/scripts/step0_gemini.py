@@ -1,4 +1,4 @@
-"""step0_gemini.py
+Otona_PsychologyOtona_Psychology"""step0_gemini.py
 @otonano_Psychology 夜19:00枠用 台本JSON生成
 - 5章構成・各章 6000-8000字（10分動画では各章1500-2000字に短縮可）
 - A案と同方針のtone・エロ度（大人の心理学・恋愛/性愛/対人/裏側系、攻めた表現OK）

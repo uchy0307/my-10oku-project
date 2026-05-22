@@ -36,7 +36,7 @@
 
 ---
 
-## 【大人の心理学YouTube（@otona_psychology）】
+## 【大人の心理学YouTube（@otonano_Psychology）】
 
 > ※ GitHub Actions ワークフロー名: `Otona YouTube Auto - Day (AI Images)`
 

@@ -91,6 +91,7 @@ jobs:
 
       - name: Run psych_v2 pipeline
         id: pipe
+        if: ${{ hashFiles(format('youtube/psych_v2/audio/{0}.mp3', inputs.psych_index)) != '' && hashFiles(format('youtube/psych_v2/images/{0}/**', inputs.psych_index)) != '' }}
         run: node youtube/psych_v2/pipeline.mjs
 
       - name: Spec-compliance gate (post-pipeline output)

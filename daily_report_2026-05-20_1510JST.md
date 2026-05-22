@@ -1,4 +1,4 @@
-Otona_PsychologyOtona_Psychology# 📊 本日の進捗（2026-05-20）
+# 📊 本日の進捗（2026-05-20）
 
 > 取りまとめ: 2026-05-20 15:10 JST（午後の cron 一部到来後）
 > 前回スナップショット: 03:15 JST（daily_report_2026-05-20.md）
@@ -54,13 +54,13 @@ samurai 本編チャンネルの最新動画は「2日前」表記 → 本日の
 
 ---
 
-## 【新YouTube（大人の心理学 / @otonano_Psychology）】
+## 【新YouTube（大人の心理学 / @Otona_Psychology）】
 
-> **注意**: タスク指示文中の `@@otonano_Psychology` は typo。正しいハンドルは `@otonano_Psychology`（memory P-001 参照）。
+> **注意**: タスク指示文中の `@@Otona_Psychology` は typo。正しいハンドルは `@Otona_Psychology`（memory P-001 参照）。
 
 ワークフロー: `new-youtube auto pipeline` (new_youtube_auto.yml) + `Otona YouTube Auto - Day` (otona_youtube_auto_day.yml)
 
-**本日のチャンネル upload: 4本**（@otonano_Psychology の動画タブ調査結果）
+**本日のチャンネル upload: 4本**（@Otona_Psychology の動画タブ調査結果）
 
 - ✅ 「30代女性が知っておきたい大人の恋愛心理学」 / ~14:47 JST / https://www.youtube.com/watch?v=PGGowNn_PvM
 - ✅ 「30代女性のための大人の恋愛心理学」 / ~04:10 JST / https://www.youtube.com/watch?v=rOrAwH6nHpQ

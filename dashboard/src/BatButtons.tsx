@@ -108,7 +108,7 @@ export function BatButtons({ onToast }: { onToast: (msg: string, tone?: "info" |
       <p className="mt-3 text-[10px] text-slate-500 leading-relaxed">
         ボタンを押すと、自宅PCの小型サーバー経由で対応する .bat / .py が実行されます。
         スマホからも操作可能（cloudflared トンネル要設定）。
-      </p>
+      </p>ます。\r\n        スマホからも操作可能（cloudflared トンネル要設定）。\r\n      </p>\r\n    </section>\r\n  );\r\n}\r\n
     </section>
   );
 }

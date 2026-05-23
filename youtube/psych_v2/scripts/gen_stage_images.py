@@ -1,15 +1,22 @@
 #!/usr/bin/env python3
 """gen_stage_images.py
 
-GitHub Actions 上で psych_v2 用の staging 画像を Gemini Imagen / Nano Banana
-で生成する。p001 はストック流用 (workflow 側で cp 済み) のため対象外、
+GitHub Actions 上で psych_v2 用の staging 画像を Gemini Imagen で生成する。
+p001 はストック流用 (workflow 側で cp 済み) のため対象外、
 ここでは p002〜p006 の 5 本 x 10 枚 = 50 枚を生成する。
+
+2026-05-23 改訂 (rate-limit対策):
+  - Gemini free tier daily quota が日中に切れるので、429 を検出したら
+    その時点で全モデルを quota-out 扱いにして残りの画像を skip → 即終了。
+    既に保存済みの画像は次回 schedule run で skip して残りを継続生成。
+  - 404 / 400 で失敗するモデルは次回以降も試行しない (memoize)。
+  - 一枚あたりの試行は 1 モデル 1 回、429 以外の失敗時のみ他モデルに fallback。
 
 仕様 (うっちー mandate):
   - 純愛 / 対人関係心理学路線 (下ネタ / 性的表現 NG)
   - 30 代日本人女性 / アニメ風セルシェーディング
   - 夜景バー・ラウンジ等の上品な雰囲気
-  - Pollinations / Stability 系は使用禁止 (Gemini Imagen / Nano Banana のみ)
+  - Pollinations / Stability 系は使用禁止 (Gemini Imagen のみ)
   - aspect 維持 / 伸ばし禁止 (足りない部分は黒帯 padding 可)
   - 出力: youtube/psych_v2/images/{002..006}/img_NN.jpg (1920x1080)
 """
@@ -18,7 +25,6 @@ import sys
 import json
 import time
 import base64
-import re
 import urllib.request
 import urllib.error
 from pathlib import Path
@@ -30,9 +36,8 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "") or os.environ.get("GOOGLE_
 TARGET_W = 1920
 TARGET_H = 1080
 IMAGES_PER_TOPIC = 10
-PER_REQUEST_SLEEP_SEC = float(os.environ.get("STAGE_SLEEP_SEC", "3"))
+PER_REQUEST_SLEEP_SEC = float(os.environ.get("STAGE_SLEEP_SEC", "7"))
 
-# Candidate models. 既存 step3_images_imagen.py と同様の順序 (free tier 優先)。
 CANDIDATE_MODELS = [
     "gemini-2.5-flash-image",
     "gemini-2.5-flash-image-preview",
@@ -43,9 +48,9 @@ CANDIDATE_MODELS = [
     "imagen-3.0-generate-001",
     "imagen-3.0-fast-generate-001",
 ]
-_working_model = None
+_dead_models = set()  # 404/400 で恒久失敗したモデル
+_quota_exhausted = False  # 429 を 1 回でも見たら True
 
-# Universal style suffix (全プロンプト共通) ---------------------------------
 STYLE_SUFFIX = (
     "Style: anime cel-shading illustration, soft pastel colors, "
     "clean lineart, modern Japanese aesthetic, cinematic 16:9 framing, "
@@ -61,10 +66,8 @@ STYLE_SUFFIX = (
     "no logos, no exaggerated anatomy, undistorted faces."
 )
 
-# Per-topic scene templates ------------------------------------------------
-# 各トピック x 10 シーン。seed 名 (psyc_safety_hello 等) から雰囲気を抽出済み。
 SCENES = {
-    "002": {  # long_lasting_partnership_habits
+    "002": {
         "title": "Long-lasting partnership habits",
         "scenes": [
             "Two adults walking side by side on a quiet evening boulevard, distant view",
@@ -79,7 +82,7 @@ SCENES = {
             "Home entrance with two pairs of shoes neatly aligned, soft amber light",
         ],
     },
-    "003": {  # drawing_out_true_feelings
+    "003": {
         "title": "Drawing out true feelings through listening",
         "scenes": [
             "A Japanese woman in her 30s listening attentively in a softly lit lounge",
@@ -94,7 +97,7 @@ SCENES = {
             "A garden path with stepping stones and lanterns at twilight",
         ],
     },
-    "004": {  # psychological_safety_relationship
+    "004": {
         "title": "Psychological safety in close relationships",
         "scenes": [
             "A Japanese woman smiling gently while greeting someone at a bar entrance",
@@ -109,7 +112,7 @@ SCENES = {
             "Garden lantern path winding toward a softly lit door, evening",
         ],
     },
-    "005": {  # preventing_breakup_psychology
+    "005": {
         "title": "Long-lasting love and preventing breakups",
         "scenes": [
             "A Japanese woman waiting at a wooden front door with a soft welcoming smile",
@@ -124,7 +127,7 @@ SCENES = {
             "Empty dining table set for two with a small handwritten thank-you card",
         ],
     },
-    "006": {  # unspoken_love_psychology
+    "006": {
         "title": "Unspoken love and quiet affection",
         "scenes": [
             "A Japanese woman in her 30s standing at a doorway smiling softly, half-turned",
@@ -223,37 +226,32 @@ def fit_aspect(out_path):
 
 
 def generate_one(prompt, out_path):
-    """Try each candidate model until one returns image bytes. Cache the working one."""
-    global _working_model
-    last_err = "init"
-    models_to_try = []
-    if _working_model:
-        models_to_try.append(_working_model)
+    """Try each non-dead model once. Returns True on success, False otherwise.
+    On HTTP 429 sets global _quota_exhausted = True so caller can stop early.
+    """
+    global _quota_exhausted
     for m in CANDIDATE_MODELS:
-        if m != _working_model:
-            models_to_try.append(m)
-    for m in models_to_try:
+        if m in _dead_models:
+            continue
         try:
             img_bytes = call_image_gen(prompt, m)
+            if not img_bytes or len(img_bytes) < 4000:
+                raise RuntimeError(f"image too small ({len(img_bytes) if img_bytes else 0} bytes)")
             out_path.write_bytes(img_bytes)
-            if len(img_bytes) < 4000:
-                raise RuntimeError(f"image too small ({len(img_bytes)} bytes)")
-            _working_model = m
             print(f"  OK model={m} bytes={len(img_bytes)}")
             fit_aspect(out_path)
             return True
         except urllib.error.HTTPError as e:
-            msg = e.read().decode("utf-8", errors="ignore")[:200]
-            last_err = f"HTTP {e.code}: {msg}"
-            print(f"  {m} {last_err}")
-            if _working_model == m:
-                _working_model = None
+            msg = e.read().decode("utf-8", errors="ignore")[:180]
+            print(f"  {m} HTTP {e.code}: {msg}")
+            if e.code == 429:
+                _quota_exhausted = True
+                return False
+            if e.code in (400, 404):
+                _dead_models.add(m)
         except Exception as e:
-            last_err = f"exc {e!r}"
-            print(f"  {m} {last_err}")
-            if _working_model == m:
-                _working_model = None
-    print(f"  ALL MODELS FAILED for {out_path.name} last_err={last_err}")
+            print(f"  {m} exc {e!r}")
+            _dead_models.add(m)
     return False
 
 
@@ -269,8 +267,9 @@ def make_prompt(topic_title, scene_desc, idx):
 def main():
     if not GEMINI_API_KEY:
         fail("GEMINI_API_KEY not set (expected from GitHub Secrets)")
-    print(f"[stage] starting. target={TARGET_W}x{TARGET_H} per-topic={IMAGES_PER_TOPIC}")
+    print(f"[stage] starting. target={TARGET_W}x{TARGET_H} per-topic={IMAGES_PER_TOPIC} sleep={PER_REQUEST_SLEEP_SEC}s")
     total_ok = 0
+    total_skip = 0
     total_fail = 0
     for topic_id, spec in SCENES.items():
         out_dir = IMAGES_ROOT / topic_id
@@ -279,26 +278,23 @@ def main():
         for i, scene in enumerate(spec["scenes"][:IMAGES_PER_TOPIC]):
             out_path = out_dir / f"img_{i:02d}.jpg"
             if out_path.exists() and out_path.stat().st_size > 4000:
-                print(f"  skip (exists): {out_path.name}")
-                total_ok += 1
+                print(f"  skip (already exists): {out_path.name}")
+                total_skip += 1
+                continue
+            if _quota_exhausted:
+                print(f"  skip (quota exhausted): {out_path.name}")
+                total_fail += 1
                 continue
             prompt = make_prompt(spec["title"], scene, i)
-            ok = False
-            for retry in range(3):
-                ok = generate_one(prompt, out_path)
-                if ok:
-                    break
-                print(f"  retry {retry + 1}/3 for {out_path.name}")
-                time.sleep(5 + retry * 5)
+            ok = generate_one(prompt, out_path)
             if ok:
                 total_ok += 1
             else:
                 total_fail += 1
-                print(f"  ::error::failed permanently: {out_path}")
+                print(f"  failed: {out_path.name} (will retry in next scheduled run)")
             time.sleep(PER_REQUEST_SLEEP_SEC)
-    print(f"\n[stage] done. ok={total_ok} fail={total_fail}")
-    # Fail the job only if any topic has fewer than 10 final images.
-    short = []
+    print(f"\n[stage] done. new={total_ok} preexisting={total_skip} pending={total_fail}")
+    print(f"[stage] dead_models={sorted(_dead_models)} quota_exhausted={_quota_exhausted}")
     for topic_id in SCENES.keys():
         d = IMAGES_ROOT / topic_id
         c = sum(
@@ -306,13 +302,7 @@ def main():
             for p in d.glob("*")
             if p.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp")
         )
-        print(f"  {topic_id}: {c} images")
-        if c < 10:
-            short.append((topic_id, c))
-    if short:
-        for tid, c in short:
-            print(f"::error::topic {tid} only {c}/{IMAGES_PER_TOPIC} images")
-        sys.exit(2)
+        print(f"  {topic_id}: {c}/{IMAGES_PER_TOPIC} images")
 
 
 if __name__ == "__main__":

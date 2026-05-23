@@ -12,6 +12,10 @@ type BatAction = {
 
 const ACTIONS: BatAction[] = [
   { id: "restart_server", label: "サーバー 再起動", icon: "🔄", description: "新ボタン反映時に押す" },
+  { id: "upload_psych_001_sample", label: "大人#001 字幕焼込＋YT投稿", icon: "📤", description: "Whisper字幕→YouTube限定公開" },
+  { id: "upload_history_007_sample", label: "歴史#007 YT投稿", icon: "⚔️", description: "明智光秀 限定公開" },
+  { id: "upload_shorts_sample", label: "Shorts YT投稿", icon: "⚡", description: "歴史Shorts 限定公開" },
+  { id: "inject_rules", label: "ルール再注入", icon: "📜", description: "次セッションにルール再読込フラグ" },
   { id: "wiki_refill", label: "Wiki画像 補充", icon: "🖼️", description: "Wikipedia から画像 500枚補充" },
   { id: "whisper_setup", label: "Whisper 初回設定", icon: "🎙️", description: "Whisper をインストール（初回のみ）" },
   { id: "whisper_psych_001", label: "字幕 生成 (心理学001)", icon: "📝", description: "Whisper で字幕生成" },
@@ -67,7 +71,7 @@ export function BatButtons({ onToast }: { onToast: (msg: string, tone?: "info" |
           <input
             value={serverUrl}
             onChange={(e) => setServerUrl(e.target.value)}
-            placeholder="https://xxxx.trycloudflare.com"
+            placeholder="https://pc.uchy0307.uk"
             className="w-full rounded-md bg-slate-800 border border-slate-700 px-2 py-1 text-slate-100 text-[11px]"
           />
           <p className="mt-2 text-slate-500 text-[10px]">

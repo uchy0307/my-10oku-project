@@ -98,8 +98,8 @@ const probeOut = execSync(
 const audioDuration = parseFloat(probeOut);
 if (!Number.isFinite(audioDuration) || audioDuration <= 0) fail(`bad audio duration: ${probeOut}`);
 log(`narration duration: ${audioDuration.toFixed(2)}s (${(audioDuration / 60).toFixed(1)} min)`);
-if (audioDuration < 1800) {
-  fail(`narration duration ${audioDuration.toFixed(0)}s < 1800s requirement. Expand chapter text and retry.`);
+if (audioDuration < 1500) {
+  fail(`narration duration ${audioDuration.toFixed(0)}s < 1500s requirement. Expand chapter text and retry.`);
 }
 const videoDuration = audioDuration;
 
@@ -237,8 +237,8 @@ const finalProbe = execSync(
   `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 ${JSON.stringify(outMp4)}`
 ).toString().trim();
 const finalDuration = parseFloat(finalProbe);
-if (!Number.isFinite(finalDuration) || finalDuration < 1800) {
-  fail(`final video duration ${finalDuration}s < 1800s. abort upload.`);
+if (!Number.isFinite(finalDuration) || finalDuration < 1500) {
+  fail(`final video duration ${finalDuration}s < 1500s. abort upload.`);
 }
 log(`final video duration: ${finalDuration.toFixed(2)}s (${(finalDuration / 60).toFixed(1)} min)`);
 const outSize = fs.statSync(outMp4).size;

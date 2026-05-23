@@ -1,5 +1,155 @@
 name: Psych v2 Image Stage (Gemini Imagen)
 
+# 2026-05-23 新規追加 + 2026-05-23 改訂 (rate-limit対策)
+# 大人YT psych_v2 用の画像 staging を GitHub Actions 上で行う。
+# p001 は new-youtube-local/output/p001_img_*.jpg のストックを流用、
+# p002〜p006 のみ Gemini Imagen で 10 枚ずつ生成する。
+# Gemini free tier の daily quota が日中に枯渇するため、
+#   - 6時間おきの schedule cron で自動再実行
+#   - Generate step 失敗時も commit step は実行 (部分保存)
+#   - Python script は既存 img を skip するので継続蓄積可
+# 完成後 youtube/psych_v2/images/{001..006}/ に commit & push する。
+#
+# 純愛・対人関係心理学路線 / 30代日本人女性 / アニメ風セルシェーディング /
+# 夜景バー・ラウンジ等の上品な雰囲気。Pollinations / Stability 系は使用禁止。
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 03:00, 09:00, 15:00, 21:00 UTC (Gemini free tier の日次リセット後)
+    - cron: '0 3,9,15,21 * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GOOGLE_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Pillow
+        run: |
+          python -m pip install --upgrade pip
+          pip install Pillow==10.4.0
+
+      - name: Stage p001 from stock (no Gemini call)
+        run: |
+          mkdir -p youtube/psych_v2/images/001
+          n=0
+          for src in new-youtube-local/output/p001_img_01_00.jpg \
+                     new-youtube-local/output/p001_img_01_01.jpg \
+                     new-youtube-local/output/p001_img_02_00.jpg \
+                     new-youtube-local/output/p001_img_02_01.jpg \
+                     new-youtube-local/output/p001_img_03_00.jpg \
+                     new-youtube-local/output/p001_img_03_01.jpg \
+                     new-youtube-local/output/p001_img_04_00.jpg \
+                     new-youtube-local/output/p001_img_04_01.jpg \
+                     new-youtube-local/output/p001_img_05_00.jpg \
+                     new-youtube-local/output/p001_img_05_01.jpg ; do
+            if [ -f "$src" ]; then
+              cp "$src" "youtube/psych_v2/images/001/img_$(printf '%02d' $n).jpg"
+              n=$((n+1))
+            else
+              echo "::warning::stock missing: $src"
+            fi
+          done
+          ls -la youtube/psych_v2/images/001/
+          echo "p001 staged: $n files"
+
+      - name: Aspect-fit p001 staged images to 1920x1080 with black padding
+        run: |
+          python <<'PY'
+          from PIL import Image
+          from pathlib import Path
+          TW, TH = 1920, 1080
+          for p in sorted(Path('youtube/psych_v2/images/001').glob('*.jpg')):
+              with Image.open(p) as im:
+                  im = im.convert('RGB')
+                  sw, sh = im.size
+                  if (sw, sh) == (TW, TH):
+                      continue
+                  ta = TW / TH
+                  sa = sw / sh
+                  if abs(sa - ta) < 0.005:
+                      out = im.resize((TW, TH), Image.LANCZOS)
+                  elif sa > ta:
+                      new_w = TW
+                      new_h = int(TW / sa)
+                      res = im.resize((new_w, new_h), Image.LANCZOS)
+                      out = Image.new('RGB', (TW, TH), (0, 0, 0))
+                      out.paste(res, (0, (TH - new_h) // 2))
+                  else:
+                      new_h = TH
+                      new_w = int(TH * sa)
+                      res = im.resize((new_w, new_h), Image.LANCZOS)
+                      out = Image.new('RGB', (TW, TH), (0, 0, 0))
+                      out.paste(res, ((TW - new_w) // 2, 0))
+                  out.save(p, format='JPEG', quality=90)
+                  print(f'p001 fit {p.name}: {sw}x{sh} -> {TW}x{TH}')
+          PY
+
+      - name: Generate p002-p006 via Gemini Imagen (best-effort, continues on quota)
+        id: gen
+        continue-on-error: true
+        run: python youtube/psych_v2/scripts/gen_stage_images.py
+
+      - name: Verify counts (warn only, do not fail job)
+        if: always()
+        run: |
+          for i in 001 002 003 004 005 006; do
+            d="youtube/psych_v2/images/$i"
+            mkdir -p "$d"
+            c=$(find "$d" -type f \( -name '*.jpg' -o -name '*.jpeg' -o -name '*.png' \) 2>/dev/null | wc -l)
+            echo "$d: $c images"
+            if [ "$c" -lt 10 ]; then
+              echo "::warning::staging incomplete in $d ($c/10) — next scheduled run will retry"
+            fi
+          done
+
+      - name: Commit and push staged images (always run, persist partial progress)
+        if: always()
+        run: |
+          git config user.name 'psych-image-stage-bot'
+          git config user.email 'psych-image-stage-bot@users.noreply.github.com'
+          git add youtube/psych_v2/images/
+          if git diff --cached --quiet ; then
+            echo 'no new images to commit'
+            exit 0
+          fi
+          git commit -m 'stage psych_v2 images (partial progress, gemini quota-aware) [skip ci]'
+          git pull --rebase origin main || true
+          git push origin HEAD:main
+
+      - name: Final summary
+        if: always()
+        run: |
+          total=0
+          for i in 001 002 003 004 005 006; do
+            d="youtube/psych_v2/images/$i"
+            c=$(find "$d" -type f \( -name '*.jpg' -o -name '*.jpeg' -o -name '*.png' \) 2>/dev/null | wc -l)
+            total=$((total + c))
+          done
+          echo "::notice::total staged images = $total / 60"
+          # gate (>= 60 = full pass)
+          if [ "$total" -ge 60 ]; then
+            echo "::notice::all topics fully staged"
+          fi
+name: Psych v2 Image Stage (Gemini Imagen)
+
 # 2026-05-23 新規追加
 # 大人YT psych_v2 用の画像 staging を GitHub Actions 上で行う。
 # p001 は new-youtube-local/output/p001_img_*.jpg のストックを流用、

@@ -11,6 +11,7 @@ type BatAction = {
 };
 
 const ACTIONS: BatAction[] = [
+  { id: "restart_server", label: "サーバー 再起動", icon: "🔄", description: "新ボタン反映時に押す" },
   { id: "wiki_refill", label: "Wiki画像 補充", icon: "🖼️", description: "Wikipedia から画像 500枚補充" },
   { id: "whisper_setup", label: "Whisper 初回設定", icon: "🎙️", description: "Whisper をインストール（初回のみ）" },
   { id: "whisper_psych_001", label: "字幕 生成 (心理学001)", icon: "📝", description: "Whisper で字幕生成" },

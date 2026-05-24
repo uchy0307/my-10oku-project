@@ -13,8 +13,12 @@
     "011"
   ],
   "note_fix4": "2026-05-19 dispatch: actually removed #011 from processed (note_fix3 was comment-only). Workflow merge conflicts also resolved in youtube_auto.yml + generate_script.mjs + generate_voice.mjs + compile_video.mjs + step3_images_imagen.py.",
-  "lastRun": "2026-05-20T15:56:43.114Z",
-  "currentTopic": null,
+  "lastRun": "2026-05-24T02:11:39.381Z",
+  "currentTopic": {
+    "id": "011",
+    "title": "長篠の戦い 鉄砲が変えた戦場",
+    "category": "合戦軸"
+  },
   "lastScriptChars": 11121,
   "lastScriptChapters": [
     {
@@ -43,8 +47,8 @@
       "chars": 2719
     }
   ],
-  "lastVoiceAt": "2026-05-20T15:57:48.436Z",
-  "lastImageGenAt": "2026-05-20T15:58:14.252Z",
+  "lastVoiceAt": "2026-05-24T02:14:05.564Z",
+  "lastImageGenAt": "2026-05-24T02:14:34.961Z",
   "videoStatus": "ready",
   "lastImageSources": [
     "https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Battle-of-Nagashino-Map-Folding-Screen-1575.png/3840px-Battle-of-Nagashino-Map-Folding-Screen-1575.png",
@@ -71,7 +75,7 @@
   "lastAssPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/011_subs.ass",
   "lastSrtPath": "/home/runner/work/my-10oku-project/my-10oku-project/youtube/output/011_subtitle.srt",
   "lastSubsCount": 693,
-  "lastCompileAt": "2026-05-20T15:59:45.103Z",
+  "lastCompileAt": "2026-05-24T02:16:07.917Z",
   "lastUploadResult": {
     "status": "success",
     "topicId": "011",

@@ -1,0 +1,4 @@
+output/_tmp/
+output/slides/
+output/*.wav
+output/*.mp4

@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "synced_at": "2026-05-24T18:16:09.988Z",
+  "synced_at": "2026-05-25T12:07:27.002Z",
   "items": [
     {
       "id": "001",
@@ -1023,14 +1023,7 @@
       "scheduled_at": null,
       "posted_at": "2026-05-24T18:23:18.792Z",
       "error": null,
-      "_hasLocalBody": true,
-      "priceSet": true,
-      "boundarySet": true,
-      "paidEnabled": true,
-      "published": true,
-      "anonStatus": 200,
-      "attached": 0,
-      "attach_error": "attached=0/3 lastReason=file btn click: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"ファイル\"), [role=\"menuitem\"]:has-text(\"ファイル\"), li:has-text(\"ファイル\") button, [data-testid*=\"file\"], button:has-text(\"File\"), button:has-text(\"ドキュメント\")').first()\n    - locator resolved to <button data-selected=\"false\" aria-selected=\"false\" class=\"sc-876c5825-4 cmGlJU\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    58 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n"
+      "_hasLocalBody": true
     },
     {
       "id": "094",
@@ -1041,14 +1034,7 @@
       "scheduled_at": null,
       "posted_at": "2026-05-24T18:29:26.441Z",
       "error": null,
-      "_hasLocalBody": true,
-      "priceSet": true,
-      "boundarySet": true,
-      "paidEnabled": true,
-      "published": true,
-      "anonStatus": 200,
-      "attached": 0,
-      "attach_error": "attached=0/3 lastReason=file btn click: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"ファイル\"), [role=\"menuitem\"]:has-text(\"ファイル\"), li:has-text(\"ファイル\") button, [data-testid*=\"file\"], button:has-text(\"File\"), button:has-text(\"ドキュメント\")').first()\n    - locator resolved to <button data-selected=\"false\" aria-selected=\"false\" class=\"sc-876c5825-4 cmGlJU\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    58 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n"
+      "_hasLocalBody": true
     },
     {
       "id": "095",
@@ -1059,6 +1045,17 @@
       "scheduled_at": null,
       "posted_at": "2026-05-24T18:35:53.335Z",
       "error": null,
+      "_hasLocalBody": true
+    },
+    {
+      "id": "096",
+      "draftId": "nbdb373fddc17",
+      "title": "【AI対話アプリ】📖 200の問い #096 「自分の取扱説明書」",
+      "publish": true,
+      "status": "published",
+      "scheduled_at": null,
+      "posted_at": "2026-05-25T12:20:57.395Z",
+      "error": null,
       "_hasLocalBody": true,
       "priceSet": true,
       "boundarySet": true,
@@ -1067,17 +1064,6 @@
       "anonStatus": 200,
       "attached": 0,
       "attach_error": "attached=0/3 lastReason=file btn click: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"ファイル\"), [role=\"menuitem\"]:has-text(\"ファイル\"), li:has-text(\"ファイル\") button, [data-testid*=\"file\"], button:has-text(\"File\"), button:has-text(\"ドキュメント\")').first()\n    - locator resolved to <button data-selected=\"false\" aria-selected=\"false\" class=\"sc-876c5825-4 cmGlJU\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    58 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n"
-    },
-    {
-      "id": "096",
-      "draftId": "nbdb373fddc17",
-      "title": "【AI対話アプリ】📖 200の問い #096 「自分の取扱説明書」",
-      "publish": true,
-      "status": "pending",
-      "scheduled_at": null,
-      "posted_at": null,
-      "error": null,
-      "_hasLocalBody": true
     },
     {
       "id": "097",

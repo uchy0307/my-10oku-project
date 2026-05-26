@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "synced_at": "2026-05-25T22:20:15.048Z",
+  "synced_at": "2026-05-26T12:50:23.807Z",
   "items": [
     {
       "id": "001",
@@ -1100,61 +1100,47 @@
       "scheduled_at": null,
       "posted_at": "2026-05-25T22:38:44.201Z",
       "error": null,
-      "_hasLocalBody": true,
-      "priceSet": true,
-      "boundarySet": true,
-      "paidEnabled": true,
-      "published": true,
-      "anonStatus": 200,
-      "attached": 0,
-      "attach_error": "attached=0/3 lastReason=file btn click: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"ファイル\"), [role=\"menuitem\"]:has-text(\"ファイル\"), li:has-text(\"ファイル\") button, [data-testid*=\"file\"], button:has-text(\"File\"), button:has-text(\"ドキュメント\")').first()\n    - locator resolved to <button data-selected=\"false\" aria-selected=\"false\" class=\"sc-876c5825-4 cmGlJU\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    58 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n"
+      "_hasLocalBody": true
     },
     {
       "id": "101",
-      "draftId": "nf52fead61d99",
+      "draftId": "n222d74512070",
       "title": "【AI対話アプリ】💵 200の問い #101 「マネーリテラシー可視化」",
       "publish": true,
       "status": "published",
       "scheduled_at": null,
       "posted_at": "2026-05-25T22:44:22.060Z",
       "error": null,
-      "_hasLocalBody": true,
-      "priceSet": true,
-      "boundarySet": true,
-      "paidEnabled": true,
-      "published": true,
-      "anonStatus": 200,
-      "attached": 0,
-      "attach_error": "attached=0/3 lastReason=file btn click: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"ファイル\"), [role=\"menuitem\"]:has-text(\"ファイル\"), li:has-text(\"ファイル\") button, [data-testid*=\"file\"], button:has-text(\"File\"), button:has-text(\"ドキュメント\")').first()\n    - locator resolved to <button data-selected=\"false\" aria-selected=\"false\" class=\"sc-876c5825-4 cmGlJU\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    58 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n"
+      "_hasLocalBody": true
     },
     {
       "id": "102",
       "draftId": "n6c570f232b25",
-      "title": "【AI対話アプリ】🚧 200の問い #102 「稼ぐことへのブロック」",
+      "title": "【AI対話アプリ】🚧 200の問い #102 「マネーリテラシーへのブロック」",
       "publish": true,
       "status": "published",
       "scheduled_at": null,
       "posted_at": "2026-05-25T22:50:24.466Z",
       "error": null,
-      "_hasLocalBody": true,
-      "priceSet": true,
-      "boundarySet": true,
-      "paidEnabled": true,
-      "published": true,
-      "anonStatus": 200,
-      "attached": 0,
-      "attach_error": "attached=0/3 lastReason=file btn click: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"ファイル\"), [role=\"menuitem\"]:has-text(\"ファイル\"), li:has-text(\"ファイル\") button, [data-testid*=\"file\"], button:has-text(\"File\"), button:has-text(\"ドキュメント\")').first()\n    - locator resolved to <button data-selected=\"false\" aria-selected=\"false\" class=\"sc-876c5825-4 cmGlJU\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    58 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n"
+      "_hasLocalBody": true
     },
     {
       "id": "103",
       "draftId": "n0e74abdb0f95",
       "title": "【AI対話アプリ】💸 200の問い #103 「支出の感情分析」",
       "publish": true,
-      "status": "pending",
+      "status": "published",
       "scheduled_at": null,
-      "posted_at": null,
+      "posted_at": "2026-05-26T12:58:14.865Z",
       "error": null,
-      "_hasLocalBody": true
+      "_hasLocalBody": true,
+      "priceSet": true,
+      "boundarySet": true,
+      "paidEnabled": true,
+      "published": true,
+      "anonStatus": 200,
+      "attached": 0,
+      "attach_error": "attached=0/3 lastReason=file btn click: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"ファイル\"), [role=\"menuitem\"]:has-text(\"ファイル\"), li:has-text(\"ファイル\") button, [data-testid*=\"file\"], button:has-text(\"File\"), button:has-text(\"ドキュメント\")').first()\n    - locator resolved to <button data-selected=\"false\" aria-selected=\"false\" class=\"sc-876c5825-4 cmGlJU\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    58 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n"
     },
     {
       "id": "104",

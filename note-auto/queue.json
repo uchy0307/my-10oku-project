@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "synced_at": "2026-05-26T12:50:23.807Z",
+  "synced_at": "2026-05-26T18:07:58.083Z",
   "items": [
     {
       "id": "001",
@@ -1133,6 +1133,17 @@
       "scheduled_at": null,
       "posted_at": "2026-05-26T12:58:14.865Z",
       "error": null,
+      "_hasLocalBody": true
+    },
+    {
+      "id": "104",
+      "draftId": "n6e1a031d9e29",
+      "title": "【AI対話アプリ】🏛️ 200の問い #104 「理想の資産形成ビジョン」",
+      "publish": true,
+      "status": "published",
+      "scheduled_at": null,
+      "posted_at": "2026-05-26T18:14:54.422Z",
+      "error": null,
       "_hasLocalBody": true,
       "priceSet": true,
       "boundarySet": true,
@@ -1141,17 +1152,6 @@
       "anonStatus": 200,
       "attached": 0,
       "attach_error": "attached=0/3 lastReason=file btn click: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"ファイル\"), [role=\"menuitem\"]:has-text(\"ファイル\"), li:has-text(\"ファイル\") button, [data-testid*=\"file\"], button:has-text(\"File\"), button:has-text(\"ドキュメント\")').first()\n    - locator resolved to <button data-selected=\"false\" aria-selected=\"false\" class=\"sc-876c5825-4 cmGlJU\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    58 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n"
-    },
-    {
-      "id": "104",
-      "draftId": "n6e1a031d9e29",
-      "title": "【AI対話アプリ】🏛️ 200の問い #104 「理想の資産形成ビジョン」",
-      "publish": true,
-      "status": "pending",
-      "scheduled_at": null,
-      "posted_at": null,
-      "error": null,
-      "_hasLocalBody": true
     },
     {
       "id": "105",

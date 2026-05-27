@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "synced_at": "2026-05-27T11:56:57.663Z",
+  "synced_at": "2026-05-27T14:43:42.251Z",
   "items": [
     {
       "id": "001",
@@ -1214,12 +1214,23 @@
     },
     {
       "id": "111",
-      "draftId": "n10c4d43918a8",
+      "draftId": "",
       "title": "【AI対話アプリ】📜 200の問い #111 「執筆・ストーリー構成」",
       "publish": true,
       "status": "published",
       "scheduled_at": null,
       "posted_at": "2026-05-27T12:03:22.795Z",
+      "error": null,
+      "_hasLocalBody": true
+    },
+    {
+      "id": "112",
+      "draftId": "n38661bcd371e",
+      "title": "【AI対話アプリ】🎵 200の問い #112 「歌詞フレーズ・エモーション」",
+      "publish": true,
+      "status": "published",
+      "scheduled_at": null,
+      "posted_at": "2026-05-27T14:53:29.064Z",
       "error": null,
       "_hasLocalBody": true,
       "priceSet": true,
@@ -1229,17 +1240,6 @@
       "anonStatus": 200,
       "attached": 0,
       "attach_error": "attached=0/3 lastReason=file btn click: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"ファイル\"), [role=\"menuitem\"]:has-text(\"ファイル\"), li:has-text(\"ファイル\") button, [data-testid*=\"file\"], button:has-text(\"File\"), button:has-text(\"ドキュメント\")').first()\n    - locator resolved to <button data-selected=\"false\" aria-selected=\"false\" class=\"sc-876c5825-4 cmGlJU\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    58 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n"
-    },
-    {
-      "id": "112",
-      "draftId": "n38661bcd371e",
-      "title": "【AI対話アプリ】🎵 200の問い #112 「歌詞フレーズ・エモーション」",
-      "publish": true,
-      "status": "pending",
-      "scheduled_at": null,
-      "posted_at": null,
-      "error": null,
-      "_hasLocalBody": true
     },
     {
       "id": "113",

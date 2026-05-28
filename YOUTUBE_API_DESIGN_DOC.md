@@ -1,0 +1,194 @@
+# YouTube Data API v3 Usage — Design Document
+
+**Project**: SamuraiAutomation (Google Cloud Project ID: `samuraiautomation`)
+**Last updated**: 2026-05-27
+**Owner**: Uchiyama Takayuki (uchiyamatakayuki0307@gmail.com)
+
+## 1. Purpose
+
+Educational content production pipeline for two Japanese YouTube channels:
+
+| Channel | Handle | Subscribers | Theme |
+|---|---|---|---|
+| 侍・戦国・幕末チャンネル | [@Japanese.Samurai.Channel](https://www.youtube.com/@Japanese.Samurai.Channel) | 3,080 | Japanese samurai / Sengoku / Bakumatsu history |
+| 大人の秘密心理学♡ | [@Otona_Psychology](https://www.youtube.com/@Otona_Psychology) | (growing) | Adult psychology, relationship insights |
+
+Daily output target: **3 long-form (>15 min) + 5 shorts (<60s) per channel = 16 videos/day**.
+
+## 2. Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Local Windows PC (Author's home)                                │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │ Step 1: Topic Selection (manual + JSON config)          │    │
+│  │   topics.json → 200+ predefined educational topics      │    │
+│  └────────────────────────┬────────────────────────────────┘    │
+│                           ▼                                       │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │ Step 2: Script Generation (Gemini API)                  │    │
+│  │   scripts/generate_stock_scripts.py                      │    │
+│  │   → JSON file with title, chapters[], references[]      │    │
+│  └────────────────────────┬────────────────────────────────┘    │
+│                           ▼                                       │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │ Step 3: Audio Generation (edge-tts, Microsoft)          │    │
+│  │   scripts/gen_audio_for_scripts.py                       │    │
+│  │   → MP3 narration files                                 │    │
+│  └────────────────────────┬────────────────────────────────┘    │
+│                           ▼                                       │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │ Step 4: Subtitle Generation (whisper local)             │    │
+│  │   scripts/whisper_subtitle_gen.py + refine_srt.py       │    │
+│  │   → SRT files synced to audio timing                    │    │
+│  └────────────────────────┬────────────────────────────────┘    │
+│                           ▼                                       │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │ Step 5: Image Sourcing                                  │    │
+│  │   - Wikimedia Commons (public domain images)            │    │
+│  │   - Local stock_images/wiki/ (cached, attributed)       │    │
+│  └────────────────────────┬────────────────────────────────┘    │
+│                           ▼                                       │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │ Step 6: Video Encoding (ffmpeg local)                   │    │
+│  │   youtube/{kind}/pipeline.mjs                            │    │
+│  │   → MP4 (1920x1080 for long-form, 1080x1920 for shorts) │    │
+│  │   → Thumbnail (JPEG via PIL)                            │    │
+│  └────────────────────────┬────────────────────────────────┘    │
+│                           ▼                                       │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │ Step 7: YouTube Upload (THIS IS WHERE API IS USED)       │    │
+│  │   - youtube.videos.insert  (1,600 units / call)         │    │
+│  │   - youtube.thumbnails.set (50 units / call)            │    │
+│  │   - youtube.videos.update  (50 units / call)            │    │
+│  │   - youtube.channels.list  (1 unit / call)              │    │
+│  │   - youtube.playlistItems.list (1 unit / call, dedup)   │    │
+│  └─────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## 3. YouTube Data API v3 Methods Used
+
+| API Method | Purpose | Cost/call | Daily Calls (target) |
+|---|---|---|---|
+| `videos.insert` | Upload completed MP4 to YouTube | 1,600 | 16 |
+| `thumbnails.set` | Set custom 1280x720 thumbnail | 50 | 16 |
+| `videos.update` | Update title/description after dedup check | 50 | <5 (rare) |
+| `channels.list` (mine=true) | Resolve uploads playlist | 1 | 2 |
+| `playlistItems.list` | Duplicate-title scan (prevents re-uploading existing) | 1 (×10 pages) | 20 |
+| **Total/day** | | | **~26,000 units** |
+
+Target quota: **100,000 units/day** to support safe operation with ~4x margin.
+
+## 4. Channel Separation & OAuth Scoping
+
+Two OAuth refresh tokens stored locally, one per channel:
+
+```
+.env (gitignored)
+├── YOUTUBE_REFRESH_TOKEN          → bound to @Japanese.Samurai.Channel
+└── OTONA_YOUTUBE_REFRESH_TOKEN    → bound to @Otona_Psychology (brand account)
+```
+
+Pipeline code enforces channel binding via mandatory env vars:
+
+```javascript
+// youtube/psych_v2/pipeline.mjs (psychology channel)
+if (!process.env.OTONA_YOUTUBE_REFRESH_TOKEN) {
+  fail('OTONA_YOUTUBE_REFRESH_TOKEN required — prevents mis-upload to samurai channel');
+}
+```
+
+**Incident response (2026-05-26)**: A short was accidentally uploaded to the samurai channel using the default token. Fixed by separating tokens; cross-channel uploads now impossible. See `CLAUDE.md` section "チャンネル別 OAuth トークン分離".
+
+## 5. Content Quality Controls (Anti-Spam)
+
+The pipeline enforces multiple gates to prevent low-quality / duplicate uploads:
+
+1. **Duplicate title prevention**: Before upload, the pipeline calls `playlistItems.list` to scan the channel's existing uploads. If exact title match exists, upload aborts with explicit error (no silent overwrite).
+
+2. **Minimum duration gate**: Long-form videos must have ≥900 seconds (15 min) of narration; shorts must have ≥10 seconds. Videos failing this check are aborted before upload.
+
+3. **Minimum image quota**: Each video requires ≥4 source images (with fallback to Wikimedia Commons). If fewer, abort.
+
+4. **Thumbnail size validation**: Thumbnail JPEG must be ≥10 KB and ≤2 MB.
+
+5. **Rich descriptions**: All uploads include:
+   - Lead paragraph (topic overview)
+   - Chapter timestamps (auto-generated from script)
+   - References / citations (educational context)
+   - BGM and illustration credits
+   - Topic hashtags
+
+   Implementation: `scripts/build_description.mjs`
+
+## 6. Operational Scheduling (Rate-Limited)
+
+YouTube uploads run once daily via Windows Task Scheduler:
+
+| Task | Time (JST) | Purpose | API Calls |
+|---|---|---|---|
+| `UchyDailyCycle` | 08:00 | Generate + upload day's batch | ~26,000 units |
+| `UchyNightlyWhisper` | 23:00 | Local subtitle generation (no API) | 0 units |
+| `UchyButtonServer` | Always | Local-only smartphone dashboard (no upload) | 0 units |
+
+Implementation: `scripts/daily_cycle.py` (uses `subprocess` to call individual pipelines sequentially)
+
+No burst behavior. No retry storms. Each failed upload waits for next day's cycle.
+
+## 7. Content Sources & Attribution
+
+All content sources are properly attributed in video descriptions:
+
+| Source | Type | Attribution |
+|---|---|---|
+| Wikimedia Commons | Images (public domain / CC) | "▼イラスト・画像提供" in description |
+| MusMus, 魔王魂, PeriTune, DOVA-SYNDROME, etc. | BGM | "▼BGM提供" in description with URLs |
+| edge-tts (Microsoft) | Voice narration synthesis | (built into video) |
+| Gemini API (Google) | Script generation | (acknowledged in CLAUDE.md project docs) |
+
+Educational content is original synthesis based on public-domain historical records and published psychology research. No reproduction of copyrighted material.
+
+## 8. Smartphone Dashboard (Out-of-Band Monitoring)
+
+A local Python HTTP server (`scripts/local_button_server.py`) provides operational dashboard at `https://pc.uchy0307.uk` (Cloudflare Tunnel to localhost:7373). The dashboard:
+
+- Displays today's upload count per channel (read-only via `playlistItems.list`)
+- Shows messages from local Claude Code sessions
+- Allows triggering local batch jobs (script-gen, audio-gen, video build)
+
+Does **NOT** itself perform YouTube API uploads. All uploads happen on the local PC via the pipeline scripts above.
+
+## 9. Why the Quota Increase Is Needed
+
+Current default quota: **10,000 units/day** = max **6 video uploads/day** (1,600 each).
+
+Daily target: **16 videos** × 1,600 = **25,600 units** for uploads alone, plus thumbnail/dedup overhead → **~26,000 units/day**.
+
+Without quota increase, the pipeline can serve only 37% of intended capacity. The remaining videos accumulate as local MP4 backlog, undermining the "daily fresh content" model that subscribers expect.
+
+100,000 units/day provides ~62 video capacity, leaving margin for retries, description updates, and dedup scans.
+
+## 10. Source Code (Public)
+
+This project is operated as a private content production system. Source code is not currently public, but the entire pipeline is documented in:
+
+- `CLAUDE.md` — operational rules, channel handles, dev practices
+- `HANDOFF.md` — change log and decision records
+- `SCHEDULE.md` — daily operational schedule
+- `agent/teams/` — team-based task delegation (A班=note, B班=200apps, C班=history YT, D班=otona YT, E班=LP)
+
+Code is hosted at: `C:\Users\user\Documents\10oku-project` (local Windows file system).
+
+Repository structure available on request from project owner.
+
+## 11. Contact
+
+- Email: uchiyamatakayuki0307@gmail.com
+- Channels:
+  - https://www.youtube.com/@Japanese.Samurai.Channel
+  - https://www.youtube.com/@Otona_Psychology
+
+---
+
+**End of Design Document**

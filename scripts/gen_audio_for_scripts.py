@@ -1,0 +1,147 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+gen_audio_for_scripts.py
+========================
+台本JSONから音声(.mp3) を edge-tts で一括生成。
+
+使い方:
+    python gen_audio_for_scripts.py --kind history
+    python gen_audio_for_scripts.py --kind psych
+    python gen_audio_for_scripts.py --kind history_shorts
+"""
+from __future__ import annotations
+import argparse
+import asyncio
+import json
+import sys
+from pathlib import Path
+
+if sys.stdout is not None and hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if sys.stderr is not None and hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
+try:
+    import edge_tts
+except ImportError:
+    print("[FATAL] edge-tts未導入。pip install edge-tts")
+    sys.exit(2)
+
+ROOT = Path(__file__).resolve().parent.parent
+
+VOICE = "ja-JP-NanamiNeural"
+RATE = "+0%"
+PITCH = "+0Hz"
+
+KIND_CONFIG = {
+    "history": {
+        "scripts_dir": ROOT / "youtube" / "history_v2" / "scripts",
+        "audio_dir":   ROOT / "youtube" / "history_v2" / "audio",
+    },
+    "psych": {
+        "scripts_dir": ROOT / "youtube" / "psych_v2" / "scripts",
+        "audio_dir":   ROOT / "youtube" / "psych_v2" / "audio",
+    },
+    "history_shorts": {
+        "scripts_dir": ROOT / "youtube" / "shorts_v2" / "scripts",
+        "audio_dir":   ROOT / "youtube" / "shorts_v2" / "audio",
+    },
+    "otona_shorts": {
+        "scripts_dir": ROOT / "youtube" / "otona_shorts_v2" / "scripts",
+        "audio_dir":   ROOT / "youtube" / "otona_shorts_v2" / "audio",
+    },
+}
+
+
+def extract_id(filename: str) -> str:
+    """long_007.json -> 007"""
+    stem = Path(filename).stem
+    # take trailing digits
+    digits = ""
+    for ch in reversed(stem):
+        if ch.isdigit():
+            digits = ch + digits
+        else:
+            break
+    return digits or stem
+
+
+def script_to_text(path: Path) -> str:
+    data = json.loads(path.read_text(encoding="utf-8"))
+    chapters = data.get("chapters") or data.get("sections") or []
+    parts = []
+    for ch in chapters:
+        if isinstance(ch, dict):
+            t = (ch.get("text") or ch.get("narration") or "").strip()
+            if t:
+                parts.append(t)
+        elif isinstance(ch, str):
+            parts.append(ch.strip())
+    if not parts and isinstance(data, dict) and data.get("text"):
+        parts.append(str(data["text"]).strip())
+    # shorts_v2 のスキーマ: narration_text フィールド
+    if not parts and isinstance(data, dict) and data.get("narration_text"):
+        parts.append(str(data["narration_text"]).strip())
+    if not parts and isinstance(data, dict) and data.get("narration"):
+        parts.append(str(data["narration"]).strip())
+    return "\n\n".join(parts)
+
+
+async def synth_one(text: str, out_mp3: Path) -> None:
+    out_mp3.parent.mkdir(parents=True, exist_ok=True)
+    comm = edge_tts.Communicate(text=text, voice=VOICE, rate=RATE, pitch=PITCH)
+    audio_bytes = 0
+    with open(out_mp3, "wb") as f:
+        async for chunk in comm.stream():
+            if chunk.get("type") == "audio":
+                f.write(chunk["data"])
+                audio_bytes += len(chunk["data"])
+    if audio_bytes < 5000:
+        raise RuntimeError(f"audio too small ({audio_bytes}B)")
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--kind", required=True, choices=list(KIND_CONFIG.keys()))
+    args = ap.parse_args()
+    cfg = KIND_CONFIG[args.kind]
+    sdir = cfg["scripts_dir"]
+    adir = cfg["audio_dir"]
+    adir.mkdir(parents=True, exist_ok=True)
+
+    if not sdir.exists():
+        print(f"[FATAL] scripts dir not found: {sdir}")
+        return 1
+    scripts = sorted(sdir.glob("*.json"))
+    print(f"[info] kind={args.kind} scripts={len(scripts)}")
+    ok = 0
+    skip = 0
+    fail = 0
+    for sp in scripts:
+        idx = extract_id(sp.name)
+        out = adir / f"{idx}.mp3"
+        if out.exists() and out.stat().st_size > 5000:
+            skip += 1
+            continue
+        try:
+            text = script_to_text(sp)
+            if not text:
+                print(f"[SKIP] {sp.name}: empty text")
+                skip += 1
+                continue
+            print(f"[gen] {sp.name} ({len(text)} chars) -> {out.name}")
+            asyncio.run(synth_one(text, out))
+            ok += 1
+        except KeyboardInterrupt:
+            print("[STOP] interrupted")
+            break
+        except Exception as e:
+            fail += 1
+            print(f"[FAIL] {sp.name}: {e}")
+    print(f"\n=== Done: ok={ok} skip={skip} fail={fail} ===")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

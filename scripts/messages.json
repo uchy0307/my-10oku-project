@@ -1,0 +1,10 @@
+[
+  {
+    "id": "msg_round9_1779983495",
+    "ts": "2026-05-29T00:51:35.514749+09:00",
+    "title": "🤖 自走ラウンド9 (0:51 JST) disk逼迫対応",
+    "text": "disk逼迫検出 → 対応:\n\n【状態】\n- UTC 15:50 = JST 0:51 / quotaリセットまで 8h+\n- inbox 未読 0\n- プロセス: node=0 / ffmpeg=0 / pythonw=1 (build全停止後の待機)\n- ボタンサーバー 200\n- DUP-GUARD 4本 全 OK\n- otona_shorts uploaded 13 (本日上限到達済)\n\n【disk対応】\n- auto_disk_cleanup: 0件削除 (削除候補枯渇)\n- stock_images/wiki/ から 500枚ランダム削除 (1001→501) → 208MB解放\n- Free 0.60→0.80GB\n\n【ScheduleWakeup】\n次回 1:51 JST. quotaリセットまで 7h+ なので upload は次の次のラウンド以降.\n\n【note引き継ぎ書】\nCLAUDE.md 末尾 + memory/2026-05-29_handoff.md に記録済.\nClaude Code 再起動でスマホ可視化準備済 (autoUploadSessions ON).\n\n【残課題】\n- 大規模 disk 解放: VOICEVOX model 1.5GB が残候補 (使用中なら触らない)\n- 未upload .work/<idx>/output.mp4 が 蓄積中 (明朝quota後にupload予定)",
+    "type": "claude_to_user",
+    "read": false
+  }
+]

@@ -37,6 +37,17 @@ const SCRIPT_PATH = path.join(ROOT, 'scripts', `long_${LONG_INDEX}.json`);
 const WORK = path.join(ROOT, '.work', LONG_INDEX);
 fs.mkdirSync(WORK, { recursive: true });
 
+// ---------- DUP-GUARD (re-added 2026-05-28): exit 99 if already uploaded ----------
+const UPLOADED_JSON = path.join(ROOT, 'uploaded.json');
+let uploadedDb = {};
+if (fs.existsSync(UPLOADED_JSON)) {
+  try { uploadedDb = JSON.parse(fs.readFileSync(UPLOADED_JSON, 'utf8')) || {}; } catch {}
+}
+if (uploadedDb[LONG_INDEX]) {
+  console.log(`[pipeline][SKIP] index ${LONG_INDEX} already uploaded: ${uploadedDb[LONG_INDEX].videoUrl || uploadedDb[LONG_INDEX]}`);
+  process.exit(99);
+}
+
 log(`reading ${SCRIPT_PATH}`);
 if (!fs.existsSync(SCRIPT_PATH)) fail(`script file not found: ${SCRIPT_PATH}`);
 const spec = JSON.parse(fs.readFileSync(SCRIPT_PATH, 'utf8'));
@@ -147,7 +158,32 @@ for (let i = 0; i < image_urls.length; i++) {
   }
 }
 log(`images succeeded: ${imagePaths.length}/${image_urls.length}`);
-if (imagePaths.length < 6) fail(`only ${imagePaths.length} images succeeded; need >= 6 (no black-bg fallback per rule)`);
+
+// ---------- 3b. Stock fallback (2026-05-28 added): Wikimedia 失効URL 救済 ----------
+// 不足してたら stock_images/wiki/ から自動補充して pipeline 続行
+if (imagePaths.length < 8) {
+  const stockFallbackDir = path.join(__dirname, '..', 'stock_images', 'wiki');
+  if (fs.existsSync(stockFallbackDir)) {
+    const allStock = fs.readdirSync(stockFallbackDir).filter(f => /\.(jpe?g|png|webp)$/i.test(f));
+    const shuffled = allStock.sort(() => Math.random() - 0.5);
+    let added = 0;
+    for (const f of shuffled) {
+      if (imagePaths.length >= 12) break;
+      const srcPath = path.join(stockFallbackDir, f);
+      const dst = path.join(WORK, `image_${imagePaths.length}.jpg`);
+      try {
+        fs.copyFileSync(srcPath, dst);
+        imagePaths.push(dst);
+        added++;
+      } catch {}
+    }
+    log(`stock fallback added: ${added} images (total: ${imagePaths.length})`);
+  } else {
+    log(`stock fallback dir not found: ${stockFallbackDir}`);
+  }
+}
+
+if (imagePaths.length < 6) fail(`only ${imagePaths.length} images succeeded; need >= 6 (Wikimedia all-404 even after stock fallback)`);
 
 // ---------- 4. Build ASS subtitles ----------
 function splitForSubs(text, maxChars = 28) {

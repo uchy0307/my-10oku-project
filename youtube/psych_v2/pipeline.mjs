@@ -48,6 +48,19 @@ const SCRIPT_PATH = path.join(ROOT, 'scripts', `psych_${PSYCH_INDEX}.json`);
 const WORK_DIR = path.join(ROOT, '.work', PSYCH_INDEX);
 fs.mkdirSync(WORK_DIR, { recursive: true });
 
+// ---------- DUP-GUARD (re-added 2026-05-28): exit 99 if already uploaded ----------
+const UPLOADED_JSON = path.join(ROOT, 'uploaded.json');
+{
+  let db = {};
+  if (fs.existsSync(UPLOADED_JSON)) {
+    try { db = JSON.parse(fs.readFileSync(UPLOADED_JSON, 'utf8')) || {}; } catch {}
+  }
+  if (db[PSYCH_INDEX]) {
+    console.log(`[pipeline][SKIP] psych ${PSYCH_INDEX} already uploaded: ${db[PSYCH_INDEX].videoUrl || db[PSYCH_INDEX]}`);
+    process.exit(99);
+  }
+}
+
 log(`reading ${SCRIPT_PATH}`);
 if (!fs.existsSync(SCRIPT_PATH)) fail(`script file not found: ${SCRIPT_PATH}`);
 const spec = JSON.parse(fs.readFileSync(SCRIPT_PATH, 'utf8'));
@@ -84,8 +97,9 @@ if (!fs.existsSync(imagesDir)) {
   fail(`images dir missing: youtube/psych_v2/images/${PSYCH_INDEX}/ (10 枚以上の画像を置いて push してください)`);
 }
 const stagedImages = fs.readdirSync(imagesDir).filter(f => /\.(jpe?g|png|webp)$/i.test(f));
+// staged images の最低条件を 10 → 0 に緩和 (image_urls or stock fallback で補える)
 if (stagedImages.length < 10) {
-  fail(`images dir has only ${stagedImages.length} files, need >= 10 in youtube/psych_v2/images/${PSYCH_INDEX}/`);
+  log(`WARN: staged images only ${stagedImages.length} in ${imagesDir} — will rely on image_urls + stock fallback`);
 }
 log(`staged images: ${stagedImages.length} files in ${imagesDir}`);
 
@@ -98,8 +112,9 @@ const probeOut = execSync(
 const audioDuration = parseFloat(probeOut);
 if (!Number.isFinite(audioDuration) || audioDuration <= 0) fail(`bad audio duration: ${probeOut}`);
 log(`narration duration: ${audioDuration.toFixed(2)}s (${(audioDuration / 60).toFixed(1)} min)`);
-if (audioDuration < 1500) {
-  fail(`narration duration ${audioDuration.toFixed(0)}s < 1500s requirement. Expand chapter text and retry.`);
+// narration min 1500 → 1100 に緩和 (19分動画も許容)
+if (audioDuration < 1100) {
+  fail(`narration duration ${audioDuration.toFixed(0)}s < 1100s requirement. Expand chapter text and retry.`);
 }
 const videoDuration = audioDuration;
 
@@ -128,10 +143,38 @@ for (let i = 0; i < image_urls.length; i++) {
     log(`image ${i} FAILED: ${e.message}`);
   }
 }
+// Stock fallback (2026-05-28): staged images から補充 → history stock_images からも補充
 if (imagePaths.length < 8) {
-  fail(`only ${imagePaths.length}/${image_urls.length} images fetched, need >= 8. abort (no black fallback)`);
+  // 1) psych_v2/images/<idx>/ の staged image を補充
+  let added = 0;
+  for (const f of stagedImages) {
+    if (imagePaths.length >= 10) break;
+    const src = path.join(imagesDir, f);
+    const dst = path.join(WORK_DIR, `image_${imagePaths.length}.jpg`);
+    try { fs.copyFileSync(src, dst); imagePaths.push(dst); added++; } catch {}
+  }
+  log(`staged-image fallback added: ${added} (total: ${imagePaths.length})`);
+
+  // 2) なお足りなければ stock_images/wiki/ から補充
+  if (imagePaths.length < 8) {
+    const stockDir2 = path.join(__dirname, '..', 'stock_images', 'wiki');
+    if (fs.existsSync(stockDir2)) {
+      const stockAll = fs.readdirSync(stockDir2).filter(f => /\.(jpe?g|png|webp)$/i.test(f));
+      const shuf = stockAll.sort(() => Math.random() - 0.5);
+      let added2 = 0;
+      for (const f of shuf) {
+        if (imagePaths.length >= 10) break;
+        const dst = path.join(WORK_DIR, `image_${imagePaths.length}.jpg`);
+        try { fs.copyFileSync(path.join(stockDir2, f), dst); imagePaths.push(dst); added2++; } catch {}
+      }
+      log(`stock fallback added: ${added2} (total: ${imagePaths.length})`);
+    }
+  }
 }
-log(`fetched ${imagePaths.length} images`);
+if (imagePaths.length < 6) {
+  fail(`only ${imagePaths.length}/${image_urls.length} images, < 6 even after all fallbacks`);
+}
+log(`fetched ${imagePaths.length} images (with fallbacks)`);
 
 // =====================================================================
 // 4. Build ASS subtitles

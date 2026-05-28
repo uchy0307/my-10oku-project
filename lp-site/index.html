@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2d2348">
+  <meta name="description" content="苦徹成珠・侍の美学。全ての成熟した悩める大人へ。歴史と心理学を侍の視座で読み解く。">
+  <title>苦徹成珠 ・ 侍の美学</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.85em' font-size='80'%3E⚔️%3C/text%3E%3C/svg%3E">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
+      background: linear-gradient(180deg, #3d3470 0%, #5b4998 45%, #4a3a82 100%);
+      color: #faf5ff;
+      line-height: 1.8;
+      min-height: 100vh;
+    }
+    .container { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+
+    /* Hero */
+    .hero {
+      padding: 80px 24px 60px;
+      text-align: center;
+      background: radial-gradient(circle at top, rgba(252,211,77,0.25), transparent 65%);
+    }
+    .hero-eyebrow {
+      font-size: 0.85rem;
+      letter-spacing: 0.4em;
+      color: #fbbf24;
+      margin-bottom: 16px;
+      font-family: -apple-system, sans-serif;
+    }
+    .hero h1 {
+      font-size: clamp(1.8rem, 5vw, 3rem);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      line-height: 1.3;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-sub {
+      font-size: 1.05rem;
+      color: #c4b5fd;
+      max-width: 520px;
+      margin: 0 auto 32px;
+    }
+    .cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .cta {
+      display: inline-block;
+      padding: 14px 28px;
+      border-radius: 999px;
+      font-weight: 700;
+      text-decoration: none;
+      font-size: 1rem;
+      transition: transform 0.15s, box-shadow 0.15s;
+      font-family: -apple-system, sans-serif;
+    }
+    .cta:active { transform: scale(0.97); }
+    .cta-primary {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: #1a1625;
+      box-shadow: 0 8px 24px rgba(245,158,11,0.4);
+    }
+    .cta-secondary {
+      border: 2px solid #c4b5fd;
+      color: #c4b5fd;
+    }
+
+    /* Section */
+    section { padding: 60px 0; }
+    .section-title {
+      font-size: 1.6rem;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 8px;
+      color: #fde68a;
+    }
+    .section-sub {
+      text-align: center;
+      color: #a78bfa;
+      font-size: 0.85rem;
+      margin-bottom: 28px;
+      font-family: -apple-system, sans-serif;
+      letter-spacing: 0.1em;
+    }
+    .step-label {
+      display: inline-block;
+      background: rgba(252,211,77,0.2);
+      color: #fde68a;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      font-family: -apple-system, sans-serif;
+      letter-spacing: 0.1em;
+      margin-bottom: 8px;
+    }
+
+    /* Cards */
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+    .card {
+      background: rgba(255,255,255,0.09);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(253,230,138,0.3);
+      border-radius: 20px;
+      padding: 24px;
+      transition: border-color 0.2s, transform 0.15s;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+    .card:active { transform: scale(0.98); }
+    .card:hover { border-color: rgba(251,191,36,0.5); }
+    .card-icon { font-size: 2.4rem; margin-bottom: 12px; }
+    .card-title { font-size: 1.1rem; font-weight: 700; color: #fde68a; margin-bottom: 8px; }
+    .card-desc { font-size: 0.88rem; color: #c4b5fd; line-height: 1.6; font-family: -apple-system, sans-serif; }
+    .card-locked {
+      background: rgba(255,255,255,0.03);
+      border-color: rgba(196,181,253,0.18);
+      opacity: 0.85;
+    }
+    .card-locked .card-title { color: #c4b5fd; }
+    .lock-badge {
+      display: inline-block;
+      background: rgba(251,146,60,0.2);
+      color: #fdba74;
+      font-size: 0.7rem;
+      padding: 3px 10px;
+      border-radius: 999px;
+      margin-left: 8px;
+      vertical-align: middle;
+      font-family: -apple-system, sans-serif;
+      font-weight: 600;
+    }
+
+    /* Funnel arrow */
+    .funnel-arrow {
+      text-align: center;
+      font-size: 1.8rem;
+      color: #fbbf24;
+      margin: -10px 0 -10px;
+      opacity: 0.7;
+    }
+
+    /* Philosophy */
+    .philosophy {
+      background: rgba(180,83,9,0.1);
+      border-top: 1px solid rgba(251,191,36,0.2);
+      border-bottom: 1px solid rgba(251,191,36,0.2);
+      padding: 60px 24px;
+      margin: 40px 0;
+      text-align: center;
+    }
+    .philosophy blockquote {
+      font-size: 1.3rem;
+      font-style: italic;
+      color: #fde68a;
+      max-width: 480px;
+      margin: 0 auto;
+      line-height: 1.9;
+    }
+    .philosophy cite {
+      display: block;
+      margin-top: 16px;
+      font-size: 0.85rem;
+      color: #a78bfa;
+      font-style: normal;
+      letter-spacing: 0.2em;
+      font-family: -apple-system, sans-serif;
+    }
+
+    /* Footer */
+    footer {
+      padding: 40px 24px 60px;
+      text-align: center;
+      border-top: 1px solid rgba(196,181,253,0.1);
+      font-family: -apple-system, sans-serif;
+    }
+    .footer-links { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; }
+    .footer-links a {
+      color: #c4b5fd;
+      text-decoration: none;
+      font-size: 0.88rem;
+      padding: 6px 14px;
+      border: 1px solid rgba(196,181,253,0.3);
+      border-radius: 999px;
+      transition: all 0.15s;
+    }
+    .footer-links a:hover { border-color: #fbbf24; color: #fbbf24; }
+    .copy { font-size: 0.75rem; color: #94a3b8; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <main>
+    <!-- Hero -->
+    <div class="hero">
+      <div class="container">
+        <div class="hero-eyebrow">SAMURAI AESTHETICS</div>
+        <h1>苦徹成珠<br>侍の美学</h1>
+        <p class="hero-sub">
+          全ての成熟した悩める大人へ。<br>
+          歴史と心理学を侍の視座で読み解く独自の知の体系。
+        </p>
+        <div class="cta-row">
+          <a href="https://www.youtube.com/@Japanese.Samurai.Channel" class="cta cta-primary" target="_blank" rel="noopener">📺 まず無料動画から</a>
+          <a href="#flow" class="cta cta-secondary">学びの流れ</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 1: Free -->
+    <section id="flow">
+      <div class="container">
+        <div style="text-align:center;"><span class="step-label">STEP 1 · 無料で触れる</span></div>
+        <h2 class="section-title">YouTubeで侍と心理学を知る</h2>
+        <div class="section-sub">FREE CONTENT</div>
+        <div class="card-grid">
+
+          <a href="https://www.youtube.com/@Japanese.Samurai.Channel" class="card" target="_blank" rel="noopener">
+            <div class="card-icon">⚔️</div>
+            <div class="card-title">歴史侍チャンネル</div>
+            <div class="card-desc">日本の侍・戦国史を1本30分超で深掘り解説。週20本ペースで更新中。すべて無料で視聴可能。</div>
+          </a>
+
+          <a href="https://www.youtube.com/@Otona_Psychology" class="card" target="_blank" rel="noopener">
+            <div class="card-icon">🧠</div>
+            <div class="card-title">大人の心理学</div>
+            <div class="card-desc">成熟した悩める大人のための実践心理学。長尺解説とショートで毎日更新。無料で視聴可能。</div>
+          </a>
+
+        </div>
+      </div>
+    </section>
+
+    <div class="funnel-arrow">▼</div>
+
+    <!-- Step 2: Paid -->
+    <section>
+      <div class="container">
+        <div style="text-align:center;"><span class="step-label">STEP 2 · 深く学ぶ</span></div>
+        <h2 class="section-title">noteで実践テキストを購入</h2>
+        <div class="section-sub">PAID ARTICLES · 1本100円〜</div>
+        <div class="card-grid">
+          <a href="https://note.com/happy_happy_4649" class="card" target="_blank" rel="noopener" style="grid-column: 1 / -1;">
+            <div class="card-icon">📝</div>
+            <div class="card-title">note</div>
+            <div class="card-desc">
+              YouTubeでは語りきれない実践と裏付けを、ここでしか読めない形で公開。
+              買取制1本100円。各記事の末尾に、専用ツールの解錠キーが封入されています。
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <div class="funnel-arrow">▼</div>
+
+    <!-- Step 3: Locked -->
+    <section>
+      <div class="container">
+        <div style="text-align:center;"><span class="step-label">STEP 3 · 自分を可視化する</span></div>
+        <h2 class="section-title">専用ツールで自己分析<span class="lock-badge">🔒 会員専用</span></h2>
+        <div class="section-sub">MEMBER ONLY</div>
+        <div class="card-grid">
+          <div class="card card-locked" style="grid-column: 1 / -1;">
+            <div class="card-icon">🎯</div>
+            <div class="card-title">toi-suite</div>
+            <div class="card-desc">
+              6軸レーダーで自分の現在地を可視化する診断ツール。
+              note記事に同梱されているアクセスキーで該当回が解錠されます。
+              全回アクセス可能なマスター契約もご用意。
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Strong CTA before philosophy -->
+    <section style="padding: 50px 16px; text-align:center;">
+      <div class="container">
+        <div style="font-size:11px;letter-spacing:0.3em;color:#fbbf24;margin-bottom:14px;font-family:system-ui,sans-serif;">FIRST STEP</div>
+        <h2 style="font-size:24px;font-weight:900;color:#fde68a;line-height:1.4;margin-bottom:18px;">
+          まずは、note の1記事から。
+        </h2>
+        <p style="font-size:14px;color:#c4b5fd;line-height:1.9;margin-bottom:28px;max-width:480px;margin-left:auto;margin-right:auto;font-family:system-ui,sans-serif;">
+          1本100円。記事の末尾に、専用ツールを解錠するキーが封入されています。気に入った記事だけ買えば、その回のtoi-suiteが永続的に解錠されます。
+        </p>
+        <a href="https://note.com/happy_happy_4649" target="_blank" rel="noopener" style="display:inline-block;padding:16px 36px;border-radius:999px;background:linear-gradient(135deg,#fbbf24,#d97706);color:#1a1625;font-size:15px;font-weight:800;text-decoration:none;box-shadow:0 8px 24px rgba(245,158,11,0.4);font-family:system-ui,sans-serif;">
+          📝 note 記事一覧を見る
+        </a>
+      </div>
+    </section>
+
+    <!-- Philosophy -->
+    <div class="philosophy">
+      <div class="container">
+        <blockquote>
+          "苦しみを徹し、珠を成す。<br>
+          それが、侍の美学である。"
+        </blockquote>
+        <cite>— MANIFESTO</cite>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="footer-links">
+      <a href="https://www.youtube.com/@Japanese.Samurai.Channel" target="_blank" rel="noopener">歴史YT</a>
+      <a href="https://www.youtube.com/@Otona_Psychology" target="_blank" rel="noopener">大人YT</a>
+      <a href="https://note.com/happy_happy_4649" target="_blank" rel="noopener">note</a>
+    </div>
+    <div class="copy">© 苦徹成珠 · 侍の美学</div>
+  </footer>
+</body>
+</html>

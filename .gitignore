@@ -1,6 +1,7 @@
 node_modules/
 .env
 .env.local
+.env.bak*
 *.log
 .DS_Store
 
@@ -9,8 +10,32 @@ youtube/output/*
 !youtube/output/.gitkeep
 !youtube/output/state.json
 
+# v2 pipeline build artifacts (大量, 再生成可能)
+youtube/*/.work/
+youtube/*/.work_quarantine/
+youtube/stock_images/wiki/
+
+# old new-youtube* outputs (旧パイプライン成果物)
+new-youtube-local/output/
+new-youtube/outputs/
+
 # note-auto: storageState.json は cookie を含むため絶対に commit しない
 note-auto/storageState.json
 note-auto/client_secret.json
 note-auto/youtube_tokens.json
-new-youtube-local/output/p001_video.mp4 
+note-auto/_debug_screen.png
+note-auto/_dom_dump.json
+
+# note md backups (自動生成、commit 不要)
+articles/*.bak_*
+articles/*.v2bak_*
+articles/*.v3bak_*
+articles/*.gem_bak_*
+articles/*.urls_bak
+
+# YT API review temp (公開用、別途 zip管理)
+youtube_api_review/*.txt
+
+# Claude/temp work
+C:/Windows/Temp/_*.txt
+scripts/logs/action_*.log

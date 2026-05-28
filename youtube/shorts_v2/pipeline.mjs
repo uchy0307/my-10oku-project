@@ -20,6 +20,19 @@ const SCRIPT_PATH = path.join(ROOT, 'scripts', `short_${SHORT_INDEX}.json`);
 const WORK_DIR = path.join(ROOT, '.work', SHORT_INDEX);
 fs.mkdirSync(WORK_DIR, { recursive: true });
 
+// ---------- DUP-GUARD (re-added 2026-05-28): exit 99 if already uploaded ----------
+const UPLOADED_JSON = path.join(ROOT, 'uploaded.json');
+{
+  let db = {};
+  if (fs.existsSync(UPLOADED_JSON)) {
+    try { db = JSON.parse(fs.readFileSync(UPLOADED_JSON, 'utf8')) || {}; } catch {}
+  }
+  if (db[SHORT_INDEX]) {
+    console.log(`[pipeline][SKIP] short ${SHORT_INDEX} already uploaded: ${db[SHORT_INDEX].videoUrl || db[SHORT_INDEX]}`);
+    process.exit(99);
+  }
+}
+
 if (!fs.existsSync(SCRIPT_PATH)) fail(`script file not found: ${SCRIPT_PATH}`);
 const spec = JSON.parse(fs.readFileSync(SCRIPT_PATH, 'utf8'));
 const { title, narration_text, image_urls = [], tags = [], description = '' } = spec;

@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "synced_at": "2026-05-27T21:20:06.570Z",
+  "synced_at": "2026-05-28T12:03:13.749Z",
   "items": [
     {
       "id": "001",
@@ -1298,25 +1298,25 @@
       "scheduled_at": null,
       "posted_at": "2026-05-27T21:33:53.940Z",
       "error": null,
-      "_hasLocalBody": true,
-      "priceSet": true,
-      "boundarySet": true,
-      "paidEnabled": true,
-      "published": true,
-      "anonStatus": 200,
-      "attached": 0,
-      "attach_error": "attached=0/3 lastReason=file btn click: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"ファイル\"), [role=\"menuitem\"]:has-text(\"ファイル\"), li:has-text(\"ファイル\") button, [data-testid*=\"file\"], button:has-text(\"File\"), button:has-text(\"ドキュメント\")').first()\n    - locator resolved to <button data-selected=\"false\" aria-selected=\"false\" class=\"sc-876c5825-4 cmGlJU\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    58 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n"
+      "_hasLocalBody": true
     },
     {
       "id": "119",
       "draftId": "n1eec4e62b6a3",
       "title": "【AI対話アプリ】✋ 200の問い #119 「工芸・職人のこだわりPR」",
       "publish": true,
-      "status": "pending",
+      "status": "draft_saved",
       "scheduled_at": null,
-      "posted_at": null,
+      "posted_at": "2026-05-28T12:13:57.685Z",
       "error": null,
-      "_hasLocalBody": true
+      "_hasLocalBody": true,
+      "priceSet": false,
+      "boundarySet": false,
+      "paidEnabled": false,
+      "published": false,
+      "anonStatus": null,
+      "attached": 0,
+      "attach_error": "attached=0/3 lastReason=file btn click: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"ファイル\"), [role=\"menuitem\"]:has-text(\"ファイル\"), li:has-text(\"ファイル\") button, [data-testid*=\"file\"], button:has-text(\"File\"), button:has-text(\"ドキュメント\")').first()\n    - locator resolved to <button data-selected=\"false\" aria-selected=\"false\" class=\"sc-876c5825-4 cmGlJU\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    58 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n"
     },
     {
       "id": "120",

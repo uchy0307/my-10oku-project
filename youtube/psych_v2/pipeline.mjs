@@ -134,58 +134,9 @@ if (imagePaths.length < 8) {
 log(`fetched ${imagePaths.length} images`);
 
 // =====================================================================
-// 4. Build ASS subtitles
+// 4. Subtitles: 2026-05-30 完全削除方針
 // =====================================================================
-function splitNarration(text, maxChars = 24) {
-  const sentences = text.split(/(?<=[。！？])/).filter(s => s.trim().length > 0);
-  const chunks = [];
-  let buf = '';
-  for (const s of sentences) {
-    if ((buf + s).length > maxChars && buf) {
-      chunks.push(buf.trim());
-      buf = s;
-    } else {
-      buf += s;
-    }
-  }
-  if (buf.trim()) chunks.push(buf.trim());
-  return chunks.length > 0 ? chunks : [text];
-}
-
-function fmtAss(sec) {
-  const total = Math.max(0, sec);
-  const h = Math.floor(total / 3600);
-  const m = Math.floor((total % 3600) / 60);
-  const s = (total % 60).toFixed(2).padStart(5, '0');
-  return `${h}:${String(m).padStart(2, '0')}:${s}`;
-}
-
-const fullNarration = chapters.map(c => c.text).join('');
-const subChunks = splitNarration(fullNarration, 24);
-const subSlot = audioDuration / subChunks.length;
-
-let assText = `[Script Info]
-ScriptType: v4.00+
-PlayResX: 1920
-PlayResY: 1080
-WrapStyle: 2
-ScaledBorderAndShadow: yes
-
-[V4+ Styles]
-Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Noto Sans CJK JP,54,&H00FFFFFF,&H000000FF,&H00000000,&HA0000000,1,0,0,0,100,100,0,0,1,4,2,2,120,120,90,1
-
-[Events]
-Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-`;
-for (let i = 0; i < subChunks.length; i++) {
-  const start = i * subSlot;
-  const end = Math.min((i + 1) * subSlot, audioDuration);
-  const safe = subChunks[i].replace(/[\\{}]/g, '');
-  assText += `Dialogue: 0,${fmtAss(start)},${fmtAss(end)},Default,,0,0,0,,${safe}\n`;
-}
-const assPath = path.join(WORK_DIR, 'sub.ass');
-fs.writeFileSync(assPath, assText, 'utf8');
+// 理由: edge-tts 固有名詞読み違え + 均等分割で同期不能。字幕焼き込み無し。
 
 // =====================================================================
 // 5. Build ken-burns segments (one per image)
@@ -228,7 +179,7 @@ if (segClips.length === 1) {
 const outMp4 = path.join(WORK_DIR, 'output.mp4');
 log('overlaying subtitles + audio (final encode)...');
 execSync(
-  `ffmpeg -y -i ${JSON.stringify(concatMp4)} -i ${JSON.stringify(mergedMp3)} -vf "subtitles=sub.ass:fontsdir=/usr/share/fonts" -map 0:v:0 -map 1:a:0 -c:v libx264 -preset veryfast -crf 23 -pix_fmt yuv420p -c:a aac -b:a 192k -shortest ${JSON.stringify(outMp4)}`,
+  `ffmpeg -y -i ${JSON.stringify(concatMp4)} -i ${JSON.stringify(mergedMp3)} -map 0:v:0 -map 1:a:0 -c:v libx264 -preset veryfast -crf 23 -pix_fmt yuv420p -c:a aac -b:a 192k -shortest ${JSON.stringify(outMp4)}`,
   { stdio: 'inherit', cwd: WORK_DIR }
 );
 

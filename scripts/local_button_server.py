@@ -341,20 +341,25 @@ _PROGRESS_DIRS = {
 _YT_CHAN_TOTAL_CACHE: dict = {}   # handle -> (timestamp, total_count)
 
 
-def _fetch_yt_chan_total(handle):
-    """yt-dlp でチャンネル公開動画の全件数取得 (過去含む)。cache 24 時間 (0 は cache しない)。"""
+def _fetch_yt_chan_total(handle, shorts=False):
+    """yt-dlp でチャンネル動画件数取得 (24h cache、0 は cache しない)。
+    shorts=True なら /shorts URL = shorts のみ件数。
+    shorts=False なら /videos URL = long + shorts 混合件数。
+    long のみ件数は呼び出し側で all - shorts として計算。"""
     import time as _t
     import subprocess as _sp
-    cached = _YT_CHAN_TOTAL_CACHE.get(handle)
+    cache_key = f'{handle}__{"shorts" if shorts else "all"}'
+    cached = _YT_CHAN_TOTAL_CACHE.get(cache_key)
     if cached and cached[1] > 0 and _t.time() - cached[0] < 86400:
         return cached[1]
+    url_suffix = '/shorts' if shorts else '/videos'
     args = [
         sys.executable, "-m", "yt_dlp",
         "--flat-playlist",
         "--print", "%(id)s",
         "--encoding", "utf-8",
         "--no-warnings",
-        f"https://www.youtube.com/{handle}/videos",
+        f"https://www.youtube.com/{handle}{url_suffix}",
     ]
     try:
         r = _sp.run(args, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120)
@@ -364,7 +369,7 @@ def _fetch_yt_chan_total(handle):
         return cached[1] if cached else 0
     count = sum(1 for line in (r.stdout or "").splitlines() if line.strip())
     if count > 0:
-        _YT_CHAN_TOTAL_CACHE[handle] = (_t.time(), count)
+        _YT_CHAN_TOTAL_CACHE[cache_key] = (_t.time(), count)
     return count
 
 
@@ -441,17 +446,19 @@ def _fetch_yt_today_from_local(chan_id):
                             last_url = v.get("videoUrl", last_url)
                 except Exception:
                     continue
-    # 2026-05-30: 過去累計はチャンネル全動画件数 (yt-dlp 経由、24h cache) を優先
-    # ローカル uploaded.json は 5/29 以降の数本のみで過去 250 本などを含まない
+    # 2026-05-30: 過去累計を long / shorts で分離取得 (yt-dlp /videos vs /shorts URL)
+    # long_only = all - shorts として精密計算
     handle_info = _CHAN_HANDLES.get(chan_id)
     if handle_info:
         handle, is_shorts = handle_info
-        # 全件取得 (shorts/long 混在)。chan 全体での集計
-        chan_total = _fetch_yt_chan_total(handle)
+        if is_shorts:
+            chan_total = _fetch_yt_chan_total(handle, shorts=True)
+        else:
+            chan_all = _fetch_yt_chan_total(handle, shorts=False)
+            chan_shorts = _fetch_yt_chan_total(handle, shorts=True)
+            chan_total = max(0, chan_all - chan_shorts)
         if chan_total > 0:
-            # is_shorts によらず chan 全体の件数を累計として使う簡易実装
-            # (shorts/long の精密分離は別途実装可)
-            total_count = max(total_count, chan_total) if not is_shorts else total_count
+            total_count = max(total_count, chan_total)
     return today_count, last_url, total_count
 
 

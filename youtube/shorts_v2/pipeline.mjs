@@ -163,7 +163,7 @@ if (segs.length > 1) {
   execSync(`ffmpeg -y -f concat -safe 0 -i ${JSON.stringify(lp)} -c copy ${JSON.stringify(concatMp4)}`, { stdio: 'inherit' });
 }
 const outMp4 = path.join(WORK_DIR, 'output.mp4');
-execSync(`ffmpeg -y -i ${JSON.stringify(concatMp4)} -i ${JSON.stringify(mp3Path)} -vf "subtitles=sub.ass:fontsdir=/usr/share/fonts" -map 0:v:0 -map 1:a:0 -c:v libx264 -preset veryfast -pix_fmt yuv420p -c:a aac -b:a 192k -shortest ${JSON.stringify(outMp4)}`, { stdio: 'inherit', cwd: WORK_DIR });
+execSync(`ffmpeg -y -i ${JSON.stringify(concatMp4)} -i ${JSON.stringify(mp3Path)} -map 0:v:0 -map 1:a:0 -c:v libx264 -preset veryfast -pix_fmt yuv420p -c:a aac -b:a 192k -shortest ${JSON.stringify(outMp4)}`, { stdio: 'inherit', cwd: WORK_DIR });
 
 const outSize = fs.statSync(outMp4).size;
 console.log(`[pipeline] composed ${(outSize / 1024 / 1024).toFixed(2)} MB`);

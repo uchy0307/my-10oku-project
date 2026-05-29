@@ -71,25 +71,12 @@ function probeDuration(p) {
   return d;
 }
 
-let audioDur = probeDuration(narrationMp3);
+const audioDur = probeDuration(narrationMp3);
 log(`narration duration: ${audioDur.toFixed(1)}s (${(audioDur/60).toFixed(2)}min)`);
-
-const TARGET_MIN_SEC = 1830;
-if (audioDur < TARGET_MIN_SEC) {
-  const padSec = Math.ceil(TARGET_MIN_SEC - audioDur + 5);
-  log(`audio under target, padding ${padSec}s silence at end`);
-  const padFile = path.join(WORK, `silence_pad.mp3`);
-  makeSilence(padSec, padFile);
-  const padListPath = path.join(WORK, 'concat_pad.txt');
-  fs.writeFileSync(padListPath, `file '${narrationMp3}'\nfile '${padFile}'\n`, 'utf8');
-  const narrationPadded = path.join(WORK, 'narration_padded.mp3');
-  execSync(
-    `ffmpeg -y -f concat -safe 0 -i ${JSON.stringify(padListPath)} -c:a libmp3lame -b:a 128k ${JSON.stringify(narrationPadded)}`,
-    { stdio: 'inherit' }
-  );
-  fs.copyFileSync(narrationPadded, narrationMp3);
-  audioDur = probeDuration(narrationMp3);
-  log(`padded narration duration: ${audioDur.toFixed(1)}s`);
+// 2026-05-30: silence padding は完全削除 (品質崩壊の温床)。
+// 音声が短い場合は再生成必須 → 動画化させない。
+if (audioDur < 1500) {
+  fail(`narration too short: ${audioDur.toFixed(0)}s < 1500s (25min). Re-generate edge-tts audio (chapter 不完全の可能性). 動画化 abort.`);
 }
 
 // ---------- 3. Fetch images: Wikimedia-compliant UA + retry + original-URL fallback ----------
@@ -149,57 +136,9 @@ for (let i = 0; i < image_urls.length; i++) {
 log(`images succeeded: ${imagePaths.length}/${image_urls.length}`);
 if (imagePaths.length < 6) fail(`only ${imagePaths.length} images succeeded; need >= 6 (no black-bg fallback per rule)`);
 
-// ---------- 4. Build ASS subtitles ----------
-function splitForSubs(text, maxChars = 28) {
-  const sentences = text.split(/(?<=[ãï¼ï¼ã])/).filter(s => s.trim().length > 0);
-  const chunks = [];
-  let buf = '';
-  for (const s of sentences) {
-    if ((buf + s).length > maxChars && buf) {
-      chunks.push(buf.trim());
-      buf = s;
-    } else {
-      buf += s;
-    }
-  }
-  if (buf.trim()) chunks.push(buf.trim());
-  return chunks;
-}
-const allText = chapters.map(c => c.text).join('');
-const subChunks = splitForSubs(allText, 28);
-const subSlot = (audioDur - 16) / subChunks.length;
-const subStart = 8;
-
-function fmtAssTime(sec) {
-  const total = Math.max(0, sec);
-  const h = Math.floor(total / 3600);
-  const m = Math.floor((total % 3600) / 60);
-  const s = (total % 60).toFixed(2).padStart(5, '0');
-  return `${h}:${String(m).padStart(2, '0')}:${s}`;
-}
-
-let assText = `[Script Info]
-ScriptType: v4.00+
-PlayResX: 1920
-PlayResY: 1080
-WrapStyle: 2
-ScaledBorderAndShadow: yes
-
-[V4+ Styles]
-Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Noto Sans CJK JP,60,&H00FFFFFF,&H000000FF,&H00000000,&HA0000000,1,0,0,0,100,100,0,0,1,4,2,2,140,140,90,1
-
-[Events]
-Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-`;
-for (let i = 0; i < subChunks.length; i++) {
-  const st = subStart + i * subSlot;
-  const ed = Math.min(subStart + (i + 1) * subSlot - 0.05, audioDur - 4);
-  const safe = subChunks[i].replace(/[\\{}]/g, '').replace(/\n/g, ' ');
-  assText += `Dialogue: 0,${fmtAssTime(st)},${fmtAssTime(ed)},Default,,0,0,0,,${safe}\n`;
-}
-const assPath = path.join(WORK, 'sub.ass');
-fs.writeFileSync(assPath, assText, 'utf8');
+// ---------- 4. Subtitles: 2026-05-30 完全削除方針 ----------
+// 理由: edge-tts 固有名詞読み違え + 均等分割で同期不能。字幕焼き込み無し。
+// 視聴体験は「ナレーション + ken-burns 画像」に集中。
 
 // ---------- 5. Build video ----------
 const segSec = Math.max(45, Math.floor(audioDur / imagePaths.length));
@@ -225,15 +164,9 @@ for (let i = 0; i < imagePaths.length; i++) {
   segMp4s.push(out);
 }
 
-let totalSec = 0;
-const concatVidList = [];
-let idx = 0;
-while (totalSec < audioDur + 5) {
-  concatVidList.push(segMp4s[idx % segMp4s.length]);
-  totalSec += segSec;
-  idx++;
-  if (idx > 200) break;
-}
+// 2026-05-30: 動画 seg ループ削除 (seg_0 が末尾に重複する温床だった)。
+const concatVidList = [...segMp4s];
+const totalSec = segMp4s.length * segSec;
 log(`concatenating ${concatVidList.length} segments (~${totalSec}s)`);
 const videoConcatListPath = path.join(WORK, 'concat_video.txt');
 fs.writeFileSync(
@@ -249,7 +182,7 @@ execSync(
 
 const outMp4 = path.join(WORK, 'output.mp4');
 execSync(
-  `ffmpeg -y -i ${JSON.stringify(bgMp4)} -i ${JSON.stringify(narrationMp3)} -vf "subtitles=sub.ass:fontsdir=/usr/share/fonts" -map 0:v:0 -map 1:a:0 -c:v libx264 -preset veryfast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${audioDur.toFixed(2)} ${JSON.stringify(outMp4)}`,
+  `ffmpeg -y -i ${JSON.stringify(bgMp4)} -i ${JSON.stringify(narrationMp3)} -map 0:v:0 -map 1:a:0 -c:v libx264 -preset veryfast -pix_fmt yuv420p -c:a aac -b:a 192k -t ${audioDur.toFixed(2)} ${JSON.stringify(outMp4)}`,
   { stdio: 'inherit', cwd: WORK }
 );
 

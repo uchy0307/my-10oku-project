@@ -86,6 +86,17 @@ if (fs.existsSync(uploadedJson)) {
 
 // candidate: <idx>_<seg> または archive_<vid>_<seg> ディレクトリで output.mp4 を持ち、未投稿のもの
 const IDX_SEG_RE = /^(?:\d{3}|archive_[A-Za-z0-9_-]+)_(intro|peak|outro)$/;
+
+// 2026-05-29: ffprobe で moov atom 不在 (破損) + duration < 14s を除外
+import { execSync } from 'node:child_process';
+function probeOK(p) {
+  try {
+    const out = execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1 ${JSON.stringify(p)}`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString();
+    const dur = parseFloat((out.match(/duration=(\S+)/) || [])[1] || '0');
+    return dur >= 14;
+  } catch { return false; }
+}
+
 const candidates = fs.readdirSync(workDir, { withFileTypes: true })
   .filter(d => d.isDirectory())
   .map(d => d.name)
@@ -93,6 +104,11 @@ const candidates = fs.readdirSync(workDir, { withFileTypes: true })
   .filter(name => fs.existsSync(path.join(workDir, name, 'output.mp4')))
   .filter(name => fs.statSync(path.join(workDir, name, 'output.mp4')).size > 100000)
   .filter(name => !uploadedDb[name])
+  .filter(name => {
+    const ok = probeOK(path.join(workDir, name, 'output.mp4'));
+    if (!ok) console.warn(`[upload_shorts] INVALID mp4: ${name} (moov missing or duration<14s)`);
+    return ok;
+  })
   .sort();
 
 console.log(`[upload_shorts] kind=${args.kind} candidates=${candidates.length} max=${args.count}`);

@@ -76,7 +76,19 @@ if (fs.existsSync(uploadedJson)) {
   try { uploadedDb = JSON.parse(fs.readFileSync(uploadedJson, 'utf8')) || {}; } catch {}
 }
 
-// quarantine と .work 両方探索する
+// 2026-05-29 破損 mp4 対策: ffprobe で validity + duration 確認、valid な方を採用
+import { execSync } from 'node:child_process';
+function probeMp4(p) {
+  try {
+    const out = execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1 ${JSON.stringify(p)}`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString();
+    const dur = parseFloat((out.match(/duration=(\S+)/) || [])[1] || '0');
+    return { ok: dur > 0, duration: dur };
+  } catch (e) {
+    return { ok: false, duration: 0, err: (e?.message || '').slice(0, 80) };
+  }
+}
+
+// quarantine と .work 両方探索 + ffprobe validity check
 function collectFrom(baseDir) {
   if (!fs.existsSync(baseDir)) return [];
   return fs.readdirSync(baseDir, { withFileTypes: true })
@@ -86,10 +98,22 @@ function collectFrom(baseDir) {
     .filter(idx => fs.existsSync(path.join(baseDir, idx, 'output.mp4')))
     .map(idx => ({ idx, dir: path.join(baseDir, idx) }));
 }
-const allCandidates = [...collectFrom(quarantineDir), ...collectFrom(workDir)]
-  .filter(c => !uploadedDb[c.idx])
-  .filter((c, i, arr) => arr.findIndex(x => x.idx === c.idx) === i)  // dedupe by idx
-  .sort((a, b) => a.idx.localeCompare(b.idx));
+const minDuration = cfg.shorts ? 14 : 1500;   // shorts >= 14s, long >= 25min
+const allRaw = [...collectFrom(quarantineDir), ...collectFrom(workDir)]
+  .filter(c => !uploadedDb[c.idx]);
+// idx ごとに ffprobe → valid + duration 大きい方を採用
+const byIdx = {};
+for (const c of allRaw) {
+  const probe = probeMp4(path.join(c.dir, 'output.mp4'));
+  if (!probe.ok || probe.duration < minDuration) {
+    console.warn(`[upload_quarantine] INVALID mp4 ${c.idx} (${c.dir}): duration=${probe.duration.toFixed(1)}s err=${probe.err || ''}`);
+    continue;
+  }
+  if (!byIdx[c.idx] || byIdx[c.idx].duration < probe.duration) {
+    byIdx[c.idx] = { idx: c.idx, dir: c.dir, duration: probe.duration };
+  }
+}
+const allCandidates = Object.values(byIdx).sort((a, b) => a.idx.localeCompare(b.idx));
 const candidates = allCandidates.map(c => c.idx);
 const candidateDirs = Object.fromEntries(allCandidates.map(c => [c.idx, c.dir]));
 

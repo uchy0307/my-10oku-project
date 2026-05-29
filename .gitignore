@@ -58,3 +58,10 @@ scripts/logs/action_*.log
 
 # Read tool 誤路ルート一時
 UsersuserAppDataLocalTemp*.txt
+
+# 2026-05-30: BGM 素材はローカル保持 (動画埋め込み後不要、再 DL 可)
+assets/bgm/
+
+# Python bytecode
+scripts/__pycache__/
+*.pyc

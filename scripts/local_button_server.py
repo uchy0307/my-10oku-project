@@ -337,10 +337,49 @@ _PROGRESS_DIRS = {
     "otona_shorts":   ["psych_shorts_v2", "otona_shorts_v2"],
 }
 
+# チャンネル全動画数 (過去含む) cache: 24h
+_YT_CHAN_TOTAL_CACHE: dict = {}   # handle -> (timestamp, total_count)
+
+
+def _fetch_yt_chan_total(handle):
+    """yt-dlp でチャンネル公開動画の全件数取得 (過去含む)。cache 24 時間 (0 は cache しない)。"""
+    import time as _t
+    import subprocess as _sp
+    cached = _YT_CHAN_TOTAL_CACHE.get(handle)
+    if cached and cached[1] > 0 and _t.time() - cached[0] < 86400:
+        return cached[1]
+    args = [
+        sys.executable, "-m", "yt_dlp",
+        "--flat-playlist",
+        "--print", "%(id)s",
+        "--encoding", "utf-8",
+        "--no-warnings",
+        f"https://www.youtube.com/{handle}/videos",
+    ]
+    try:
+        r = _sp.run(args, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120)
+    except Exception:
+        return cached[1] if cached else 0
+    if r.returncode != 0:
+        return cached[1] if cached else 0
+    count = sum(1 for line in (r.stdout or "").splitlines() if line.strip())
+    if count > 0:
+        _YT_CHAN_TOTAL_CACHE[handle] = (_t.time(), count)
+    return count
+
+
+_CHAN_HANDLES = {
+    "history":        ("@Japanese.Samurai.Channel", False),  # shorts も含まれる、別途分離
+    "history_shorts": ("@Japanese.Samurai.Channel", True),
+    "otona":          ("@Otona_Psychology", False),
+    "otona_shorts":   ("@Otona_Psychology", True),
+}
+
 
 def _fetch_yt_today_from_local(chan_id):
-    """ローカル youtube/<dir>/uploaded.json から本日 JST 投稿 + 累計 を集計 (scope 不要・正確)。
-    返却: (today_count, last_url, total_count)
+    """ローカル uploaded.json から本日分 + チャンネル全件 (yt-dlp 過去含む) を集計。
+    返却: (today_count, last_url, total_count_with_past)
+    過去累計はチャンネル全動画件数を採用 (ローカル uploaded.json は数本のみのため不正確)。
     """
     jst = timezone(timedelta(hours=9))
     today = datetime.now(jst).strftime("%Y-%m-%d")
@@ -402,6 +441,17 @@ def _fetch_yt_today_from_local(chan_id):
                             last_url = v.get("videoUrl", last_url)
                 except Exception:
                     continue
+    # 2026-05-30: 過去累計はチャンネル全動画件数 (yt-dlp 経由、24h cache) を優先
+    # ローカル uploaded.json は 5/29 以降の数本のみで過去 250 本などを含まない
+    handle_info = _CHAN_HANDLES.get(chan_id)
+    if handle_info:
+        handle, is_shorts = handle_info
+        # 全件取得 (shorts/long 混在)。chan 全体での集計
+        chan_total = _fetch_yt_chan_total(handle)
+        if chan_total > 0:
+            # is_shorts によらず chan 全体の件数を累計として使う簡易実装
+            # (shorts/long の精密分離は別途実装可)
+            total_count = max(total_count, chan_total) if not is_shorts else total_count
     return today_count, last_url, total_count
 
 

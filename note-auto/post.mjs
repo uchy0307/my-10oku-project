@@ -58,10 +58,44 @@ function preprocessBody(body, articleId) {
   out = out.replace(/\{\{30DAY_URL\}\}/g, link);
   out = out.replace(/\{\{PROMPT_URL\}\}/g, link);
   out = out.replace(/\{\{ARTICLE_ID\}\}/g, articleId);
+
+  // 2026-05-29: クロスセル深 link 自動挿入 (note → toi-suite 個別ページ)
+  // 読了後の「次に試す 3 本」を末尾 URL の直前に挿入
+  const recs = getCrossRecs(articleId);
+  const crossBlock = [
+    '',
+    '## 🔗 ここまで読んで響いたら、この3本も',
+    '',
+    ...recs.map((r) => `- 📜 [#${r} の問いを試す](${URL_PATTERN}${r})`),
+    '',
+    '※ note 各記事 1 本ずつ ¥100 で永久解錠。1 タイプ ¥100、3 本セットで ¥300。',
+    '',
+  ].join('\n');
+
   if (code) {
     if (!out.includes(link)) {
-      out += `\n\n\n\n---\n\n▼アプリで深く問う\n\n${link}\n\nアクセスコード: ${code}\n`;
+      out += `\n\n\n\n---\n${crossBlock}\n\n▼アプリで深く問う\n\n${link}\n\nアクセスコード: ${code}\n`;
+    } else {
+      // 既存末尾 ▼ の前にクロスセルを差し込む (重複防止)
+      if (!out.includes('## 🔗 ここまで読んで響いたら')) {
+        out = out.replace(/\n\n▼アプリで深く問う/, `\n${crossBlock}\n\n▼アプリで深く問う`);
+      }
     }
+  }
+  return out;
+}
+
+/** 隣接 3 ID を返す (1..200, self 除外) */
+function getCrossRecs(articleId) {
+  const n = parseInt(articleId, 10);
+  if (!Number.isFinite(n)) return [];
+  const candidates = [n - 1, n + 1, n - 5, n + 5, n - 10, n + 10, n + 20]
+    .filter((x) => x >= 1 && x <= 200 && x !== n);
+  const out = [];
+  for (const x of candidates) {
+    const s = String(x).padStart(3, '0');
+    if (!out.includes(s)) out.push(s);
+    if (out.length >= 3) break;
   }
   return out;
 }

@@ -257,19 +257,51 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--kind", required=True, choices=list(KIND_CONFIG.keys()))
     ap.add_argument("--count", type=int, default=30)
+    ap.add_argument("--topics-file", default=None,
+                    help="diverse topics JSON のパス (例: youtube/topics_history_diverse.json) を指定すると "
+                         "KIND_CONFIG のデフォルトを上書きする")
     args = ap.parse_args()
 
     cfg = KIND_CONFIG[args.kind]
-    topics_path = cfg["topics"]
+    topics_path = Path(args.topics_file) if args.topics_file else cfg["topics"]
+    if not topics_path.is_absolute():
+        topics_path = ROOT / topics_path
     out_dir = cfg["out_dir"]
     if not topics_path.exists():
         print(f"[FATAL] topics.json not found: {topics_path}")
         sys.exit(1)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    topics = json.loads(topics_path.read_text(encoding="utf-8"))
+    # topics_*_diverse.json は {topics: {category: [items]}} ネスト形式の場合あり → 平坦化
+    raw = json.loads(topics_path.read_text(encoding="utf-8"))
+    if isinstance(raw, dict) and "topics" in raw and isinstance(raw["topics"], dict):
+        # diverse 形式: {topics: {category: [{title, tags}]}}
+        topics = []
+        next_id = 1
+        # 既存出力で最大の id を avoidance のため取得
+        for p in out_dir.glob("*.json"):
+            try:
+                n = int(p.stem.split("_")[-1])
+                next_id = max(next_id, n + 1)
+            except Exception:
+                pass
+        for category, items in raw["topics"].items():
+            for it in items:
+                topics.append({
+                    "id": f"{next_id:03d}",
+                    "title": it["title"],
+                    "category": category,
+                    "tags": it.get("tags", []),
+                })
+                next_id += 1
+    elif isinstance(raw, list):
+        topics = raw
+    else:
+        # 古い形式 (dict だがネストなし) はそのまま
+        topics = raw
+
     existing = {p.stem for p in out_dir.glob("*.json")}
-    print(f"[info] kind={args.kind} topics={len(topics)} existing={len(existing)}")
+    print(f"[info] kind={args.kind} topics={len(topics)} existing={len(existing)} (source: {topics_path.name})")
 
     # 既存IDをスキップしてリスト化
     pending = []

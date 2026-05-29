@@ -4,6 +4,56 @@
 
 ---
 
+## 🔴 2026-05-29 朝 自走立て直し ハイライト (commit `f8c24bc` まで反映)
+
+### 緊急対応
+- `.env.env.bak_*` 漏洩 (`Path.with_suffix` バグ) → 全 OAuth 2種 + Gemini key 2本ローテーション完了
+- `git reset --hard origin/main` 事故で scripts/ 80+ 消失 → `git checkout 9576708 -- scripts/` で復元
+- `_update_env_token.py` バグ修正済
+
+### 5/29 投稿実績 17 本 (規約 16 本超え)
+| chan | 投稿 |
+|---|---|
+| 歴史長尺 ×3 | 009 北条早雲 / 010 真田幸村 / 016 壇ノ浦 |
+| 大人長尺 ×3 | 004 心理的安全性 / 006 言葉にしない愛情 / 007 |
+| 歴史ショート ×5 (C案初運用) | 002/003/004/005/006 peak |
+| 大人ショート ×6 | 010/012/014/015/016/017 |
+
+### 新機能 (commit `959e822` `16ebe5c`)
+- `scripts/make_shorts_from_long.py`: C 案 (ロング→intro/peak/outro 切り出し、コスト0)
+- `scripts/archive_to_shorts.py`: 過去 250 本 yt-dlp DL → ショート量産。samurai 最新動画で検証 OK
+- `scripts/upload_shorts.mjs`: idx + archive_<vid> 両対応、samurai/otona OAuth 切替
+- `scripts/title_dedup_check.py`: Jaccard 2-gram 類似度 0.7 ゲート
+- `scripts/_oauth_test.py` `_env_diagnose.py` `_gemini_test.py` `_rename_otona_key.py`: 漏洩対応支援
+- `scripts/nightly_whisper.py`: 空 SRT (size<1KB) 未処理扱い fix
+- `scripts/build_history_shorts_5.bat` / `build_otona_shorts_5.bat`: C 案方式に書換
+- `note-auto/post.mjs`: plusMenuOpen + paidConfigBtn を新 UI 用 selector に拡張
+- `note-auto/queue.json`: 破損 #119 (差151) + #120 (差548) を publish=false ガード
+- `youtube/topics_history_diverse.json`: 江戸庶民風俗 20 本 + 幕末 7 本 + 平安 4 本 + 戦後 3 本 = 34 本 (戦国偏り解消)
+- `.gitignore`: .env.* + audio + .archive_dl 強化
+
+### memory 永続化
+- `toi-suite-continuous-improvement.md`: 200 アプリ質向上を**永久タスク**化。次セッション開始時に CV 改善を 1 件承認なしで着手
+
+### 翌朝以降の準備
+- `UchyDailyCycle` (タスクスケジューラ) 状態 `Ready` ✅
+- 残在庫: history ショート 6 本 + ロング 多数 (5/30 自動投稿可能)
+- archive_to_shorts.py で過去 250 本 → 最大 750 ショート量産経路確保
+
+### 残作業 (5/30 以降)
+- 破損 article #119/#120/#199 本文再生成 (Gemini で master 構造に)
+- `sync-drafts.mjs` draftId 検出ロジック追加
+- `generate_stock_scripts.py --topics-file` で diverse topics 連携
+- `title_dedup_check.py` を pipeline.mjs に組み込み
+- toi-suite Phase 3 CV 改善 (永久タスクから自動着手)
+- Note 新 UI 実機テスト (1 件 dry-run)
+
+### Remote Control 設定
+- `~/.claude/settings.json` で `autoUploadSessions` / `inputNeededNotifEnabled` / `agentPushNotifEnabled` / `remoteControlAtStartup` 全部 **true** 確認済
+- 次セッション (再起動後) は claude.ai/code 経由でデスクトップアプリ + モバイルアプリから操作可能
+
+---
+
 ## プロジェクト概要
 
 - **名称**: 年商10億・完全自動化量産プロジェクト

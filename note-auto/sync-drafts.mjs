@@ -22,7 +22,7 @@
 
 import { chromium } from 'playwright';
 import { readFile, writeFile, readdir } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -34,9 +34,17 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function parseStorageState() {
   const raw = process.env.NOTE_STORAGE_STATE;
+  if (raw) {
+    try { return JSON.parse(raw); } catch {}
+  }
+  // fallback: storageState.json file (ESM)
+  const ssPath = join(__dirname, 'storageState.json');
+  if (existsSync(ssPath)) {
+    return JSON.parse(readFileSync(ssPath, 'utf8'));
+  }
   if (!raw) {
     throw new Error(
-      'NOTE_STORAGE_STATE が未設定です。note-auto/capture-session.mjs で取得し、Secret に登録してください。',
+      'NOTE_STORAGE_STATE 未設定 かつ storageState.json も無い',
     );
   }
   try {

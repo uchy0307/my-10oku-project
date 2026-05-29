@@ -1,0 +1,248 @@
+{
+  "meta": {
+    "url": "https://editor.note.com/notes/nec468bd06e11/publish/",
+    "originalUrl": "https://editor.note.com/notes/nec468bd06e11/publish/"
+  },
+  "buttons": [
+    {
+      "text": "キャンセル",
+      "cls": "relative m-0 inline-flex cursor-pointer touch-manipulation a",
+      "ariaLabel": "",
+      "dataTestid": "",
+      "visible": true
+    },
+    {
+      "text": "投稿する",
+      "cls": "relative m-0 inline-flex cursor-pointer touch-manipulation a",
+      "ariaLabel": "",
+      "dataTestid": "",
+      "visible": true
+    },
+    {
+      "text": "ハッシュタグ",
+      "cls": "sc-1a8b219b-4 lcnVoI",
+      "ariaLabel": "",
+      "dataTestid": "",
+      "visible": true
+    },
+    {
+      "text": "記事タイプ",
+      "cls": "sc-1a8b219b-4 lcnVoI",
+      "ariaLabel": "",
+      "dataTestid": "",
+      "visible": true
+    },
+    {
+      "text": "記事の追加",
+      "cls": "sc-1a8b219b-4 lcnVoI",
+      "ariaLabel": "",
+      "dataTestid": "",
+      "visible": true
+    },
+    {
+      "text": "クーポン",
+      "cls": "sc-1a8b219b-4 lcnVoI",
+      "ariaLabel": "",
+      "dataTestid": "",
+      "visible": true
+    },
+    {
+      "text": "詳細設定",
+      "cls": "sc-1a8b219b-4 lcnVoI",
+      "ariaLabel": "",
+      "dataTestid": "",
+      "visible": true
+    },
+    {
+      "text": "#000",
+      "cls": "sc-35e5f35-2 cFEPnm",
+      "ariaLabel": "",
+      "dataTestid": "",
+      "visible": true
+    },
+    {
+      "text": "#スポーツ・",
+      "cls": "sc-35e5f35-2 cFEPnm",
+      "ariaLabel": "",
+      "dataTestid": "",
+      "visible": true
+    },
+    {
+      "text": "#プロンプト",
+      "cls": "sc-35e5f35-2 cFEPnm",
+      "ariaLabel": "",
+      "dataTestid": "",
+      "visible": true
+    },
+    {
+      "text": "#アプリ",
+      "cls": "sc-35e5f35-2 cFEPnm",
+      "ariaLabel": "",
+      "dataTestid": "",
+      "visible": true
+    },
+    {
+      "text": "#戦術分析",
+      "cls": "sc-35e5f35-2 cFEPnm",
+      "ariaLabel": "",
+      "dataTestid": "",
+      "visible": true
+    },
+    {
+      "text": "#ワークブック",
+      "cls": "sc-35e5f35-2 cFEPnm",
+      "ariaLabel": "",
+      "dataTestid": "",
+      "visible": true
+    },
+    {
+      "text": "138,692件7月8日まで",
+      "cls": "relative box-border flex min-h-[52px] w-full justify-center ",
+      "ariaLabel": "",
+      "dataTestid": "",
+      "visible": true
+    },
+    {
+      "text": "2,863件6月13日まで",
+      "cls": "relative box-border flex min-h-[52px] w-full justify-center ",
+      "ariaLabel": "",
+      "dataTestid": "",
+      "visible": true
+    },
+    {
+      "text": "1,452件6月17日まで",
+      "cls": "relative box-border flex min-h-[52px] w-full justify-center ",
+      "ariaLabel": "",
+      "dataTestid": "",
+      "visible": true
+    },
+    {
+      "text": "3,458件6月20日まで",
+      "cls": "relative box-border flex min-h-[52px] w-full justify-center ",
+      "ariaLabel": "",
+      "dataTestid": "",
+      "visible": true
+    },
+    {
+      "text": "もっと見る",
+      "cls": "mt-2 text-text-secondary",
+      "ariaLabel": "",
+      "dataTestid": "",
+      "visible": true
+    },
+    {
+      "text": "マガジン",
+      "cls": "sc-85300528-3 cMrFRw",
+      "ariaLabel": "",
+      "dataTestid": "",
+      "visible": true
+    },
+    {
+      "text": "メンバーシップ",
+      "cls": "sc-85300528-3 cMrFRw",
+      "ariaLabel": "",
+      "dataTestid": "",
+      "visible": true
+    },
+    {
+      "text": "追加",
+      "cls": "relative m-0 inline-flex cursor-pointer touch-manipulation a",
+      "ariaLabel": "",
+      "dataTestid": "",
+      "visible": true
+    },
+    {
+      "text": "日時の設定",
+      "cls": "relative m-0 inline-flex cursor-pointer touch-manipulation a",
+      "ariaLabel": "",
+      "dataTestid": "",
+      "visible": true
+    }
+  ],
+  "inputs": [
+    {
+      "tag": "INPUT",
+      "type": "",
+      "name": "",
+      "placeholder": "ハッシュタグを追加する",
+      "cls": "sc-35e5f35-3 kFFesX",
+      "visible": true
+    },
+    {
+      "tag": "INPUT",
+      "type": "radio",
+      "name": "is_paid",
+      "placeholder": "",
+      "cls": "sc-6a7afe37-0 gHYurQ",
+      "visible": true
+    },
+    {
+      "tag": "INPUT",
+      "type": "radio",
+      "name": "is_paid",
+      "placeholder": "",
+      "cls": "sc-6a7afe37-0 gHYurQ",
+      "visible": true
+    },
+    {
+      "tag": "INPUT",
+      "type": "radio",
+      "name": "pro-coupon-nec468bd06e11",
+      "placeholder": "",
+      "cls": "sc-6a7afe37-0 gHYurQ",
+      "visible": true
+    },
+    {
+      "tag": "INPUT",
+      "type": "checkbox",
+      "name": "",
+      "placeholder": "",
+      "cls": "absolute left-0 top-0 z-10 m-0 h-full w-full p-0 opacity-0 c",
+      "visible": true
+    },
+    {
+      "tag": "INPUT",
+      "type": "checkbox",
+      "name": "",
+      "placeholder": "",
+      "cls": "absolute left-0 top-0 z-10 m-0 h-full w-full p-0 opacity-0 c",
+      "visible": true
+    },
+    {
+      "tag": "INPUT",
+      "type": "checkbox",
+      "name": "",
+      "placeholder": "",
+      "cls": "absolute left-0 top-0 z-10 m-0 h-full w-full p-0 opacity-0 c",
+      "visible": true
+    },
+    {
+      "tag": "INPUT",
+      "type": "checkbox",
+      "name": "",
+      "placeholder": "",
+      "cls": "absolute left-0 top-0 z-10 m-0 h-full w-full p-0 opacity-0 c",
+      "visible": true
+    }
+  ],
+  "radios": [
+    {
+      "name": "is_paid",
+      "value": "free",
+      "checked": true,
+      "id": "free"
+    },
+    {
+      "name": "is_paid",
+      "value": "paid",
+      "checked": false,
+      "id": "paid"
+    },
+    {
+      "name": "pro-coupon-nec468bd06e11",
+      "value": "none",
+      "checked": true,
+      "id": "pro-coupon-none-nec468bd06e11"
+    }
+  ]
+}

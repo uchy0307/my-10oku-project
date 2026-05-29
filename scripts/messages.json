@@ -1,0 +1,50 @@
+[
+  {
+    "id": "msg_diskcleanup_1780015071",
+    "ts": "2026-05-29T09:37:51.789444+09:00",
+    "title": "🧹 ディスク掃除 (空き 16.8GB)",
+    "text": "削除: 9 件, 解放: 0.0 MB\n空き: 16.84 GB / 118.27 GB\nerrors: 0",
+    "type": "claude_to_user",
+    "read": true
+  },
+  {
+    "id": "msg_diskcleanup_1780009201",
+    "ts": "2026-05-29T08:00:01.319747+09:00",
+    "title": "🧹 ディスク掃除 (空き 17.2GB)",
+    "text": "削除: 1 件, 解放: 0.0 MB\n空き: 17.15 GB / 118.27 GB\nerrors: 0",
+    "type": "claude_to_user",
+    "read": true
+  },
+  {
+    "id": "msg_round9_1779983495",
+    "ts": "2026-05-29T00:51:35.514749+09:00",
+    "title": "🤖 自走ラウンド9 (0:51 JST) disk逼迫対応",
+    "text": "disk逼迫検出 → 対応:\n\n【状態】\n- UTC 15:50 = JST 0:51 / quotaリセットまで 8h+\n- inbox 未読 0\n- プロセス: node=0 / ffmpeg=0 / pythonw=1 (build全停止後の待機)\n- ボタンサーバー 200\n- DUP-GUARD 4本 全 OK\n- otona_shorts uploaded 13 (本日上限到達済)\n\n【disk対応】\n- auto_disk_cleanup: 0件削除 (削除候補枯渇)\n- stock_images/wiki/ から 500枚ランダム削除 (1001→501) → 208MB解放\n- Free 0.60→0.80GB\n\n【ScheduleWakeup】\n次回 1:51 JST. quotaリセットまで 7h+ なので upload は次の次のラウンド以降.\n\n【note引き継ぎ書】\nCLAUDE.md 末尾 + memory/2026-05-29_handoff.md に記録済.\nClaude Code 再起動でスマホ可視化準備済 (autoUploadSessions ON).\n\n【残課題】\n- 大規模 disk 解放: VOICEVOX model 1.5GB が残候補 (使用中なら触らない)\n- 未upload .work/<idx>/output.mp4 が 蓄積中 (明朝quota後にupload予定)",
+    "type": "claude_to_user",
+    "read": true
+  },
+  {
+    "id": "auto_reply_in_1780011556",
+    "ts": "2026-05-29T08:42:20.099624+09:00",
+    "title": "🤖 自動応答（Claude オフライン）",
+    "body": "受信: 「なぜ固まってる？\nターミナルもブラウザも開いているのに？」(2026-05-28T23:39:16)\n\n✉ 通常質問・指示は私が次セッション開始時にまとめて返答します。\n\nClaude本体は session 内のみ稼働。次回チャット時に読み込み済。",
+    "read": true,
+    "auto": true
+  },
+  {
+    "id": "auto_reply_in_1780014669",
+    "ts": "2026-05-29T09:32:20.157317+09:00",
+    "title": "🤖 自動応答（Claude オフライン）",
+    "body": "受信: 「完全自動しろや俺のチャットを無視して死ぬほど承認依頼を送ってくるのはなんや？\n喧嘩売ってんのか？」(2026-05-29T00:31:09)\n\n✉ 通常質問・指示は私が次セッション開始時にまとめて返答します。\n\nClaude本体は session 内のみ稼働。次回チャット時に読み込み済。",
+    "read": true,
+    "auto": true
+  },
+  {
+    "id": "daily_1780032099",
+    "ts": "2026-05-29T14:21:39.200399+09:00",
+    "title": "📅 日次サイクル完了 2026-05-29",
+    "body": "# 日次サイクル 2026-05-29 09:37:51\n\n## -1. ディスク自動掃除\n  before=16.84GB → after=16.84GB (rc=0)\n\n## 0. button server 再起動\n  button server restarted (killed PID 7048)\n\n## 1. 台本ストック確保\n  history: 30 (sufficient)\n  psych: 6 → 6 (rc=1)\n  history_shorts: 10 → 10 (rc=1)\n  otona_shorts: 0 → 0 (rc=1)\n\n## 2. 音声生成\n  history: audio 17 → 30 (rc=0)\n  psych: audio 6/6 (sufficient)\n  history_shorts: audio 10/10 (sufficient)\n  otona_shorts: audio 0/0 (sufficient)\n\n## 3. 字幕同期(whisper)\n  history 010.mp3: rc=0\n  history 011.mp3: rc=0\n  history 012.mp3: rc=0\n  history 013.mp3: rc=0\n  history: refine_srt rc=0\n  psych: whisper sufficient (6/6 SRT exists)\n  psych: refine_srt rc=0\n\n## 4. 動画化＋YT投稿\n  history: rc=0\n  history_shorts: rc=0\n  psych: rc=0\n  otona_shorts: rc=0\n\n## 5. note添付(20件)\n  note attached: 20/200 (rc=0)\n\n## 終了時刻 2026-05-29 14:21:39\n- 歴史: scripts=30 audio=30 srt=28\n- 大人: scripts=6 audio=6 srt=6\n- ショート: scripts=10 audio=10 srt=0\n",
+    "read": false,
+    "auto": true
+  }
+]

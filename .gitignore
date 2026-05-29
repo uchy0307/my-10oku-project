@@ -1,6 +1,14 @@
 node_modules/
 .env
 .env.local
+.env.bak*
+# 2026-05-29 漏洩対策強化: あらゆる .env 派生ファイルを除外
+.env.*
+*.env.bak*
+.env_backup*
+.env.backup*
+# allowlist
+!.env.example
 *.log
 .DS_Store
 
@@ -9,8 +17,44 @@ youtube/output/*
 !youtube/output/.gitkeep
 !youtube/output/state.json
 
-# note-auto: storageState.json は cookie を含むため絶対に commit しない
+# v2 pipeline build artifacts (大量, 再生成可能)
+youtube/*/.work/
+youtube/*/.work_quarantine/
+youtube/*/.work_broken/
+youtube/stock_images/wiki/
+
+# 2026-05-29 追加: 音声・字幕・whisper 副産物は容量大、ローカル再生成可
+youtube/*/audio/*.mp3
+youtube/*/audio/*.srt
+youtube/*/audio/*_words.json
+
+# archive_to_shorts.py 一時 DL
+.archive_dl/
+
+# old new-youtube* outputs
+new-youtube-local/output/
+new-youtube/outputs/
+
+# note-auto: cookie / 認証
 note-auto/storageState.json
 note-auto/client_secret.json
 note-auto/youtube_tokens.json
-new-youtube-local/output/p001_video.mp4 
+note-auto/_debug_screen.png
+note-auto/_dom_dump.json
+
+# note md backups
+articles/*.bak_*
+articles/*.v2bak_*
+articles/*.v3bak_*
+articles/*.gem_bak_*
+articles/*.urls_bak
+
+# YT API review temp
+youtube_api_review/*.txt
+
+# Claude/temp work
+C:/Windows/Temp/_*.txt
+scripts/logs/action_*.log
+
+# Read tool 誤路ルート一時
+UsersuserAppDataLocalTemp*.txt

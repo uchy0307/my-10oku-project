@@ -1,0 +1,118 @@
+{
+  "gen_history_scripts": {
+    "cmd": ["cmd.exe", "/c", "start", "", "{SCRIPTS}\\gen_history_scripts.bat"],
+    "label": "① 歴史 台本生成30本",
+    "icon": "📜",
+    "description": "Geminiで歴史台本を一気に作成（まずコレ）",
+    "category": "build-history"
+  },
+  "gen_history_audio": {
+    "cmd": ["cmd.exe", "/c", "start", "", "{SCRIPTS}\\gen_history_audio_with_whisper.bat"],
+    "label": "② 歴史 音声＋字幕生成",
+    "icon": "🎙️",
+    "description": "edge-tts音声＋whisper単語レベル字幕同期SRTを一括生成",
+    "category": "build-history"
+  },
+  "build_history_3": {
+    "cmd": ["cmd.exe", "/c", "start", "", "{SCRIPTS}\\build_history_3.bat"],
+    "label": "③ 歴史 投稿（次の3本）",
+    "icon": "⚔️",
+    "description": "音声付きストックから未投稿の3本を選んで動画化→YouTube",
+    "category": "build-history"
+  },
+
+  "gen_history_shorts_scripts": {
+    "cmd": ["cmd.exe", "/c", "start", "", "{SCRIPTS}\\gen_history_shorts_scripts.bat"],
+    "label": "① 歴史ショート 台本30本",
+    "icon": "📝",
+    "description": "Geminiで歴史ショート台本を一気に作成",
+    "category": "build-history-shorts"
+  },
+  "gen_history_shorts_audio": {
+    "cmd": ["cmd.exe", "/c", "start", "", "{SCRIPTS}\\gen_history_shorts_audio.bat"],
+    "label": "② 歴史ショート 音声生成",
+    "icon": "🔊",
+    "description": "歴史ショート台本からedge-ttsで音声を作る",
+    "category": "build-history-shorts"
+  },
+  "build_history_shorts_5": {
+    "cmd": ["cmd.exe", "/c", "start", "", "{SCRIPTS}\\build_history_shorts_5.bat"],
+    "label": "③ 歴史ショート 投稿（次の5本）",
+    "icon": "⚡",
+    "description": "音声付きショートストックから次の5本を動画化→YouTube",
+    "category": "build-history-shorts"
+  },
+
+  "gen_otona_scripts": {
+    "cmd": ["cmd.exe", "/c", "start", "", "{SCRIPTS}\\gen_otona_scripts.bat"],
+    "label": "① 大人 台本生成30本",
+    "icon": "🪶",
+    "description": "Geminiで大人心理学台本を一気に作成",
+    "category": "build-otona"
+  },
+  "gen_otona_audio": {
+    "cmd": ["cmd.exe", "/c", "start", "", "{SCRIPTS}\\gen_otona_audio_with_whisper.bat"],
+    "label": "② 大人 音声＋字幕生成",
+    "icon": "🎤",
+    "description": "edge-tts音声＋whisper単語レベル字幕同期SRTを一括生成",
+    "category": "build-otona"
+  },
+  "build_otona_3": {
+    "cmd": ["cmd.exe", "/c", "start", "", "{SCRIPTS}\\build_otona_3.bat"],
+    "label": "③ 大人 投稿（次の3本）",
+    "icon": "🧠",
+    "description": "音声付き大人ストックから次の3本を動画化→YouTube (OTONA_YOUTUBE_REFRESH_TOKEN必須)",
+    "category": "build-otona"
+  },
+
+  "gen_otona_shorts_scripts": {
+    "cmd": ["cmd.exe", "/c", "start", "", "{SCRIPTS}\\gen_otona_shorts_scripts.bat"],
+    "label": "① 大人ショート 台本30本",
+    "icon": "🌙",
+    "description": "Geminiで大人ショート台本を一気に作成",
+    "category": "build-otona-shorts"
+  },
+  "gen_otona_shorts_audio": {
+    "cmd": ["cmd.exe", "/c", "start", "", "{SCRIPTS}\\gen_otona_shorts_audio.bat"],
+    "label": "② 大人ショート 音声生成",
+    "icon": "🎵",
+    "description": "大人ショート台本からedge-ttsで音声を作る",
+    "category": "build-otona-shorts"
+  },
+  "build_otona_shorts_5": {
+    "cmd": ["cmd.exe", "/c", "start", "", "{SCRIPTS}\\build_otona_shorts_5.bat"],
+    "label": "③ 大人ショート 投稿（次の5本）",
+    "icon": "✨",
+    "description": "音声付き大人ショートストックから次の5本を動画化→YouTube (OTONA_YOUTUBE_REFRESH_TOKEN必須)",
+    "category": "build-otona-shorts"
+  },
+
+  "wiki_refill": {
+    "cmd": ["cmd.exe", "/c", "start", "", "{SCRIPTS}\\run_wiki_refill_initial.bat"],
+    "label": "Wiki画像 補充",
+    "icon": "🖼️",
+    "description": "ストック画像が1000枚以下になったら押す（Wikipediaから500枚追加）",
+    "category": "util"
+  },
+  "cleanup_images_preview": {
+    "cmd": ["cmd.exe", "/c", "start", "", "{SCRIPTS}\\run_cleanup_images_preview.bat"],
+    "label": "画像 整理 プレビュー",
+    "icon": "👀",
+    "description": "削除候補を表示のみ (実行はしない)",
+    "category": "util"
+  },
+  "cleanup_images": {
+    "cmd": ["cmd.exe", "/c", "start", "", "{SCRIPTS}\\run_cleanup_images.bat"],
+    "label": "画像 整理 実行",
+    "icon": "🧹",
+    "description": "カテゴリ不明・重複画像を即削除 (確認なし)",
+    "category": "util"
+  },
+  "disk_cleanup": {
+    "cmd": ["cmd.exe", "/c", "start", "", "{SCRIPTS}\\run_auto_disk_cleanup.bat"],
+    "label": "💾 ディスク掃除",
+    "icon": "💾",
+    "description": "uploaded.json 既存 idx の中間ファイル・古いログ・Windows Temp 古いキャッシュを安全削除. audio/scripts/stock は触らない. messages.json に結果",
+    "category": "util"
+  }
+}

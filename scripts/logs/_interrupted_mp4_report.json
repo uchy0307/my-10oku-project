@@ -1,0 +1,717 @@
+{
+  "summary": {
+    "history_v2": {
+      "total": 70,
+      "ok": 6,
+      "no_mp4": 62,
+      "short": 0,
+      "corrupt": 2,
+      "rows": [
+        {
+          "idx": "001",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "002",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "003",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "004",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "005",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "006",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "007",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "008",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "009",
+          "status": "OK",
+          "size_mb": 245.6,
+          "dur_s": 1836.0
+        },
+        {
+          "idx": "010",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "011",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "012",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "013",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "014",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "015",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "016",
+          "status": "OK",
+          "size_mb": 319.4,
+          "dur_s": 2843.7
+        },
+        {
+          "idx": "017",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "018",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "019",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "020",
+          "status": "OK",
+          "size_mb": 214.5,
+          "dur_s": 2379.3
+        },
+        {
+          "idx": "021",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "022",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "023",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "024",
+          "status": "OK",
+          "size_mb": 241.4,
+          "dur_s": 2521.3
+        },
+        {
+          "idx": "025",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "026",
+          "status": "OK",
+          "size_mb": 277.9,
+          "dur_s": 2355.5
+        },
+        {
+          "idx": "027",
+          "status": "OK",
+          "size_mb": 93.1,
+          "dur_s": 1835.6
+        },
+        {
+          "idx": "028",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "029",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "030",
+          "status": "CORRUPT",
+          "size_mb": 191.8
+        },
+        {
+          "idx": "031",
+          "status": "CORRUPT",
+          "size_mb": 230.5
+        },
+        {
+          "idx": "032",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "033",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "034",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "035",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "036",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "037",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "038",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "039",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "040",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "041",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "042",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "043",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "044",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "045",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "046",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "047",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "048",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "049",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "050",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "051",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "052",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "053",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "054",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "055",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "056",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "057",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "058",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "059",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "060",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "061",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "062",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "063",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "064",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "065",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "066",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "067",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "068",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "069",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "070",
+          "status": "NO_MP4"
+        }
+      ]
+    },
+    "psych_v2": {
+      "total": 40,
+      "ok": 0,
+      "no_mp4": 40,
+      "short": 0,
+      "corrupt": 0,
+      "rows": [
+        {
+          "idx": "001",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "002",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "003",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "004",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "005",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "006",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "007",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "008",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "009",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "010",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "011",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "012",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "013",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "014",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "015",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "016",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "017",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "018",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "019",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "020",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "021",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "022",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "023",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "024",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "025",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "026",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "027",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "028",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "029",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "030",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "031",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "032",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "033",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "034",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "035",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "036",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "037",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "038",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "039",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "040",
+          "status": "NO_MP4"
+        }
+      ]
+    },
+    "shorts_v2": {
+      "total": 10,
+      "ok": 0,
+      "no_mp4": 10,
+      "short": 0,
+      "corrupt": 0,
+      "rows": [
+        {
+          "idx": "001",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "002",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "003",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "004",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "005",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "006",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "007",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "008",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "009",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "010",
+          "status": "NO_MP4"
+        }
+      ]
+    },
+    "otona_shorts_v2": {
+      "total": 30,
+      "ok": 0,
+      "no_mp4": 23,
+      "short": 0,
+      "corrupt": 7,
+      "rows": [
+        {
+          "idx": "001",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "002",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "003",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "004",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "005",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "006",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "007",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "008",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "009",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "010",
+          "status": "CORRUPT",
+          "size_mb": 0.3
+        },
+        {
+          "idx": "011",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "012",
+          "status": "CORRUPT",
+          "size_mb": 0.0
+        },
+        {
+          "idx": "013",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "014",
+          "status": "CORRUPT",
+          "size_mb": 0.8
+        },
+        {
+          "idx": "015",
+          "status": "CORRUPT",
+          "size_mb": 0.0
+        },
+        {
+          "idx": "016",
+          "status": "CORRUPT",
+          "size_mb": 0.0
+        },
+        {
+          "idx": "017",
+          "status": "CORRUPT",
+          "size_mb": 0.0
+        },
+        {
+          "idx": "018",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "019",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "020",
+          "status": "CORRUPT",
+          "size_mb": 0.8
+        },
+        {
+          "idx": "021",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "022",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "023",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "024",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "025",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "026",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "027",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "028",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "029",
+          "status": "NO_MP4"
+        },
+        {
+          "idx": "030",
+          "status": "NO_MP4"
+        }
+      ]
+    }
+  },
+  "interrupted": [
+    {
+      "pipeline": "history_v2",
+      "idx": "030",
+      "reason": "ffprobe_fail",
+      "size_mb": 191.8
+    },
+    {
+      "pipeline": "history_v2",
+      "idx": "031",
+      "reason": "ffprobe_fail",
+      "size_mb": 230.5
+    },
+    {
+      "pipeline": "otona_shorts_v2",
+      "idx": "010",
+      "reason": "ffprobe_fail",
+      "size_mb": 0.3
+    },
+    {
+      "pipeline": "otona_shorts_v2",
+      "idx": "012",
+      "reason": "ffprobe_fail",
+      "size_mb": 0.0
+    },
+    {
+      "pipeline": "otona_shorts_v2",
+      "idx": "014",
+      "reason": "ffprobe_fail",
+      "size_mb": 0.8
+    },
+    {
+      "pipeline": "otona_shorts_v2",
+      "idx": "015",
+      "reason": "ffprobe_fail",
+      "size_mb": 0.0
+    },
+    {
+      "pipeline": "otona_shorts_v2",
+      "idx": "016",
+      "reason": "ffprobe_fail",
+      "size_mb": 0.0
+    },
+    {
+      "pipeline": "otona_shorts_v2",
+      "idx": "017",
+      "reason": "ffprobe_fail",
+      "size_mb": 0.0
+    },
+    {
+      "pipeline": "otona_shorts_v2",
+      "idx": "020",
+      "reason": "ffprobe_fail",
+      "size_mb": 0.8
+    }
+  ]
+}

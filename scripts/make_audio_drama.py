@@ -64,7 +64,13 @@ def main():
 
     title = spec.get('title', spec_path.stem)
     image = ROOT / spec['image'] if not Path(spec['image']).is_absolute() else Path(spec['image'])
-    bgm   = ROOT / spec['bgm']   if not Path(spec['bgm']).is_absolute()   else Path(spec['bgm'])
+    bgm_spec = spec.get('bgm', '')
+    use_bgm = bool(bgm_spec)
+    bgm = (ROOT / bgm_spec if not Path(bgm_spec).is_absolute() else Path(bgm_spec)) if use_bgm else None
+    if use_bgm and not bgm.exists():
+        print(f'[WARN] bgm not found: {bgm} → BGM 無しで続行')
+        use_bgm = False
+        bgm = None
     scenes = spec.get('scenes', [])
     if not scenes:
         print('[FATAL] no scenes')
@@ -79,7 +85,7 @@ def main():
         scene_mp3s.append(mp3)
         print(f'  scene_{i:03d}: {mp3.stat().st_size} bytes ({sc.get("voice", "?")})')
 
-    # 2) シーン間に 0.4 秒の無音を挟みつつ ffmpeg concat
+    # 2) シーン間に 0.4 秒の無音を挟みつつ binary 結合 (mp3 は単純 cat で OK)
     silence = out_dir / '_silence_400ms.mp3'
     subprocess.run([
         'ffmpeg', '-y', '-f', 'lavfi',
@@ -87,39 +93,42 @@ def main():
         '-t', '0.4', '-c:a', 'libmp3lame', '-b:a', '128k', str(silence)
     ], check=True, capture_output=True)
 
-    concat_txt = out_dir / 'concat.txt'
-    parts = []
-    for i, m in enumerate(scene_mp3s):
-        parts.append(f"file '{m.as_posix()}'")
-        if i < len(scene_mp3s) - 1:
-            parts.append(f"file '{silence.as_posix()}'")
-    concat_txt.write_text('\n'.join(parts), encoding='utf-8')
-
     voice_concat = out_dir / 'voice.mp3'
-    subprocess.run([
-        'ffmpeg', '-y', '-f', 'concat', '-safe', '0',
-        '-i', str(concat_txt),
-        '-c:a', 'libmp3lame', '-b:a', '128k', str(voice_concat),
-    ], check=True, capture_output=True)
+    silence_bytes = silence.read_bytes()
+    with open(voice_concat, 'wb') as fout:
+        for i, m in enumerate(scene_mp3s):
+            fout.write(m.read_bytes())
+            if i < len(scene_mp3s) - 1:
+                fout.write(silence_bytes)
+    print(f'[drama] voice.mp3 created: {voice_concat.stat().st_size:,} bytes (binary concat)', flush=True)
 
-    # 3) BGM を -25 dB で mix
+    # 3) BGM を -15 dB で mix (任意)
     voice_dur = float(subprocess.check_output([
         'ffprobe', '-v', 'error', '-show_entries', 'format=duration',
         '-of', 'default=noprint_wrappers=1:nokey=1', str(voice_concat)
     ]).decode().strip())
-    print(f'[drama] voice duration: {voice_dur:.1f}s')
+    print(f'[drama] voice duration: {voice_dur:.1f}s (use_bgm={use_bgm})')
 
     final_audio = out_dir / 'final_audio.mp3'
-    subprocess.run([
-        'ffmpeg', '-y',
-        '-i', str(voice_concat),
-        '-stream_loop', '-1', '-i', str(bgm),
-        '-filter_complex',
-        f'[1:a]volume=0.18[bgm];[0:a][bgm]amix=inputs=2:duration=first:dropout_transition=2',
-        '-c:a', 'libmp3lame', '-b:a', '192k',
-        '-t', str(voice_dur),
-        str(final_audio),
-    ], check=True, capture_output=True)
+    if use_bgm:
+        subprocess.run([
+            'ffmpeg', '-y',
+            '-i', str(voice_concat),
+            '-stream_loop', '-1', '-i', str(bgm),
+            '-filter_complex',
+            f'[1:a]volume=0.18[bgm];[0:a][bgm]amix=inputs=2:duration=first:dropout_transition=2',
+            '-c:a', 'libmp3lame', '-b:a', '192k',
+            '-t', str(voice_dur),
+            str(final_audio),
+        ], check=True, capture_output=True)
+    else:
+        # BGM 無し: voice そのまま流用 (再 encode)
+        subprocess.run([
+            'ffmpeg', '-y',
+            '-i', str(voice_concat),
+            '-c:a', 'libmp3lame', '-b:a', '192k',
+            str(final_audio),
+        ], check=True, capture_output=True)
 
     # 4) 静止画 + 音声で動画化 (1920x1080, ken-burns)
     out_mp4 = out_dir / 'output.mp4'

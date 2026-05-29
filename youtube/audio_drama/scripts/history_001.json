@@ -1,11 +1,11 @@
 {
   "title": "島津義弘 関ヶ原 敵中突破の刻｜捨て奸の死兵が示した魂",
   "kind": "history",
-  "image": "youtube/stock_images/wiki/hist_sengoku_001.jpg",
-  "bgm": "assets/bgm/japanese_koto_loop.mp3",
+  "image": "youtube/stock_images/wiki/wiki_hist_armor_0004_samurai_armor.jpg",
+  "bgm": "",
   "scenes": [
     {
-      "voice": "ja-JP-DaichiNeural",
+      "voice": "ja-JP-KeitaNeural",
       "text": "慶長五年九月十五日、関ヶ原。霧が晴れた野に、十五万を超える兵が対峙した。東軍、徳川家康。西軍、石田三成。"
     },
     {
@@ -13,7 +13,7 @@
       "text": "島津義弘、薩摩の老将。齢六十六、率いる兵わずか千五百。布陣は西軍の中央やや後方。"
     },
     {
-      "voice": "ja-JP-DaichiNeural",
+      "voice": "ja-JP-KeitaNeural",
       "text": "戦は半日で決した。小早川秀秋の裏切り、東軍勝利。西軍は総崩れ。退路は閉ざされた。"
     },
     {
@@ -25,7 +25,7 @@
       "text": "それは戦国史上最も無謀で、最も誇り高い退却劇となった。捨て奸。命を捨てて主君を逃がす死兵の戦法。"
     },
     {
-      "voice": "ja-JP-DaichiNeural",
+      "voice": "ja-JP-KeitaNeural",
       "text": "千五百のうち、薩摩に帰り着いたのはわずか八十余名。だがその八十名が、徳川の世になっても薩摩武士の魂を伝え続けた。"
     },
     {
@@ -33,7 +33,7 @@
       "text": "義弘の敵中突破は、敗戦の中の勝利だった。死ぬ覚悟が、生き残る道を開く。これが薩摩武士の哲学である。"
     },
     {
-      "voice": "ja-JP-DaichiNeural",
+      "voice": "ja-JP-NanamiNeural",
       "text": "三百年後、明治維新の中心となるのは薩摩藩であった。関ヶ原の捨て奸が、歴史の伏線となった瞬間。義弘は知らずに種を蒔いていたのかもしれない。"
     }
   ]

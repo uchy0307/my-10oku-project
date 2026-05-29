@@ -1,7 +1,13 @@
-# CLAUDE.md - うっちー様プロジェクト規約
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+# うっちー様プロジェクト規約
 
 > このファイルは Claude Code が新セッション開始時に自動で読み込みます。
 > 最新の状態は `HANDOFF.md` と `agent/memory/MEMORY.md` も併読してください。
+> プロジェクト全体の概要 (4脳連携 / GitHub Actions cron / setup) は `README.md` 参照。
+> 過去 incident の詳細は `docs/incidents/<YYYY-MM>.md` 参照。
 
 ---
 
@@ -153,8 +159,16 @@ subprocess.Popen(actual_cmd, cwd=str(ROOT), creationflags=flags)
 
 ## 過去のミス記録（再発防止）
 
+### 2026-05-30 動画品質致命バグ (詳細: docs/incidents/2026-05.md)
+1. **silence padding 残存**: 5/25 「削除済」とハルシネーション、実装は 5/30 まで未反映 → 5/30 実際に削除
+2. **動画 seg ループ**: `while totalSec < audioDur+5` で `concat_video.txt` 末尾に seg_0 重複 → タイトル無関係画像が末尾で長時間ループ
+3. **ASS 字幕均等分散**: whisper SRT 未使用、 全テキスト ÷ padding 後 audioDur で分割 → 音声と完全 desync
+4. **edge-tts 固有名詞読み違え** (「今川氏親→いまがしおや」) → Task #35 で `_yomi_dict.json` + 前処理予定
+5. **画像とタイトル不一致** → Task #36 で Gemini プロンプトに chapter_image_map 強制要求予定
+→ うっちー様指示「今後 YT 全部字幕なし」 → 全 pipeline (history/psych/shorts) 字幕焼き込み完全削除 (commit 3bf44ea)
+
 ### 2026-05-25 深夜 追加修正
-- pipeline.mjs `silence padding` を **削除**（無音動画化の温床）。30分未満は fail
+- pipeline.mjs `silence padding` 「削除」記載は**ハルシネーション** (実装は 5/30 まで未反映、5/30 に実際削除)
 - zoompan 座標を `trunc()` で整数化 → 画像震え修正
 - ASS テロップ折り返し 28字→18字 (1920px幅+font80に合わせ)
 - サムネ用 Windows フォント追加 (Yu Gothic / メイリオ / msgothic)
@@ -229,7 +243,14 @@ subprocess.Popen(actual_cmd, cwd=str(ROOT), creationflags=flags)
 
 これをやらないと大人系の投稿は全部 fail で止まる (= 誤投稿ゼロ保証)。
 
-## 字幕 (テロップ) 再生成 (2026-05-26)
+## 字幕方針: 2026-05-30 完全削除に変更
+
+**現方針** (2026-05-30 commit 3bf44ea):
+- pipeline.mjs から `subtitles=sub.ass` filter 完全削除 (history/psych/shorts 全て)
+- ASS / SRT 生成コードも削除 (将来再復活する場合は git revert)
+- うっちー様指示: 「今後 YT 全部字幕なし。音声と画像イメージは必ずタイトルに合わす」
+
+## 旧字幕方針 (2026-05-26、現在は無効)
 
 **問題**: whisper の日本語 base モデル誤認識が酷い (采配→採隔、終止符→修士夫)。さらに chunk_size=5 単語 で 1.26秒/cue は読めない速さ＆途中切れ。
 
@@ -246,6 +267,7 @@ pipeline 側の `force_style` も Fontsize 80→72, MarginL=MarginR=180, MarginV
 
 ## 直近の重要決定
 
+- 2026-05-30: 動画品質バグ 3 点修正 (silence padding / seg ループ / 字幕均等分散) + 字幕完全削除方針 + スマホパネル shorts URL `/shorts` 別取得で long/shorts 精密分離 + ディスク 45GB 解放 (commit 3bf44ea, 詳細 `docs/incidents/2026-05.md`)
 - 2026-05-26: OAuth トークンをチャンネル別に分離 (混入防止)
 - 2026-05-26: 字幕を refine_srt.py で原稿テキスト + whisper タイミング合成に変更
 - 2026-05-24: Dispatchから Claude Code をメインに移行

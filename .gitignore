@@ -65,3 +65,6 @@ assets/bgm/
 # Python bytecode
 scripts/__pycache__/
 *.pyc
+
+# 一時 commit message file
+_commit_msg.txt

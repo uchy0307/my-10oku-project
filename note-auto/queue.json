@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "synced_at": "2026-05-29T11:01:38.317Z",
+  "synced_at": "2026-05-29T14:17:20.064Z",
   "items": [
     {
       "id": "001",
@@ -1309,8 +1309,7 @@
       "scheduled_at": null,
       "posted_at": "2026-05-28T12:13:57.685Z",
       "error": null,
-      "_hasLocalBody": true,
-      "_disabled_reason": "corrupted_brackets_2026-05-29"
+      "_hasLocalBody": true
     },
     {
       "id": "120",
@@ -1321,8 +1320,7 @@
       "scheduled_at": null,
       "posted_at": "2026-05-28T15:04:56.570Z",
       "error": null,
-      "_hasLocalBody": true,
-      "_disabled_reason": "corrupted_brackets_2026-05-29"
+      "_hasLocalBody": true
     },
     {
       "id": "121",
@@ -1410,6 +1408,17 @@
       "scheduled_at": null,
       "posted_at": "2026-05-29T11:10:51.107Z",
       "error": null,
+      "_hasLocalBody": true
+    },
+    {
+      "id": "129",
+      "draftId": "n45ec689025c0",
+      "title": "【AI対話アプリ】🐛 200の問い #129 「エンジニア・バグの哲学」",
+      "publish": true,
+      "status": "published",
+      "scheduled_at": null,
+      "posted_at": "2026-05-29T14:28:51.419Z",
+      "error": null,
       "_hasLocalBody": true,
       "priceSet": true,
       "boundarySet": true,
@@ -1418,17 +1427,6 @@
       "anonStatus": 200,
       "attached": 0,
       "attach_error": "attached=0/3 lastReason=file btn click: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"ファイル\"), [role=\"menuitem\"]:has-text(\"ファイル\"), li:has-text(\"ファイル\") button, [data-testid*=\"file\"], button:has-text(\"File\"), button:has-text(\"ドキュメント\")').first()\n    - locator resolved to <button data-selected=\"false\" aria-selected=\"false\" class=\"sc-876c5825-4 cmGlJU\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    58 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n"
-    },
-    {
-      "id": "129",
-      "draftId": "n45ec689025c0",
-      "title": "【AI対話アプリ】🐛 200の問い #129 「エンジニア・バグの哲学」",
-      "publish": true,
-      "status": "pending",
-      "scheduled_at": null,
-      "posted_at": null,
-      "error": null,
-      "_hasLocalBody": true
     },
     {
       "id": "130",

@@ -229,34 +229,60 @@ def _get_access_token(oauth_kind: str) -> tuple[str, str] | tuple[None, None]:
     return access_token, uploads_playlist
 
 
+_ytdlp_cache: dict = {}   # handle -> (timestamp, entries)
+
+
 def fetch_youtube_rss(channel_id, oauth_kind="samurai"):
-    """YouTube Data API v3 で uploads playlist から最近の動画を取得。
-    (旧 RSS は Google が 404 返すようになったので API 経由に変更)
-    返却: [{id, title, published, link}, ...]"""
-    access_token, uploads_playlist = _get_access_token(oauth_kind)
-    if not access_token or not uploads_playlist:
-        return []
-    url = f"https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId={uploads_playlist}&maxResults=20"
-    req = urllib.request.Request(url, headers={"Authorization": f"Bearer {access_token}"})
+    """2026-05-29: youtube.upload scope では channels.list / playlistItems.list が呼べない (insufficient).
+    yt-dlp 経由でチャンネル最近動画を取得 (scope 不要)。
+    返却: [{id, title, published(YYYYMMDD), link, is_shorts_url}]
+    cache 5分。"""
+    import time as _t
+    import subprocess as _sp
+    handle = "@Japanese.Samurai.Channel" if oauth_kind == "samurai" else "@Otona_Psychology"
+    cached = _ytdlp_cache.get(handle)
+    if cached and _t.time() - cached[0] < 300:
+        return cached[1]
+    args = [
+        sys.executable, "-m", "yt_dlp",
+        "--flat-playlist", "--playlist-end", "20",
+        "--print", "%(id)s|%(title)s|%(upload_date)s|%(duration)s",
+        "--encoding", "utf-8",
+        "--no-warnings",
+        f"https://www.youtube.com/{handle}/videos",
+    ]
     try:
-        with urllib.request.urlopen(req, timeout=10) as res:
-            data = json.loads(res.read().decode("utf-8"))
+        r = _sp.run(args, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=20)
     except Exception:
+        return []
+    if r.returncode != 0:
         return []
     entries = []
     seen = set()
-    for it in data.get("items", []):
-        s = it.get("snippet", {})
-        vid = s.get("resourceId", {}).get("videoId")
+    for line in (r.stdout or "").splitlines():
+        parts = line.strip().split("|", 3)
+        if len(parts) < 2:
+            continue
+        vid = parts[0]
+        title = parts[1] if len(parts) > 1 else ""
+        upload_date = parts[2] if len(parts) > 2 else ""
+        try:
+            dur = float(parts[3]) if len(parts) > 3 and parts[3] not in ("", "None") else 0
+        except ValueError:
+            dur = 0
         if not vid or vid in seen:
             continue
         seen.add(vid)
+        # Shorts URL は yt-dlp で duration <= 60 + URL に /shorts/ を含む傾向 → duration で判定
+        is_shorts_url = 0 < dur <= 65
         entries.append({
             "id": vid,
-            "title": s.get("title", ""),
-            "published": s.get("publishedAt", ""),
-            "link": f"https://youtu.be/{vid}",
+            "title": title,
+            "published": upload_date,  # YYYYMMDD
+            "link": f"https://youtube.com/shorts/{vid}" if is_shorts_url else f"https://youtu.be/{vid}",
+            "_duration": dur,
         })
+    _ytdlp_cache[handle] = (_t.time(), entries)
     return entries
 
 
@@ -290,10 +316,45 @@ def fetch_note_today_count():
         return 0, "https://note.com/happy_happy_4649"
 
 
+_PROGRESS_DIRS = {
+    "history":        ["history_v2"],
+    "history_shorts": ["history_shorts_v2", "shorts_v2"],
+    "otona":          ["psych_v2"],
+    "otona_shorts":   ["psych_shorts_v2", "otona_shorts_v2"],
+}
+
+
+def _fetch_yt_today_from_local(chan_id):
+    """ローカル youtube/<dir>/uploaded.json から本日 JST 投稿分を集計 (scope 不要・正確)。"""
+    jst = timezone(timedelta(hours=9))
+    today = datetime.now(jst).strftime("%Y-%m-%d")
+    total = 0
+    last_url = None
+    last_ts = ""
+    for d in _PROGRESS_DIRS.get(chan_id, []):
+        p = ROOT / "youtube" / d / "uploaded.json"
+        if not p.exists():
+            continue
+        try:
+            db = json.loads(p.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        for k, v in db.items():
+            ts = v.get("uploadedAt", "")
+            try:
+                dt = datetime.fromisoformat(ts.replace("Z", "+00:00")).astimezone(jst)
+                if dt.strftime("%Y-%m-%d") == today:
+                    total += 1
+                    if ts > last_ts:
+                        last_ts = ts
+                        last_url = v.get("videoUrl", last_url)
+            except Exception:
+                continue
+    return total, last_url
+
+
 def get_progress():
-    """全プラットフォームの本日アップ数を返す"""
-    cutoff = jst_today_start()
-    cache = {}
+    """全プラットフォームの本日アップ数を返す (uploaded.json ベース、ローカル真実が正)"""
     result = []
     for p in PLATFORMS:
         if p.get("is_note"):
@@ -307,31 +368,14 @@ def get_progress():
                 "url": link,
             })
             continue
-        cid = p["yt_channel_id"]
-        cache_key = f"{cid}:{p.get('oauth_kind','samurai')}"
-        if cache_key not in cache:
-            cache[cache_key] = fetch_youtube_rss(cid, p.get("oauth_kind", "samurai"))
-        entries = cache[cache_key]
-        today_entries = []
-        for e in entries:
-            try:
-                pub = datetime.fromisoformat(e["published"].replace("Z", "+00:00"))
-                if pub >= cutoff:
-                    today_entries.append(e)
-            except Exception:
-                continue
-        if p["is_shorts"]:
-            today_entries = [e for e in today_entries if "shorts" in e.get("link", "").lower() or "#shorts" in e.get("title", "").lower()]
-        else:
-            today_entries = [e for e in today_entries if "shorts" not in e.get("link", "").lower() and "#shorts" not in e.get("title", "").lower()]
-        latest_link = today_entries[0]["link"] if today_entries else p["yt_url"]
+        cnt, last_url = _fetch_yt_today_from_local(p["id"])
         result.append({
             "id": p["id"],
             "label": p["label"],
             "icon": p["icon"],
-            "count": len(today_entries),
+            "count": cnt,
             "quota": p["quota"],
-            "url": latest_link,
+            "url": last_url or p["yt_url"],
         })
     return result
 

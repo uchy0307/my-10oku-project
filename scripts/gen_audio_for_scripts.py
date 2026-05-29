@@ -28,6 +28,14 @@ except ImportError:
     print("[FATAL] edge-tts未導入。pip install edge-tts")
     sys.exit(2)
 
+# 2026-05-30: 固有名詞ふりがな置換 (Task #35)
+# edge-tts が「今川氏親→いまがしおや」と誤読する対策
+try:
+    from preprocess_yomi import apply_yomi  # type: ignore
+except ImportError:
+    def apply_yomi(text):  # フォールバック
+        return text
+
 ROOT = Path(__file__).resolve().parent.parent
 
 VOICE = "ja-JP-NanamiNeural"
@@ -130,8 +138,11 @@ def main():
                 print(f"[SKIP] {sp.name}: empty text")
                 skip += 1
                 continue
-            print(f"[gen] {sp.name} ({len(text)} chars) -> {out.name}")
-            asyncio.run(synth_one(text, out))
+            # 2026-05-30: edge-tts 投入前にふりがな置換
+            text_yomi = apply_yomi(text)
+            yomi_diff = len(text_yomi) - len(text)
+            print(f"[gen] {sp.name} ({len(text)} chars, yomi diff={yomi_diff:+d}) -> {out.name}")
+            asyncio.run(synth_one(text_yomi, out))
             ok += 1
         except KeyboardInterrupt:
             print("[STOP] interrupted")

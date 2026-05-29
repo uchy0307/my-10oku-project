@@ -89,9 +89,10 @@ const SELECTORS = {
   titleInput: 'textarea[placeholder*="タイトル"]',
   saveDraftButton: 'button:has-text("下書き保存")',
   cancelButton: 'button:has-text("キャンセル")',
-  // 2026-05 note.com UI: plus(＋) button selectors broadened. The editor renders a floating ＋
-  // beside the active block; aria-label/data-testid vary by build. We OR many candidates.
+  // 2026-05-29 note.com UI: editor.note.com → note.com 統合により ProseMirror セレクタは保持。
+  // plus(＋) menu は aria-label="メニューを開く" に統一されたので最優先。残りは fallback。
   plusMenuOpen: [
+    'button[aria-label="メニューを開く"]',
     '[aria-label="メニューを開く"]',
     '[data-testid="plusMenu"]',
     '[data-testid="block-add-button"]',
@@ -100,8 +101,6 @@ const SELECTORS = {
     'button[aria-label*="追加"]',
     'button[aria-label*="ブロック"]',
     'button[aria-label*="挿入"]',
-    'button[aria-label="その他"]',
-    'button[aria-label="ファイル"]',
   ].join(', '),
   filePickerButton: [
     'button:has-text("ファイル")',
@@ -112,7 +111,14 @@ const SELECTORS = {
     'button:has-text("ドキュメント")',
   ].join(', '),
   fileInput: 'input[type="file"]',
-  paidConfigBtn: 'button:has-text("有料エリア設定")',
+  // 2026-05-29: /publish/ で「有料エリア設定」が消えて「詳細設定」に統合された模様 (_dom_dump_publish.json より)。両方を OR で。
+  paidConfigBtn: [
+    'button:has-text("有料エリア設定")',
+    'button:has-text("詳細設定")',
+    'button:has-text("価格設定")',
+    'button:has-text("有料設定")',
+    'button:has-text("境界線")',
+  ].join(', '),
   publishNowBtn: 'button:has-text("投稿する")',
 };
 

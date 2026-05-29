@@ -1304,23 +1304,25 @@
       "id": "119",
       "draftId": "n1eec4e62b6a3",
       "title": "【AI対話アプリ】✋ 200の問い #119 「工芸・職人のこだわりPR」",
-      "publish": true,
+      "publish": false,
       "status": "draft_saved",
       "scheduled_at": null,
       "posted_at": "2026-05-28T12:13:57.685Z",
       "error": null,
-      "_hasLocalBody": true
+      "_hasLocalBody": true,
+      "_disabled_reason": "corrupted_brackets_2026-05-29"
     },
     {
       "id": "120",
       "draftId": "",
       "title": "【AI対話アプリ】🖼️ 200の問い #120 「アート・ステートメント」",
-      "publish": true,
+      "publish": false,
       "status": "published",
       "scheduled_at": null,
       "posted_at": "2026-05-28T15:04:56.570Z",
       "error": null,
-      "_hasLocalBody": true
+      "_hasLocalBody": true,
+      "_disabled_reason": "corrupted_brackets_2026-05-29"
     },
     {
       "id": "121",

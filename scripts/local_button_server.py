@@ -287,7 +287,10 @@ def fetch_youtube_rss(channel_id, oauth_kind="samurai"):
 
 
 def fetch_note_today_count():
-    """note の本日投稿数を取得（noteのRSS）"""
+    """note の本日投稿数 + 累計 を取得。本日は RSS、累計は queue.json (status=published) から。"""
+    today_count = 0
+    latest_link = "https://note.com/happy_happy_4649"
+    # 今日分: RSS
     try:
         url = "https://note.com/happy_happy_4649/rss"
         req = urllib.request.Request(url, headers={"User-Agent": "uchy-button/1.0"})
@@ -295,8 +298,6 @@ def fetch_note_today_count():
             xml = res.read().decode("utf-8", errors="replace")
         root = ET.fromstring(xml)
         cutoff = jst_today_start()
-        count = 0
-        latest_link = "https://note.com/happy_happy_4649"
         for item in root.iter("item"):
             pub_el = item.find("pubDate")
             link_el = item.find("link")
@@ -306,14 +307,27 @@ def fetch_note_today_count():
                 from email.utils import parsedate_to_datetime
                 pub = parsedate_to_datetime(pub_el.text)
                 if pub >= cutoff:
-                    count += 1
+                    today_count += 1
                     if link_el is not None and link_el.text:
                         latest_link = link_el.text
             except Exception:
                 continue
-        return count, latest_link
     except Exception:
-        return 0, "https://note.com/happy_happy_4649"
+        pass
+    # 累計: note-auto/queue.json の published 件数
+    total_count = 0
+    qp = ROOT / "note-auto" / "queue.json"
+    if qp.exists():
+        try:
+            q = json.loads(qp.read_text(encoding="utf-8"))
+            items = q if isinstance(q, list) else (q.get("items") or [])
+            for it in items:
+                st = (it.get("status") or "").lower() if isinstance(it, dict) else ""
+                if st in ("published", "published_manual"):
+                    total_count += 1
+        except Exception:
+            pass
+    return today_count, latest_link, total_count
 
 
 _PROGRESS_DIRS = {
@@ -325,32 +339,70 @@ _PROGRESS_DIRS = {
 
 
 def _fetch_yt_today_from_local(chan_id):
-    """ローカル youtube/<dir>/uploaded.json から本日 JST 投稿分を集計 (scope 不要・正確)。"""
+    """ローカル youtube/<dir>/uploaded.json から本日 JST 投稿 + 累計 を集計 (scope 不要・正確)。
+    返却: (today_count, last_url, total_count)
+    """
     jst = timezone(timedelta(hours=9))
     today = datetime.now(jst).strftime("%Y-%m-%d")
-    total = 0
+    today_count = 0
+    total_count = 0
     last_url = None
     last_ts = ""
     for d in _PROGRESS_DIRS.get(chan_id, []):
+        # 通常の uploaded.json (history_v2 等)
         p = ROOT / "youtube" / d / "uploaded.json"
-        if not p.exists():
-            continue
-        try:
-            db = json.loads(p.read_text(encoding="utf-8"))
-        except Exception:
-            continue
-        for k, v in db.items():
-            ts = v.get("uploadedAt", "")
+        if p.exists():
             try:
-                dt = datetime.fromisoformat(ts.replace("Z", "+00:00")).astimezone(jst)
-                if dt.strftime("%Y-%m-%d") == today:
-                    total += 1
-                    if ts > last_ts:
-                        last_ts = ts
-                        last_url = v.get("videoUrl", last_url)
+                db = json.loads(p.read_text(encoding="utf-8"))
             except Exception:
-                continue
-    return total, last_url
+                db = {}
+            total_count += len(db)
+            for k, v in db.items():
+                ts = v.get("uploadedAt", "")
+                try:
+                    dt = datetime.fromisoformat(ts.replace("Z", "+00:00")).astimezone(jst)
+                    if dt.strftime("%Y-%m-%d") == today:
+                        today_count += 1
+                        if ts > last_ts:
+                            last_ts = ts
+                            last_url = v.get("videoUrl", last_url)
+                except Exception:
+                    continue
+    # audio_drama も該当 kind を含めて集計
+    drama_p = ROOT / "youtube" / "audio_drama" / "uploaded.json"
+    if drama_p.exists():
+        try:
+            db = json.loads(drama_p.read_text(encoding="utf-8"))
+        except Exception:
+            db = {}
+        for k, v in db.items():
+            drama_kind = v.get("kind", "")
+            # history → samurai 系、psych/otona → otona 系
+            if chan_id == "history" and drama_kind == "history":
+                total_count += 1
+                ts = v.get("uploadedAt", "")
+                try:
+                    dt = datetime.fromisoformat(ts.replace("Z", "+00:00")).astimezone(jst)
+                    if dt.strftime("%Y-%m-%d") == today:
+                        today_count += 1
+                        if ts > last_ts:
+                            last_ts = ts
+                            last_url = v.get("videoUrl", last_url)
+                except Exception:
+                    continue
+            elif chan_id == "otona" and drama_kind == "otona":
+                total_count += 1
+                ts = v.get("uploadedAt", "")
+                try:
+                    dt = datetime.fromisoformat(ts.replace("Z", "+00:00")).astimezone(jst)
+                    if dt.strftime("%Y-%m-%d") == today:
+                        today_count += 1
+                        if ts > last_ts:
+                            last_ts = ts
+                            last_url = v.get("videoUrl", last_url)
+                except Exception:
+                    continue
+    return today_count, last_url, total_count
 
 
 def get_progress():
@@ -358,23 +410,25 @@ def get_progress():
     result = []
     for p in PLATFORMS:
         if p.get("is_note"):
-            count, link = fetch_note_today_count()
+            count, link, total = fetch_note_today_count()
             result.append({
                 "id": p["id"],
                 "label": p["label"],
                 "icon": p["icon"],
                 "count": count,
                 "quota": p["quota"],
+                "total": total,                # 累計
                 "url": link,
             })
             continue
-        cnt, last_url = _fetch_yt_today_from_local(p["id"])
+        cnt, last_url, total = _fetch_yt_today_from_local(p["id"])
         result.append({
             "id": p["id"],
             "label": p["label"],
             "icon": p["icon"],
             "count": cnt,
             "quota": p["quota"],
+            "total": total,                   # 累計
             "url": last_url or p["yt_url"],
         })
     return result
@@ -570,6 +624,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     .progress-card .pc-head { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; font-weight: 700; color: #78350f; }
     .progress-card .pc-count { font-size: 1.6rem; font-weight: 800; color: #1f2937; letter-spacing: -0.02em; }
     .progress-card .pc-count .target { font-size: 1rem; color: #6b7280; font-weight: 600; }
+    .progress-card .pc-total { font-size: 0.7rem; color: #8a6030; margin-top: 4px; font-weight: 600; }
     .progress-card .pc-bar { height: 6px; background: #fef3c7; border-radius: 999px; overflow: hidden; margin-top: 4px; }
     .progress-card .pc-fill { height: 100%; background: #f59e0b; transition: width 0.3s; }
     .progress-card.done .pc-fill { background: #10b981; }
@@ -748,10 +803,12 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           card.href = p.url;
           card.target = '_blank';
           card.rel = 'noopener';
+          const totalStr = (p.total != null) ? ('<div class="pc-total">累計 ' + p.total + ' 本</div>') : '';
           card.innerHTML =
             '<div class="pc-head">' + p.icon + ' ' + escHtml(p.label) + '</div>' +
             '<div class="pc-count">' + p.count + '<span class="target"> / ' + p.quota + ' 本</span></div>' +
-            '<div class="pc-bar"><div class="pc-fill" style="width:' + pct + '%"></div></div>';
+            '<div class="pc-bar"><div class="pc-fill" style="width:' + pct + '%"></div></div>' +
+            totalStr;
           grid.appendChild(card);
         }
       } catch(e) {

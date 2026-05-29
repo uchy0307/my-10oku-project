@@ -104,21 +104,30 @@ const targets = candidates.slice(0, args.count);
 
 for (const idx of targets) {
   const mp4 = path.join(candidateDirs[idx], 'output.mp4');
-  // load metadata from scripts/<prefix><idx>.json
+  // 2026-05-29 ハルシネーション対策: script JSON 必須 + placeholder タイトル禁止
   const scriptPath = path.join(scriptsDir, `${cfg.scriptPrefix}${idx}.json`);
-  let title = `${args.kind} ${idx}`;
-  let description = '';
-  let tags = [];
-  if (fs.existsSync(scriptPath)) {
-    try {
-      const spec = JSON.parse(fs.readFileSync(scriptPath, 'utf8'));
-      title = spec.title || title;
-      description = spec.description || '';
-      tags = Array.isArray(spec.tags) ? spec.tags.slice(0, 15) : [];
-    } catch (e) {
-      console.warn(`[upload_quarantine] script load fail ${idx}: ${e.message}`);
-    }
+  if (!fs.existsSync(scriptPath)) {
+    console.error(`[upload_quarantine] SKIP ${idx}: script JSON not found at ${scriptPath} — refusing to publish with placeholder title`);
+    continue;
   }
+  let spec;
+  try {
+    spec = JSON.parse(fs.readFileSync(scriptPath, 'utf8'));
+  } catch (e) {
+    console.error(`[upload_quarantine] SKIP ${idx}: script JSON parse fail: ${e.message}`);
+    continue;
+  }
+  const title = (spec.title || '').trim();
+  if (!title) {
+    console.error(`[upload_quarantine] SKIP ${idx}: empty title in script JSON`);
+    continue;
+  }
+  if (/^(?:history|psych|shorts|otona_shorts|history_shorts|psych_shorts)\s+\d{3}$/i.test(title)) {
+    console.error(`[upload_quarantine] SKIP ${idx}: placeholder-like title "${title}" — refusing to publish`);
+    continue;
+  }
+  const description = spec.description || '';
+  const tags = Array.isArray(spec.tags) ? spec.tags.slice(0, 15) : [];
 
   console.log(`[upload_quarantine] uploading ${idx}: ${title}`);
 

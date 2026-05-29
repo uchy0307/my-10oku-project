@@ -305,6 +305,39 @@ async function main() {
   console.log(`[INFO] draftId(hash): ${withDraftId} / localBody: ${withLocalBody}`);
   console.log(`[INFO] matched=${byNum.size}`);
   console.log(`[INFO] status:`, counts);
+
+  // 2026-05-29: draftId 取得失敗 + 破損 article (鉤括弧 open/close 大幅不一致) を warn 集計
+  const missingDraftId = newItems.filter((i) => i._hasLocalBody && !i.draftId && i.publish);
+  if (missingDraftId.length > 0) {
+    console.warn(`[WARN] ${missingDraftId.length} items have local body + publish=true but NO draftId (note sync missed them):`);
+    for (const m of missingDraftId.slice(0, 20)) {
+      console.warn(`  id=${m.id} title="${(m.title || '').slice(0, 60)}"`);
+    }
+  }
+
+  // 破損 article 検出: 「『」と「』」の数が大きく乖離している article は本文が壊れてる可能性
+  const corruptionCheck = [];
+  for (const it of newItems) {
+    if (!it._hasLocalBody) continue;
+    try {
+      const body = await loadLocalBody(it.id);
+      if (!body) continue;
+      const openCount = (body.match(/『/g) || []).length;
+      const closeCount = (body.match(/』/g) || []).length;
+      const diff = Math.abs(openCount - closeCount);
+      // 100 を超える差は明らかに placeholder 垂れ流し系の破損
+      if (diff > 100) {
+        corruptionCheck.push({ id: it.id, openCount, closeCount, diff });
+      }
+    } catch {}
+  }
+  if (corruptionCheck.length > 0) {
+    console.warn(`[WARN] ${corruptionCheck.length} corrupted articles detected (bracket imbalance > 100):`);
+    for (const c of corruptionCheck) {
+      console.warn(`  id=${c.id} open=${c.openCount} close=${c.closeCount} diff=${c.diff}`);
+    }
+    console.warn('[WARN] これらは publish=false にして手動修復を推奨');
+  }
 }
 
 main().catch((err) => {

@@ -109,18 +109,29 @@ for (const name of targets) {
   const mp4 = path.join(dir, 'output.mp4');
   const scriptPath = path.join(scriptsDir, `short_${name}.json`);
 
-  let title = `Shorts ${name}`;
-  let description = '#Shorts';
-  let tags = ['Shorts'];
-  if (fs.existsSync(scriptPath)) {
-    try {
-      const spec = JSON.parse(fs.readFileSync(scriptPath, 'utf8'));
-      title = spec.title || title;
-      description = spec.description || description;
-      tags = Array.isArray(spec.tags) ? spec.tags.slice(0, 15) : tags;
-    } catch (e) {
-      console.warn(`[upload_shorts] script load fail ${name}: ${e.message}`);
-    }
+  // 2026-05-29 ハルシネーション対策: script JSON 必須 + placeholder タイトル禁止
+  if (!fs.existsSync(scriptPath)) {
+    console.error(`[upload_shorts] SKIP ${name}: script JSON not found at ${scriptPath} — refusing to publish placeholder`);
+    continue;
+  }
+  let spec;
+  try {
+    spec = JSON.parse(fs.readFileSync(scriptPath, 'utf8'));
+  } catch (e) {
+    console.error(`[upload_shorts] SKIP ${name}: script JSON parse fail: ${e.message}`);
+    continue;
+  }
+  let title = (spec.title || '').trim();
+  let description = spec.description || '';
+  let tags = Array.isArray(spec.tags) ? spec.tags.slice(0, 15) : ['Shorts'];
+
+  if (!title) {
+    console.error(`[upload_shorts] SKIP ${name}: empty title in script JSON`);
+    continue;
+  }
+  if (/^Shorts\s+/i.test(title) || /^(?:otona_shorts|history_shorts|psych_shorts)\s+/i.test(title)) {
+    console.error(`[upload_shorts] SKIP ${name}: placeholder-like title "${title}" — refusing to publish`);
+    continue;
   }
 
   // ensure #Shorts marker is in title or description (YouTube requires for Shorts detection)

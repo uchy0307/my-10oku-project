@@ -165,7 +165,9 @@
       "scheduled_at": null,
       "posted_at": "2026-05-16T06:17:34.225Z",
       "error": null,
-      "_hasLocalBody": true
+      "_hasLocalBody": true,
+      "attachmentCount": 3,
+      "attached_at": "2026-05-29T23:41:54.041Z"
     },
     {
       "id": "016",
@@ -176,7 +178,9 @@
       "scheduled_at": null,
       "posted_at": "2026-05-16T08:04:14.086Z",
       "error": null,
-      "_hasLocalBody": true
+      "_hasLocalBody": true,
+      "attachmentCount": 3,
+      "attached_at": "2026-05-29T23:42:23.508Z"
     },
     {
       "id": "017",
@@ -187,7 +191,9 @@
       "scheduled_at": null,
       "posted_at": "2026-05-16T08:13:53.607Z",
       "error": null,
-      "_hasLocalBody": true
+      "_hasLocalBody": true,
+      "attachmentCount": 3,
+      "attached_at": "2026-05-29T23:42:52.663Z"
     },
     {
       "id": "018",
@@ -198,7 +204,9 @@
       "scheduled_at": null,
       "posted_at": "2026-05-16T08:21:15.608Z",
       "error": null,
-      "_hasLocalBody": true
+      "_hasLocalBody": true,
+      "attachmentCount": 3,
+      "attached_at": "2026-05-29T23:43:22.113Z"
     },
     {
       "id": "019",
@@ -209,7 +217,9 @@
       "scheduled_at": null,
       "posted_at": "2026-05-16T08:33:13.322Z",
       "error": null,
-      "_hasLocalBody": true
+      "_hasLocalBody": true,
+      "attachmentCount": 3,
+      "attached_at": "2026-05-29T23:43:51.053Z"
     },
     {
       "id": "020",
@@ -220,7 +230,9 @@
       "scheduled_at": null,
       "posted_at": "2026-05-16T08:40:33.506Z",
       "error": null,
-      "_hasLocalBody": true
+      "_hasLocalBody": true,
+      "attachmentCount": 3,
+      "attached_at": "2026-05-29T23:44:20.152Z"
     },
     {
       "id": "021",
@@ -231,7 +243,9 @@
       "scheduled_at": null,
       "posted_at": "2026-05-16T14:55:19.552Z",
       "error": null,
-      "_hasLocalBody": true
+      "_hasLocalBody": true,
+      "attachmentCount": 3,
+      "attached_at": "2026-05-29T23:44:49.123Z"
     },
     {
       "id": "022",
@@ -242,7 +256,9 @@
       "scheduled_at": null,
       "posted_at": "2026-05-16T16:56:27.561Z",
       "error": null,
-      "_hasLocalBody": true
+      "_hasLocalBody": true,
+      "attachmentCount": 3,
+      "attached_at": "2026-05-29T23:45:18.152Z"
     },
     {
       "id": "023",
@@ -253,7 +269,9 @@
       "scheduled_at": null,
       "posted_at": null,
       "error": null,
-      "_hasLocalBody": true
+      "_hasLocalBody": true,
+      "attachmentCount": 3,
+      "attached_at": "2026-05-29T23:45:47.190Z"
     },
     {
       "id": "024",
@@ -264,7 +282,9 @@
       "scheduled_at": null,
       "posted_at": null,
       "error": null,
-      "_hasLocalBody": true
+      "_hasLocalBody": true,
+      "attachmentCount": 3,
+      "attached_at": "2026-05-29T23:46:16.234Z"
     },
     {
       "id": "025",
@@ -275,7 +295,9 @@
       "scheduled_at": null,
       "posted_at": null,
       "error": null,
-      "_hasLocalBody": true
+      "_hasLocalBody": true,
+      "attachmentCount": 3,
+      "attached_at": "2026-05-29T23:46:49.748Z"
     },
     {
       "id": "026",
@@ -286,7 +308,9 @@
       "scheduled_at": null,
       "posted_at": null,
       "error": null,
-      "_hasLocalBody": true
+      "_hasLocalBody": true,
+      "attachmentCount": 3,
+      "attached_at": "2026-05-29T23:47:18.987Z"
     },
     {
       "id": "027",
@@ -297,7 +321,9 @@
       "scheduled_at": null,
       "posted_at": null,
       "error": null,
-      "_hasLocalBody": true
+      "_hasLocalBody": true,
+      "attachmentCount": 3,
+      "attached_at": "2026-05-29T23:47:48.776Z"
     },
     {
       "id": "028",
@@ -308,7 +334,9 @@
       "scheduled_at": null,
       "posted_at": null,
       "error": null,
-      "_hasLocalBody": true
+      "_hasLocalBody": true,
+      "attachmentCount": 3,
+      "attached_at": "2026-05-29T23:48:18.046Z"
     },
     {
       "id": "029",
@@ -319,7 +347,9 @@
       "scheduled_at": null,
       "posted_at": null,
       "error": null,
-      "_hasLocalBody": true
+      "_hasLocalBody": true,
+      "attachmentCount": 3,
+      "attached_at": "2026-05-29T23:48:47.281Z"
     },
     {
       "id": "030",
@@ -330,7 +360,9 @@
       "scheduled_at": null,
       "posted_at": null,
       "error": null,
-      "_hasLocalBody": true
+      "_hasLocalBody": true,
+      "attachmentCount": 3,
+      "attached_at": "2026-05-29T23:49:16.414Z"
     },
     {
       "id": "031",
@@ -341,7 +373,9 @@
       "scheduled_at": null,
       "posted_at": null,
       "error": null,
-      "_hasLocalBody": true
+      "_hasLocalBody": true,
+      "attachmentCount": 3,
+      "attached_at": "2026-05-29T23:49:45.573Z"
     },
     {
       "id": "032",
@@ -352,7 +386,9 @@
       "scheduled_at": null,
       "posted_at": null,
       "error": null,
-      "_hasLocalBody": true
+      "_hasLocalBody": true,
+      "attachmentCount": 3,
+      "attached_at": "2026-05-29T23:50:14.565Z"
     },
     {
       "id": "033",
@@ -363,7 +399,9 @@
       "scheduled_at": null,
       "posted_at": null,
       "error": null,
-      "_hasLocalBody": true
+      "_hasLocalBody": true,
+      "attachmentCount": 3,
+      "attached_at": "2026-05-29T23:50:44.433Z"
     },
     {
       "id": "034",
@@ -374,7 +412,9 @@
       "scheduled_at": null,
       "posted_at": "2026-05-18T12:15:31.196Z",
       "error": null,
-      "_hasLocalBody": true
+      "_hasLocalBody": true,
+      "attachmentCount": 3,
+      "attached_at": "2026-05-29T23:51:13.489Z"
     },
     {
       "id": "035",

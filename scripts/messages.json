@@ -1,5 +1,45 @@
 [
   {
+    "id": "msg_complete_530_1780115100",
+    "ts": "2026-05-30T13:25:00.922087+09:00",
+    "title": "5/30 自走完遂 (規約 4/5 達成)",
+    "text": "歴史 4/3 OK\n歴史ショート 5/5 OK (3+2 archive upload)\n大人 long 2/3 (audio 問題で 1 不足、 Task #40)\n大人ショート 5/5 OK (3+2 archive upload)\nnote 6/5 OK\n\n完了タスク: #13 #28 #30 #35 #37 #38\n台本/音声ストック: history 40 本 + psych 18 本 完成\nimage_urls 自動取得: history 031-040 完了\n\n大人 long 1 不足は audio 長さ問題 (edge-tts RATE 効かず) で要修正、 翌日以降",
+    "type": "claude_to_user",
+    "read": true
+  },
+  {
+    "id": "msg_x_success_1780103231",
+    "ts": "2026-05-30T10:07:11.287158+09:00",
+    "title": "X 自動投稿 稼働開始",
+    "text": "tweet id=2060528176141607172 投稿成功\nuser_auth=True 修正で 403 解消\n次の自動発火: JST 9/13/17/21/1/5 時 (4 時間毎)\n月 180 投稿 x /usr/bin/bash.015 = .70/月\n5 入金で約 9 ヶ月分予算確保",
+    "type": "claude_to_user",
+    "read": true
+  },
+  {
+    "id": "msg_pipeline_fix_1780096084",
+    "ts": "2026-05-30T08:08:04.166375+09:00",
+    "title": "✅ 動画品質根本対応 + スマホパネル正確化 + 45GB 解放",
+    "text": "今後 YT 全動画 字幕削除完了 (commit 3bf44ea)\nhistory_v2: silence padding 削除 + 動画 seg ループ削除 + 字幕削除\npsych_v2 + shorts_v2: 字幕削除\nアップロード済 3 本 (009/016/004) は放置 (うっちー様指示)\n\nスマホパネル: 歴史 155/74、大人 5/32 (long/shorts 分離)\nディスク C: 3.87GB → 49.04GB (45GB 解放)\n\n次: 固有名詞ふりがな辞書 (今川氏親→いまがわうじちか)\n次: Gemini プロンプトで画像と chapter 内容一致",
+    "type": "claude_to_user",
+    "read": true
+  },
+  {
+    "id": "msg_diskcleanup_1780095750",
+    "ts": "2026-05-30T08:02:30.062098+09:00",
+    "title": "⚠ ディスク危険 (空き 3.9GB のみ)",
+    "text": "削除: 0 件, 解放: 0.0 MB\n空き: 3.88 GB / 118.27 GB\nerrors: 0",
+    "type": "claude_to_user",
+    "read": true
+  },
+  {
+    "id": "msg_diskcleanup_1780095601",
+    "ts": "2026-05-30T08:00:01.375397+09:00",
+    "title": "⚠ ディスク危険 (空き 3.9GB のみ)",
+    "text": "削除: 32 件, 解放: 736.3 MB\n空き: 3.89 GB / 118.27 GB\nerrors: 0",
+    "type": "claude_to_user",
+    "read": true
+  },
+  {
     "id": "msg_diskcleanup_1780015071",
     "ts": "2026-05-29T09:37:51.789444+09:00",
     "title": "🧹 ディスク掃除 (空き 16.8GB)",
@@ -44,7 +84,15 @@
     "ts": "2026-05-29T14:21:39.200399+09:00",
     "title": "📅 日次サイクル完了 2026-05-29",
     "body": "# 日次サイクル 2026-05-29 09:37:51\n\n## -1. ディスク自動掃除\n  before=16.84GB → after=16.84GB (rc=0)\n\n## 0. button server 再起動\n  button server restarted (killed PID 7048)\n\n## 1. 台本ストック確保\n  history: 30 (sufficient)\n  psych: 6 → 6 (rc=1)\n  history_shorts: 10 → 10 (rc=1)\n  otona_shorts: 0 → 0 (rc=1)\n\n## 2. 音声生成\n  history: audio 17 → 30 (rc=0)\n  psych: audio 6/6 (sufficient)\n  history_shorts: audio 10/10 (sufficient)\n  otona_shorts: audio 0/0 (sufficient)\n\n## 3. 字幕同期(whisper)\n  history 010.mp3: rc=0\n  history 011.mp3: rc=0\n  history 012.mp3: rc=0\n  history 013.mp3: rc=0\n  history: refine_srt rc=0\n  psych: whisper sufficient (6/6 SRT exists)\n  psych: refine_srt rc=0\n\n## 4. 動画化＋YT投稿\n  history: rc=0\n  history_shorts: rc=0\n  psych: rc=0\n  otona_shorts: rc=0\n\n## 5. note添付(20件)\n  note attached: 20/200 (rc=0)\n\n## 終了時刻 2026-05-29 14:21:39\n- 歴史: scripts=30 audio=30 srt=28\n- 大人: scripts=6 audio=6 srt=6\n- ショート: scripts=10 audio=10 srt=0\n",
-    "read": false,
+    "read": true,
+    "auto": true
+  },
+  {
+    "id": "daily_1780098676",
+    "ts": "2026-05-30T08:51:16.692517+09:00",
+    "title": "📅 日次サイクル完了 2026-05-30",
+    "body": "# 日次サイクル 2026-05-30 08:00:01\n\n## -1. ディスク自動掃除\n  before=3.17GB → after=3.89GB (rc=0)\n\n## 0. button server 再起動\n  button server restarted (killed PID 2484)\n\n## 1. 台本ストック確保\n  history: 30 (sufficient)\n  psych: 12 → 12 (rc=1)\n  history_shorts: 10 → 10 (rc=1)\n  otona_shorts: 30 (sufficient)\n\n## 2. 音声生成\n  history: audio 30/30 (sufficient)\n  psych: audio 6 → 4 (rc=0)\n  history_shorts: audio 0 → 10 (rc=0)\n  otona_shorts: audio 0 → 30 (rc=0)\n\n## 3. 字幕同期(whisper)\n  history: whisper sufficient (0/0 SRT exists)\n  history: refine_srt rc=0\n  psych 009.mp3: rc=0\n  psych 010.mp3: rc=0\n  psych 011.mp3: rc=0\n  psych 012.mp3: rc=0\n  psych: refine_srt rc=0\n\n## 4. 動画化＋YT投稿\n  history: rc=0\n  history_shorts: rc=0\n  psych: rc=0\n  otona_shorts: rc=0\n\n## 5. note添付(20件)\n  note attached: 20/200 (rc=0)\n\n## 終了時刻 2026-05-30 08:51:16\n- 歴史: scripts=30 audio=0 srt=0\n- 大人: scripts=12 audio=4 srt=4\n- ショート: scripts=10 audio=10 srt=0\n",
+    "read": true,
     "auto": true
   }
 ]

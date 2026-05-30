@@ -43,9 +43,10 @@ VOICE = "ja-JP-NanamiNeural"
 # RATE=-25% + atempo 固定 0.65 の二重適用で 80 分になる事故があったため、 RATE は触らない。
 RATE = "+0%"
 PITCH = "+0Hz"
-# 動画化要件: 30 分動画 = audio >= 1500s。 目標 1750s (29min) に landing させる。
-TARGET_SEC = 1750
-MIN_SEC = 1500
+# 動画化要件: pipeline.mjs GATE は >= 1800s。 余裕を持って 1950s (32.5min) target、
+# raw が 1850s 未満のみ atempo で 1950s に伸長 (1800 gate を確実にクリア)。
+TARGET_SEC = 1950
+MIN_SEC = 1850
 
 KIND_CONFIG = {
     "history": {

@@ -212,8 +212,10 @@ const thumbPath = path.join(WORK, 'thumbnail.jpg');
 const heroImg = imagePaths[0]; // portrait/main figure
 const makeThumbPy = path.join(ROOT, 'scripts', 'make_thumb.py');
 if (!fs.existsSync(makeThumbPy)) fail(`make_thumb.py missing at ${makeThumbPy}`);
+// 2026-05-30: Windows 対応。 python3 は Windows に無い (CLAUDE.md 既知バグ)
+const PYBIN = process.platform === 'win32' ? 'python' : 'python3';
 const thumbRun = spawnSync(
-  'python3',
+  PYBIN,
   [
     makeThumbPy,
     '--title', title,

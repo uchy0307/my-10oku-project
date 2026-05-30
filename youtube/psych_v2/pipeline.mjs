@@ -268,8 +268,10 @@ for idx, L in enumerate(lines):
 img.save(dst, 'JPEG', quality=92)
 print('thumbnail ok:', dst)
 `);
+// 2026-05-30: Windows 対応 (python3 は Windows に無い)
+const PYBIN_THUMB = process.platform === 'win32' ? 'python' : 'python3';
 execSync(
-  `python3 ${JSON.stringify(thumbPy)} ${JSON.stringify(imagePaths[0])} ${JSON.stringify(thumbPath)} ${JSON.stringify(thumbTitle)}`,
+  `${PYBIN_THUMB} ${JSON.stringify(thumbPy)} ${JSON.stringify(imagePaths[0])} ${JSON.stringify(thumbPath)} ${JSON.stringify(thumbTitle)}`,
   { stdio: 'inherit' }
 );
 if (!fs.existsSync(thumbPath) || fs.statSync(thumbPath).size < 5000) {

@@ -174,6 +174,22 @@ async function main() {
     if (!r) continue;
     console.log(`${r.label}: youtube=${r.total} matched=${r.matched} duplicates=${r.duplicates.length}`);
   }
+
+  // 2026-05-30 (Task #13): uploaded_titles.json 集約出力 (title_dedup_check 用 DB)
+  const allTitles = [];
+  for (const sub of ['history_v2', 'shorts_v2', 'psych_v2', 'otona_shorts_v2', 'history_shorts_v2', 'psych_shorts_v2']) {
+    const up = path.join(PROJECT_ROOT, 'youtube', sub, 'uploaded.json');
+    if (!fs.existsSync(up)) continue;
+    try {
+      const db = JSON.parse(fs.readFileSync(up, 'utf8'));
+      for (const [idx, v] of Object.entries(db)) {
+        if (v?.title) allTitles.push({ channel: sub, idx, title: v.title, videoId: v.videoId });
+      }
+    } catch {}
+  }
+  const aggregatedPath = path.join(PROJECT_ROOT, 'youtube', 'uploaded_titles.json');
+  fs.writeFileSync(aggregatedPath, JSON.stringify({ updatedAt: new Date().toISOString(), count: allTitles.length, titles: allTitles }, null, 2), 'utf8');
+  console.log(`\n[aggregated] uploaded_titles.json written (${allTitles.length} titles) → ${aggregatedPath}`);
 }
 
 main().catch(e => {

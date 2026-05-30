@@ -230,9 +230,29 @@ def build_outline_prompt(topic: dict, cfg: dict) -> str:
 それでは作成せよ。"""
 
 
+def check_title_dup(title: str, threshold: float = 0.7) -> bool:
+    """既存タイトルと類似度チェック。 True = 重複 (REJECT)、 False = OK。
+    title_dedup_check.py を subprocess 経由で呼ぶ。"""
+    import subprocess
+    try:
+        r = subprocess.run(
+            [sys.executable, str(ROOT / 'scripts' / 'title_dedup_check.py'),
+             '--title', title, '--threshold', str(threshold)],
+            capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=30
+        )
+        return r.returncode != 0  # exit 1 = REJECT
+    except Exception as e:
+        print(f"  [WARN] dedup check failed: {e} (skip check)")
+        return False
+
+
 def generate_one(topic: dict, cfg: dict) -> dict:
     """1本分の台本JSONを生成"""
     print(f"[gen] {topic['id']}: {topic['title']}")
+    # 2026-05-30: title 重複防止 (Task #13)
+    if check_title_dup(topic['title'], threshold=0.7):
+        print(f"  [DUP] title 重複検出、 skip: {topic['title']}")
+        return None
     outline = call_gemini(build_outline_prompt(topic, cfg))
     chapters = []
     prev = ""
@@ -333,9 +353,14 @@ def main():
 
     ok = 0
     fail = 0
+    skip = 0
     for t in target:
         try:
             data = generate_one(t, cfg)
+            if data is None:
+                # 重複検出で skip
+                skip += 1
+                continue
             fpath = out_dir / cfg["filename_tpl"].format(id=t["id"])
             fpath.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
             ok += 1
@@ -348,7 +373,7 @@ def main():
             print(f"[FAIL] {t['id']}: {e}")
             time.sleep(10)
 
-    print(f"\n=== Done: {ok} OK, {fail} FAIL ===")
+    print(f"\n=== Done: {ok} OK, {skip} SKIP (dup), {fail} FAIL ===")
 
 
 if __name__ == "__main__":

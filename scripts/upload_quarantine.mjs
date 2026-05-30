@@ -26,14 +26,25 @@ if (fs.existsSync(envPath)) {
 }
 
 // ===== args =====
-const args = { kind: null, count: 3 };
-for (const a of process.argv.slice(2)) {
+// --kind=<>: history/psych/shorts/otona_shorts
+// --count=<>: 上限本数 (default 3)
+// --ids=009,016: 特定 idx 強制再投稿 (uploaded.json 既存でも投稿、 順序 ids 通り)
+// --force: uploaded.json 既存 idx もスキップせず投稿
+const args = { kind: null, count: 3, ids: null, force: false };
+for (let i = 0; i < process.argv.slice(2).length; i++) {
+  const a = process.argv.slice(2)[i];
   const mk = a.match(/^--kind=([a-z_]+)$/);
   if (mk) args.kind = mk[1];
   const mc = a.match(/^--count=(\d+)$/);
   if (mc) args.count = parseInt(mc[1]);
-  if (a.startsWith('--kind') && !mk) args.kind = process.argv[process.argv.indexOf(a) + 1];
-  if (a.startsWith('--count') && !mc) args.count = parseInt(process.argv[process.argv.indexOf(a) + 1]);
+  const mi = a.match(/^--ids=(.+)$/);
+  if (mi) args.ids = mi[1].split(',').map(s => s.trim()).filter(s => /^\d{3}(?:_(?:intro|peak|outro))?$/.test(s));
+  if (a === '--force') args.force = true;
+  if (a.startsWith('--kind') && !mk) args.kind = process.argv.slice(2)[i + 1];
+  if (a.startsWith('--count') && !mc) args.count = parseInt(process.argv.slice(2)[i + 1]);
+  if (a.startsWith('--ids') && !mi && process.argv.slice(2)[i + 1]) {
+    args.ids = process.argv.slice(2)[i + 1].split(',').map(s => s.trim()).filter(s => /^\d{3}(?:_(?:intro|peak|outro))?$/.test(s));
+  }
 }
 
 const CFG = {
@@ -99,8 +110,14 @@ function collectFrom(baseDir) {
     .map(idx => ({ idx, dir: path.join(baseDir, idx) }));
 }
 const minDuration = cfg.shorts ? 14 : 1500;   // shorts >= 14s, long >= 25min
-const allRaw = [...collectFrom(quarantineDir), ...collectFrom(workDir)]
-  .filter(c => !uploadedDb[c.idx]);
+const allRaw0 = [...collectFrom(quarantineDir), ...collectFrom(workDir)];
+// --ids 指定時は filter、 未指定 + !force なら uploaded.json 既存 skip
+const allRaw = args.ids
+  ? allRaw0.filter(c => args.ids.includes(c.idx))
+  : (args.force ? allRaw0 : allRaw0.filter(c => !uploadedDb[c.idx]));
+if (args.ids) {
+  console.log(`[upload_quarantine] --ids 指定: ${args.ids.join(',')} (uploaded.json 無視で強制投稿)`);
+}
 // idx ごとに ffprobe → valid + duration 大きい方を採用
 const byIdx = {};
 for (const c of allRaw) {
@@ -113,7 +130,15 @@ for (const c of allRaw) {
     byIdx[c.idx] = { idx: c.idx, dir: c.dir, duration: probe.duration };
   }
 }
-const allCandidates = Object.values(byIdx).sort((a, b) => a.idx.localeCompare(b.idx));
+// --ids 指定時は ids 順序維持、 通常は idx 昇順
+let allCandidates;
+if (args.ids) {
+  allCandidates = args.ids
+    .map(id => byIdx[id])
+    .filter(Boolean);
+} else {
+  allCandidates = Object.values(byIdx).sort((a, b) => a.idx.localeCompare(b.idx));
+}
 const candidates = allCandidates.map(c => c.idx);
 const candidateDirs = Object.fromEntries(allCandidates.map(c => [c.idx, c.dir]));
 

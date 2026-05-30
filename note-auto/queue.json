@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "synced_at": "2026-05-30T09:34:43.968Z",
+  "synced_at": "2026-05-30T11:57:02.528Z",
   "items": [
     {
       "id": "001",
@@ -165,9 +165,7 @@
       "scheduled_at": null,
       "posted_at": "2026-05-16T06:17:34.225Z",
       "error": null,
-      "_hasLocalBody": true,
-      "attachmentCount": 3,
-      "attached_at": "2026-05-29T23:41:54.041Z"
+      "_hasLocalBody": true
     },
     {
       "id": "016",
@@ -178,9 +176,7 @@
       "scheduled_at": null,
       "posted_at": "2026-05-16T08:04:14.086Z",
       "error": null,
-      "_hasLocalBody": true,
-      "attachmentCount": 3,
-      "attached_at": "2026-05-29T23:42:23.508Z"
+      "_hasLocalBody": true
     },
     {
       "id": "017",
@@ -191,9 +187,7 @@
       "scheduled_at": null,
       "posted_at": "2026-05-16T08:13:53.607Z",
       "error": null,
-      "_hasLocalBody": true,
-      "attachmentCount": 3,
-      "attached_at": "2026-05-29T23:42:52.663Z"
+      "_hasLocalBody": true
     },
     {
       "id": "018",
@@ -204,9 +198,7 @@
       "scheduled_at": null,
       "posted_at": "2026-05-16T08:21:15.608Z",
       "error": null,
-      "_hasLocalBody": true,
-      "attachmentCount": 3,
-      "attached_at": "2026-05-29T23:43:22.113Z"
+      "_hasLocalBody": true
     },
     {
       "id": "019",
@@ -217,9 +209,7 @@
       "scheduled_at": null,
       "posted_at": "2026-05-16T08:33:13.322Z",
       "error": null,
-      "_hasLocalBody": true,
-      "attachmentCount": 3,
-      "attached_at": "2026-05-29T23:43:51.053Z"
+      "_hasLocalBody": true
     },
     {
       "id": "020",
@@ -230,9 +220,7 @@
       "scheduled_at": null,
       "posted_at": "2026-05-16T08:40:33.506Z",
       "error": null,
-      "_hasLocalBody": true,
-      "attachmentCount": 3,
-      "attached_at": "2026-05-29T23:44:20.152Z"
+      "_hasLocalBody": true
     },
     {
       "id": "021",
@@ -243,9 +231,7 @@
       "scheduled_at": null,
       "posted_at": "2026-05-16T14:55:19.552Z",
       "error": null,
-      "_hasLocalBody": true,
-      "attachmentCount": 3,
-      "attached_at": "2026-05-29T23:44:49.123Z"
+      "_hasLocalBody": true
     },
     {
       "id": "022",
@@ -256,9 +242,7 @@
       "scheduled_at": null,
       "posted_at": "2026-05-16T16:56:27.561Z",
       "error": null,
-      "_hasLocalBody": true,
-      "attachmentCount": 3,
-      "attached_at": "2026-05-29T23:45:18.152Z"
+      "_hasLocalBody": true
     },
     {
       "id": "023",
@@ -269,9 +253,7 @@
       "scheduled_at": null,
       "posted_at": null,
       "error": null,
-      "_hasLocalBody": true,
-      "attachmentCount": 3,
-      "attached_at": "2026-05-29T23:45:47.190Z"
+      "_hasLocalBody": true
     },
     {
       "id": "024",
@@ -282,9 +264,7 @@
       "scheduled_at": null,
       "posted_at": null,
       "error": null,
-      "_hasLocalBody": true,
-      "attachmentCount": 3,
-      "attached_at": "2026-05-29T23:46:16.234Z"
+      "_hasLocalBody": true
     },
     {
       "id": "025",
@@ -295,9 +275,7 @@
       "scheduled_at": null,
       "posted_at": null,
       "error": null,
-      "_hasLocalBody": true,
-      "attachmentCount": 3,
-      "attached_at": "2026-05-29T23:46:49.748Z"
+      "_hasLocalBody": true
     },
     {
       "id": "026",
@@ -308,9 +286,7 @@
       "scheduled_at": null,
       "posted_at": null,
       "error": null,
-      "_hasLocalBody": true,
-      "attachmentCount": 3,
-      "attached_at": "2026-05-29T23:47:18.987Z"
+      "_hasLocalBody": true
     },
     {
       "id": "027",
@@ -321,9 +297,7 @@
       "scheduled_at": null,
       "posted_at": null,
       "error": null,
-      "_hasLocalBody": true,
-      "attachmentCount": 3,
-      "attached_at": "2026-05-29T23:47:48.776Z"
+      "_hasLocalBody": true
     },
     {
       "id": "028",
@@ -334,9 +308,7 @@
       "scheduled_at": null,
       "posted_at": null,
       "error": null,
-      "_hasLocalBody": true,
-      "attachmentCount": 3,
-      "attached_at": "2026-05-29T23:48:18.046Z"
+      "_hasLocalBody": true
     },
     {
       "id": "029",
@@ -347,9 +319,7 @@
       "scheduled_at": null,
       "posted_at": null,
       "error": null,
-      "_hasLocalBody": true,
-      "attachmentCount": 3,
-      "attached_at": "2026-05-29T23:48:47.281Z"
+      "_hasLocalBody": true
     },
     {
       "id": "030",
@@ -360,9 +330,7 @@
       "scheduled_at": null,
       "posted_at": null,
       "error": null,
-      "_hasLocalBody": true,
-      "attachmentCount": 3,
-      "attached_at": "2026-05-29T23:49:16.414Z"
+      "_hasLocalBody": true
     },
     {
       "id": "031",
@@ -373,9 +341,7 @@
       "scheduled_at": null,
       "posted_at": null,
       "error": null,
-      "_hasLocalBody": true,
-      "attachmentCount": 3,
-      "attached_at": "2026-05-29T23:49:45.573Z"
+      "_hasLocalBody": true
     },
     {
       "id": "032",
@@ -386,9 +352,7 @@
       "scheduled_at": null,
       "posted_at": null,
       "error": null,
-      "_hasLocalBody": true,
-      "attachmentCount": 3,
-      "attached_at": "2026-05-29T23:50:14.565Z"
+      "_hasLocalBody": true
     },
     {
       "id": "033",
@@ -399,9 +363,7 @@
       "scheduled_at": null,
       "posted_at": null,
       "error": null,
-      "_hasLocalBody": true,
-      "attachmentCount": 3,
-      "attached_at": "2026-05-29T23:50:44.433Z"
+      "_hasLocalBody": true
     },
     {
       "id": "034",
@@ -412,9 +374,7 @@
       "scheduled_at": null,
       "posted_at": "2026-05-18T12:15:31.196Z",
       "error": null,
-      "_hasLocalBody": true,
-      "attachmentCount": 3,
-      "attached_at": "2026-05-29T23:51:13.489Z"
+      "_hasLocalBody": true
     },
     {
       "id": "035",
@@ -1547,6 +1507,17 @@
       "scheduled_at": null,
       "posted_at": "2026-05-30T09:44:20.687Z",
       "error": null,
+      "_hasLocalBody": true
+    },
+    {
+      "id": "138",
+      "draftId": "n779802a2d580",
+      "title": "【AI対話アプリ】📚 200の問い #138 「塾講師・勉強の動機づけ」",
+      "publish": true,
+      "status": "published",
+      "scheduled_at": null,
+      "posted_at": "2026-05-30T12:17:44.087Z",
+      "error": null,
       "_hasLocalBody": true,
       "priceSet": true,
       "boundarySet": true,
@@ -1555,17 +1526,6 @@
       "anonStatus": 200,
       "attached": 0,
       "attach_error": "attached=0/3 lastReason=file btn click: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('button:has-text(\"ファイル\"), [role=\"menuitem\"]:has-text(\"ファイル\"), li:has-text(\"ファイル\") button, [data-testid*=\"file\"], button:has-text(\"File\"), button:has-text(\"ドキュメント\")').first()\n    - locator resolved to <button data-selected=\"false\" aria-selected=\"false\" class=\"sc-876c5825-4 cmGlJU\">…</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    58 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n"
-    },
-    {
-      "id": "138",
-      "draftId": "n779802a2d580",
-      "title": "【AI対話アプリ】📚 200の問い #138 「塾講師・勉強の動機づけ」",
-      "publish": true,
-      "status": "pending",
-      "scheduled_at": null,
-      "posted_at": null,
-      "error": null,
-      "_hasLocalBody": true
     },
     {
       "id": "139",

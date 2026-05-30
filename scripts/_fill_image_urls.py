@@ -48,6 +48,9 @@ MODERN_NG = [
     # 海外の同名地名・施設 (ローマ字が米国地名等にマッチする事故対策)
     'nrhp', 'county', '_sd_', '_usa', '_us_', 'illinois', 'california',
     'texas', 'ohio', 'virginia', 'dakota', 'kansas', 'street_view',
+    # 天体・地名collision (絵師名が水星クレーター等にマッチ)
+    'crater', 'nasa', 'mercury', 'planet', 'm10', 'aom', 'asteroid',
+    'lunar', 'satellite', 'spacecraft', 'messenger',
 ]
 # 歴史画像を優先するための GOOD パターン
 HIST_GOOD = [

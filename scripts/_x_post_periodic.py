@@ -100,7 +100,8 @@ def post_to_x(text, dry_run=False):
             access_token=access_token,
             access_token_secret=access_secret,
         )
-        res = client.create_tweet(text=text)
+        # 2026-05-30: user_auth=True 明示 (tweepy >= 4.10 で OAuth 1.0a User Context 確実化)
+        res = client.create_tweet(text=text, user_auth=True)
         tid = res.data.get('id') if hasattr(res, 'data') else '?'
         print(f'[x-post] OK -> tweet id={tid}')
         return True

@@ -108,4 +108,14 @@ PCをOFFにしても、クラウドで自律稼働を継続します。
 
 ---
 
+## 公開プラットフォーム (苦徹成珠 ─ 侍の美学)
+
+- **X (Twitter)**: [@SoothingSoothin](https://x.com/SoothingSoothin) ── 1日6回 自動投稿 cron 稼働中
+- **toi-suite (Web アプリ)**: [https://toi-suite.vercel.app/](https://toi-suite.vercel.app/) ── 6軸自己診断 + 200の問い
+- **note (記事)**: [https://note.com/happy_happy_4649](https://note.com/happy_happy_4649) ── 200の問い 1問100円
+- **YouTube (日本史)**: [@Japanese.Samurai.Channel](https://www.youtube.com/@Japanese.Samurai.Channel)
+- **YouTube (大人の心理学)**: [@Otona_Psychology](https://www.youtube.com/@Otona_Psychology)
+
+---
+
 侍の美学を、最後の最後まで。

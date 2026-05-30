@@ -25,13 +25,14 @@ CLAUDE.md 本体は規約のみ保持。月次で過去の incident は `docs/in
 - **コア哲学**: 苦徹成珠・侍の美学
 - **ターゲット**: 全ての成熟した悩める大人（※「47歳管理職」表現は使用禁止）
 
-## 4本柱（最新）
+## 4本柱（最新） + X (2026-05-30 追加)
 
 | # | プロダクト | URL | 状態 |
 |---|---|---|---|
 | 1 | toi-suite Webアプリ | https://toi-suite.vercel.app/ | Vercel稼働中。**有料（noteの該当回購入者のみアクセス可）**。改善フェーズ |
 | 2 | 歴史侍YouTube | https://www.youtube.com/@Japanese.Samurai.Channel | 過去収益化、登録3000、250本実績、現在非収益化（再生時間狙い） |
 | 3 | 大人心理学YouTube | https://www.youtube.com/@Otona_Psychology | 立ち上げ初期、ローカル生成→アップロード方針 |
+| **6** | **X (Twitter)** | **https://x.com/SoothingSoothin** | **2026-05-30 GitHub Actions cron 月 180 投稿稼働中。 URL なしテンプレ10 種、 月 $2.70 (Pay Per Use)** |
 | 4 | note記事 | https://note.com/happy_happy_4649 | 200本下書きアップ済、毎日5本自動公開中（1本100円買取制） |
 | 5 | LP | https://main.uchy-lp.pages.dev | 公開中。カスタムドメイン `lp.uchy0307.uk` は調整中 |
 

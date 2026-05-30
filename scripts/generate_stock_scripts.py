@@ -245,7 +245,15 @@ def generate_one(topic: dict, cfg: dict) -> dict:
         "id": topic["id"],
         "title": topic["title"],
         "category": topic.get("category", ""),
-        "description": f"{topic['title']}を深掘り解説します。\n\nチャンネル登録もお願いします。",
+        "description": (
+            f"{topic['title']}を深掘り解説します。\n\nチャンネル登録もお願いします。\n\n"
+            "━━━━━━━━━━━━━━━━━\n"
+            "📌 関連プラットフォーム / 苦徹成珠\n"
+            "X (Twitter): https://x.com/SoothingSoothin\n"
+            "toi-suite (200の問い): https://toi-suite.vercel.app/\n"
+            "note: https://note.com/happy_happy_4649\n"
+            "━━━━━━━━━━━━━━━━━"
+        ),
         "tags": [topic.get("category", ""), "解説", "心理学", "侍"],
         "chapters": chapters,
         "image_urls": [],

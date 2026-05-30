@@ -95,3 +95,13 @@
 #015「集中力プロファイラー」 — 「偽りの自分チェッカー」と地続きで取り組める隣接テーマです。一緒に進めると、変化が複利で積み上がります。
 
 happyhappy
+
+---
+
+📌 **関連プラットフォーム / Follow me**
+
+- **X (Twitter)**: [@SoothingSoothin](https://x.com/SoothingSoothin) ── 苦徹成珠 ─ 侍の美学
+- **toi-suite**: [200の問い + 6軸自己診断](https://toi-suite.vercel.app/) ── 無料7問体験
+- **YouTube (日本史)**: [@Japanese.Samurai.Channel](https://www.youtube.com/@Japanese.Samurai.Channel)
+- **YouTube (大人の心理学)**: [@Otona_Psychology](https://www.youtube.com/@Otona_Psychology)
+

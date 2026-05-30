@@ -78,3 +78,13 @@ https://toi-suite.vercel.app/004
 最後までお読みいただきありがとうございました。今夜、メモアプリの「しんどい」の隣に、その理由を1行だけ書いてみてください。明朝の景色が変わります。
 
 happyhappy
+
+---
+
+📌 **関連プラットフォーム / Follow me**
+
+- **X (Twitter)**: [@SoothingSoothin](https://x.com/SoothingSoothin) ── 苦徹成珠 ─ 侍の美学
+- **toi-suite**: [200の問い + 6軸自己診断](https://toi-suite.vercel.app/) ── 無料7問体験
+- **YouTube (日本史)**: [@Japanese.Samurai.Channel](https://www.youtube.com/@Japanese.Samurai.Channel)
+- **YouTube (大人の心理学)**: [@Otona_Psychology](https://www.youtube.com/@Otona_Psychology)
+

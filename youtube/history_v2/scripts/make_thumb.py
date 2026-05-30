@@ -39,7 +39,15 @@ MAX_TEXT_W = int(W * 0.92)
 
 # Candidate Japanese-capable font paths, in priority order.
 JP_FONT_CANDIDATES = [
-    # GitHub Actions ubuntu-latest after `apt install fonts-noto-ckk`
+    # Windows (2026-05-30 追加: CLAUDE.md 既知バグ「サムネフォント Linux 決め打ち」対策)
+    r"C:\Windows\Fonts\YuGothB.ttc",      # 游ゴシック Bold
+    r"C:\Windows\Fonts\YuGothM.ttc",      # 游ゴシック Medium
+    r"C:\Windows\Fonts\meiryob.ttc",      # メイリオ Bold
+    r"C:\Windows\Fonts\meiryo.ttc",       # メイリオ
+    r"C:\Windows\Fonts\msgothic.ttc",     # MS ゴシック
+    r"C:\Windows\Fonts\NotoSansCJKjp-Bold.otf",
+    r"C:\Windows\Fonts\BIZ-UDGothicB.ttc",
+    # GitHub Actions ubuntu-latest after `apt install fonts-noto-cjk`
     "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
     "/usr/share/fonts/opentype/noto/NotoSansCJK.ttc",
     "/usr/share/fonts/opentype/noto/NotoSansJP-Bold.otf",

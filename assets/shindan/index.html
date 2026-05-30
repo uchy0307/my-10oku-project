@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>侍タイプ診断｜あなたは戦国武将なら誰?｜苦徹成珠</title>
+<meta name="description" content="8つの問いで、あなたの中の戦国武将を診断。信長・秀吉・家康・謙信・政宗… あなたはどのタイプ? 無料・登録不要。">
+<meta property="og:title" content="侍タイプ診断｜あなたは戦国武将なら誰?">
+<meta property="og:description" content="8つの問いであなたの中の戦国武将を診断。結果をシェアしよう。">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Yuji+Boku&family=Noto+Serif+JP:wght@500;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0A0A0F;--ink:#F8F4E9;--gold:#D4AF37;--aka:#A52A2A;--sub:#9a9aa0;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:var(--bg);color:var(--ink);font-family:'Noto Sans JP',sans-serif;line-height:1.7;-webkit-text-size-adjust:100%;}
+.wrap{max-width:680px;margin:0 auto;padding:1.5rem 1.2rem 4rem;}
+header{text-align:center;padding:2rem 0 1rem;}
+.brand{font-family:'Yuji Boku','Noto Serif JP',serif;color:var(--gold);font-size:1.1rem;letter-spacing:.15em;}
+h1{font-family:'Yuji Boku','Noto Serif JP',serif;font-size:clamp(1.8rem,6vw,2.8rem);margin:.8rem 0;line-height:1.3;}
+.lead{color:var(--sub);font-size:.95rem;}
+.btn{display:inline-block;background:var(--aka);color:#fff;font-weight:700;padding:1rem 2.5rem;border:1px solid var(--aka);border-radius:4px;cursor:pointer;font-size:1.05rem;transition:.25s;text-decoration:none;font-family:'Noto Sans JP',sans-serif;}
+.btn:hover{background:transparent;color:var(--gold);border-color:var(--gold);}
+.btn-ghost{background:transparent;color:var(--gold);border:1px solid var(--gold);}
+.card{background:#13131a;border:1px solid rgba(212,175,55,.2);border-radius:8px;padding:1.5rem;margin:1rem 0;}
+.q-num{color:var(--gold);font-size:.85rem;letter-spacing:.1em;margin-bottom:.5rem;}
+.q-text{font-family:'Noto Serif JP',serif;font-weight:500;font-size:1.25rem;margin-bottom:1.4rem;}
+.opt{display:block;width:100%;text-align:left;background:#1b1b24;border:1px solid rgba(248,244,233,.12);color:var(--ink);padding:1rem 1.2rem;border-radius:6px;margin:.6rem 0;cursor:pointer;font-size:1rem;transition:.2s;font-family:inherit;}
+.opt:hover{border-color:var(--gold);background:#22222c;}
+.progress{height:4px;background:#1b1b24;border-radius:2px;margin:1.5rem 0;overflow:hidden;}
+.bar{height:100%;background:linear-gradient(90deg,var(--aka),var(--gold));width:0;transition:width .4s;}
+.hidden{display:none;}
+#result{text-align:center;}
+.r-type{font-family:'Yuji Boku','Noto Serif JP',serif;font-size:clamp(2rem,8vw,3.2rem);color:var(--gold);margin:.5rem 0;}
+.r-sub{color:var(--sub);margin-bottom:1.2rem;}
+.r-desc{font-family:'Noto Serif JP',serif;text-align:left;line-height:2;margin:1.5rem 0;}
+.r-traits{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;margin:1rem 0;}
+.trait{background:rgba(212,175,55,.15);color:var(--gold);padding:.3rem .9rem;border-radius:20px;font-size:.85rem;}
+canvas{max-width:100%;border-radius:8px;margin:1rem 0;border:1px solid rgba(212,175,55,.2);}
+.share{display:flex;gap:.8rem;justify-content:center;flex-wrap:wrap;margin:1.5rem 0;}
+.foot{text-align:center;color:var(--sub);font-size:.8rem;margin-top:3rem;line-height:1.9;}
+.foot a{color:var(--gold);text-decoration:none;}
+.cross{background:#13131a;border:1px solid rgba(165,42,42,.3);border-radius:8px;padding:1.3rem;margin:2rem 0;text-align:center;}
+.cross h3{font-family:'Noto Serif JP',serif;font-size:1.1rem;margin-bottom:.8rem;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">苦徹成珠 ─ 侍の美学</div>
+    <h1>侍タイプ診断</h1>
+    <p class="lead">8つの問いで、あなたの中の戦国武将がわかる</p>
+  </header>
+
+  <!-- INTRO -->
+  <section id="intro">
+    <div class="card" style="text-align:center;">
+      <p style="font-family:'Noto Serif JP',serif;font-size:1.1rem;margin-bottom:1.5rem;">
+        もしあなたが戦国の世に生まれていたら──<br>どんな武将になっていたか。
+      </p>
+      <p class="lead" style="margin-bottom:1.8rem;">所要1分・全8問・登録不要</p>
+      <button class="btn" onclick="start()">診断を始める</button>
+    </div>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="quiz" class="hidden">
+    <div class="progress"><div class="bar" id="bar"></div></div>
+    <div class="card">
+      <div class="q-num" id="qnum"></div>
+      <div class="q-text" id="qtext"></div>
+      <div id="opts"></div>
+    </div>
+  </section>
+
+  <!-- RESULT -->
+  <section id="result" class="hidden">
+    <div class="card">
+      <div class="lead">あなたの侍タイプは</div>
+      <div class="r-type" id="rtype"></div>
+      <div class="r-sub" id="rsub"></div>
+      <div class="r-traits" id="rtraits"></div>
+      <canvas id="shareCanvas" width="1080" height="1080" style="display:none;"></canvas>
+      <img id="shareImg" style="max-width:100%;border-radius:8px;margin:1rem 0;" alt="診断結果">
+      <div class="r-desc" id="rdesc"></div>
+      <div class="share">
+        <a class="btn" id="xshare" target="_blank" rel="noopener">Xでシェア</a>
+        <button class="btn-ghost btn" onclick="saveImg()">結果画像を保存</button>
+        <button class="btn-ghost btn" onclick="location.reload()">もう一度</button>
+      </div>
+    </div>
+    <div class="cross">
+      <h3>あなたの「侍性」を6軸で深掘り</h3>
+      <p class="lead" style="margin-bottom:1rem;">決断力・洞察力・大義・精神力・適応力・規律心を可視化する本格診断へ</p>
+      <a class="btn" href="https://toi-suite.vercel.app/#sample" target="_blank" rel="noopener">6軸自己診断（無料7問）</a>
+    </div>
+  </section>
+
+  <div class="foot">
+    <a href="https://www.youtube.com/@Japanese.Samurai.Channel">歴史侍チャンネル</a> ／
+    <a href="https://x.com/SoothingSoothin">X</a> ／
+    <a href="https://toi-suite.vercel.app/">toi-suite</a><br>
+    苦徹成珠 ─ SAMURAI AESTHETICS
+  </div>
+</div>
+
+<script>
+// 8 問。 各選択肢が 5 タイプにスコア配分
+// タイプ: 信長(革新) 秀吉(人心) 家康(忍耐) 謙信(義) 政宗(野心)
+const TYPES={
+  nobunaga:{name:"織田信長",sub:"革新の天才肌",traits:["革新","合理","カリスマ"],
+    desc:"常識を壊し、新しい秩序を創る人。退屈を最も嫌い、誰も見たことのない道を切り拓く。その熱量は人を惹きつけ、時に恐れさせる。あなたが動くとき、世界は確実に変わり始める。",color:"#A52A2A"},
+  hideyoshi:{name:"豊臣秀吉",sub:"人たらしの戦略家",traits:["人心掌握","柔軟","上昇志向"],
+    desc:"人の心を読み、味方に変える天性の才。どんな逆境も知恵と愛嬌で乗り越える。ゼロから頂点へ駆け上がる原動力は、あなたの『人を喜ばせたい』という純粋さにある。",color:"#D4AF37"},
+  ieyasu:{name:"徳川家康",sub:"忍耐の大器",traits:["忍耐","大局観","堅実"],
+    desc:"急がず、焦らず、好機を待てる人。目先の勝ちより最後の勝ちを見据える。あなたの我慢強さは弱さではなく、誰よりも長く戦い続けるための最強の武器だ。",color:"#2C7A4B"},
+  kenshin:{name:"上杉謙信",sub:"義に生きる軍神",traits:["義理","誇り","信念"],
+    desc:"損得ではなく『正しさ』で動く人。筋を通すためなら自分の不利も恐れない。その清廉さは現代では稀有で、まわりの人はあなたの背中に静かな尊敬を抱いている。",color:"#3A6EA5"},
+  masamune:{name:"伊達政宗",sub:"野心の風雲児",traits:["野心","美意識","大胆"],
+    desc:"遅れてきた天才。生まれた時代を呪いながらも、与えられた手札で最大の勝負を仕掛ける。あなたの美学と反骨心は、平凡を拒み、人生を作品に変えていく。",color:"#7B4FA0"},
+};
+const Q=[
+ {q:"大きな決断を迫られた。あなたは?",a:[
+   ["前例がなくても面白い方を選ぶ","nobunaga"],
+   ["まず周りの空気と人を読む","hideyoshi"],
+   ["焦らず情報を集めて待つ","ieyasu"],
+   ["自分の信念に正しいかで決める","kenshin"],
+   ["一発逆転の大勝負に賭ける","masamune"]]},
+ {q:"チームであなたの役回りは?",a:[
+   ["方向を指し示すリーダー","nobunaga"],
+   ["みんなを繋ぐ調整役","hideyoshi"],
+   ["土台を支える縁の下","ieyasu"],
+   ["筋を通す目付け役","kenshin"],
+   ["流れを変える切り込み隊長","masamune"]]},
+ {q:"敵に勝つために重視するのは?",a:[
+   ["誰も思いつかない奇策","nobunaga"],
+   ["敵を味方に変える調略","hideyoshi"],
+   ["相手が崩れるまで待つ","ieyasu"],
+   ["正々堂々の真っ向勝負","kenshin"],
+   ["勢いと気迫の電撃戦","masamune"]]},
+ {q:"あなたが最も恐れるのは?",a:[
+   ["退屈・停滞","nobunaga"],
+   ["人に嫌われ孤立すること","hideyoshi"],
+   ["取り返しのつかない失敗","ieyasu"],
+   ["筋を曲げて生きること","kenshin"],
+   ["凡庸なまま終わること","masamune"]]},
+ {q:"理想の生き様に近いのは?",a:[
+   ["時代を作り変える","nobunaga"],
+   ["裸一貫から頂点へ","hideyoshi"],
+   ["最後に笑う者になる","ieyasu"],
+   ["義を貫き名を残す","kenshin"],
+   ["己の美学を貫く","masamune"]]},
+ {q:"部下・仲間への接し方は?",a:[
+   ["実力主義で抜擢する","nobunaga"],
+   ["情に厚く面倒見が良い","hideyoshi"],
+   ["長く信頼を積み重ねる","ieyasu"],
+   ["公平で筋を曲げない","kenshin"],
+   ["背中で魅せて引っ張る","masamune"]]},
+ {q:"逆境に立たされたとき?",a:[
+   ["ルールごとひっくり返す","nobunaga"],
+   ["人脈とアイデアで切り抜ける","hideyoshi"],
+   ["耐えて好機を待つ","ieyasu"],
+   ["信念を盾に真っ向から","kenshin"],
+   ["大胆に賭けて打開する","masamune"]]},
+ {q:"あなたにとって『勝ち』とは?",a:[
+   ["新しい世界を見ること","nobunaga"],
+   ["みんなで栄えること","hideyoshi"],
+   ["最後まで生き残ること","ieyasu"],
+   ["誇りを守り抜くこと","kenshin"],
+   ["己の名を歴史に刻むこと","masamune"]]},
+];
+
+let idx=0, score={nobunaga:0,hideyoshi:0,ieyasu:0,kenshin:0,masamune:0};
+const $=id=>document.getElementById(id);
+
+function start(){$("intro").classList.add("hidden");$("quiz").classList.remove("hidden");render();}
+function render(){
+  const q=Q[idx];
+  $("qnum").textContent=`問 ${idx+1} / ${Q.length}`;
+  $("qtext").textContent=q.q;
+  $("bar").style.width=`${(idx/Q.length)*100}%`;
+  const o=$("opts");o.innerHTML="";
+  q.a.forEach(([label,type])=>{
+    const b=document.createElement("button");
+    b.className="opt";b.textContent=label;
+    b.onclick=()=>{score[type]++;next();};
+    o.appendChild(b);
+  });
+}
+function next(){idx++;if(idx<Q.length){render();}else{show();}}
+function show(){
+  $("bar").style.width="100%";
+  $("quiz").classList.add("hidden");$("result").classList.remove("hidden");
+  let best="nobunaga",max=-1;
+  for(const k in score){if(score[k]>max){max=score[k];best=k;}}
+  const t=TYPES[best];
+  $("rtype").textContent=t.name;
+  $("rsub").textContent=t.sub;
+  $("rdesc").textContent=t.desc;
+  const tr=$("rtraits");tr.innerHTML="";
+  t.traits.forEach(x=>{const s=document.createElement("span");s.className="trait";s.textContent="#"+x;tr.appendChild(s);});
+  drawShare(t);
+  const text=encodeURIComponent(`私の侍タイプは【${t.name}】${t.sub}でした!\nあなたは戦国武将なら誰?\n#侍タイプ診断 #苦徹成珠`);
+  $("xshare").href=`https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent(location.href)}`;
+}
+function drawShare(t){
+  const c=$("shareCanvas"),x=c.getContext("2d");
+  x.fillStyle="#0A0A0F";x.fillRect(0,0,1080,1080);
+  // 枠
+  x.strokeStyle=t.color;x.lineWidth=6;x.strokeRect(40,40,1000,1000);
+  // ブランド
+  x.fillStyle="#D4AF37";x.textAlign="center";x.font="34px 'Noto Serif JP',serif";
+  x.fillText("苦徹成珠 ─ 侍の美学",540,140);
+  x.font="40px 'Noto Sans JP',sans-serif";x.fillStyle="#9a9aa0";
+  x.fillText("私の侍タイプは",540,320);
+  // 武将名
+  x.fillStyle=t.color;x.font="bold 120px 'Noto Serif JP',serif";
+  x.fillText(t.name,540,470);
+  x.fillStyle="#F8F4E9";x.font="44px 'Noto Serif JP',serif";
+  x.fillText(t.sub,540,560);
+  // traits
+  x.fillStyle="#D4AF37";x.font="38px 'Noto Sans JP',sans-serif";
+  x.fillText(t.traits.map(v=>"#"+v).join("  "),540,650);
+  // desc (wrap)
+  x.fillStyle="#cfcfd4";x.font="34px 'Noto Sans JP',sans-serif";
+  wrap(x,t.desc,540,740,920,50);
+  // footer
+  x.fillStyle="#D4AF37";x.font="32px 'Noto Sans JP',sans-serif";
+  x.fillText("▶ 侍タイプ診断 で検索",540,1000);
+  const url=c.toDataURL("image/png");
+  $("shareImg").src=url;
+}
+function wrap(ctx,text,cx,cy,maxW,lh){
+  const chars=[...text];let line="",y=cy;
+  for(const ch of chars){
+    if(ctx.measureText(line+ch).width>maxW){ctx.fillText(line,cx,y);line=ch;y+=lh;}
+    else line+=ch;
+  }
+  if(line)ctx.fillText(line,cx,y);
+}
+function saveImg(){
+  const a=document.createElement("a");
+  a.href=$("shareCanvas").toDataURL("image/png");
+  a.download="侍タイプ診断_結果.png";a.click();
+}
+</script>
+</body>
+</html>

@@ -39,7 +39,10 @@ except ImportError:
 ROOT = Path(__file__).resolve().parent.parent
 
 VOICE = "ja-JP-NanamiNeural"
-RATE = "+0%"
+# 2026-05-30: RATE を -25% に変更。 +0% だと早口で 30min 動画化要件 (>=1500s) を満たせず、
+# build_videos_seq.py で 600-880s しか出ず pipeline 「< 1500s で fail」になった。
+# -25% で読み速度を落とし、 台本 7000-12000 chars で 1500s+ 確保。
+RATE = "-25%"
 PITCH = "+0Hz"
 
 KIND_CONFIG = {
@@ -112,6 +115,10 @@ async def synth_one(text: str, out_mp3: Path) -> None:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--kind", required=True, choices=list(KIND_CONFIG.keys()))
+    ap.add_argument("--force", action="store_true",
+                    help="既存 mp3 を上書き再生成 (RATE 変更時等の再生成用)")
+    ap.add_argument("--idx-from", type=int, default=1)
+    ap.add_argument("--idx-to", type=int, default=999)
     args = ap.parse_args()
     cfg = KIND_CONFIG[args.kind]
     sdir = cfg["scripts_dir"]
@@ -128,10 +135,18 @@ def main():
     fail = 0
     for sp in scripts:
         idx = extract_id(sp.name)
+        try:
+            idx_n = int(idx)
+            if not (args.idx_from <= idx_n <= args.idx_to):
+                continue
+        except ValueError:
+            pass
         out = adir / f"{idx}.mp3"
-        if out.exists() and out.stat().st_size > 5000:
+        if out.exists() and out.stat().st_size > 5000 and not args.force:
             skip += 1
             continue
+        if args.force and out.exists():
+            print(f"[force] overwrite existing {out.name}")
         try:
             text = script_to_text(sp)
             if not text:

@@ -175,6 +175,11 @@ for (const idx of targets) {
     console.error(`[upload_quarantine] SKIP ${idx}: placeholder-like title "${title}" — refusing to publish`);
     continue;
   }
+  // 2026-05-30 (Task #41 再発防止): 文字化け (U+FFFD) や cp932 化け疑い検出 → 即 abort
+  if (title.includes('�') || /[-]/.test(title.slice(0, 30))) {
+    console.error(`[upload_quarantine] SKIP ${idx}: mojibake detected in title "${title.slice(0,60)}" — abort to prevent broken publish`);
+    continue;
+  }
   const description = spec.description || '';
   const tags = Array.isArray(spec.tags) ? spec.tags.slice(0, 15) : [];
 

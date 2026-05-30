@@ -90,6 +90,10 @@ def fetch_uploads(channel_handle, limit=10):
             continue
         vid = parts[0]
         title = parts[1] if len(parts) > 1 else ''
+        # 2026-05-30 (Task #41): 文字化け検知 → fail-safe abort
+        if title and ('�' in title or any(0x80 <= ord(c) <= 0x9f for c in title[:30])):
+            print(f'[archive] WARN mojibake in title for {vid}: {title!r} - skip', flush=True)
+            continue
         try:
             dur = float(parts[2]) if len(parts) > 2 and parts[2] not in ('', 'None') else 0
         except ValueError:

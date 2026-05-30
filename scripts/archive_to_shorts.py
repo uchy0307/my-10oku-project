@@ -57,8 +57,14 @@ KIND_CFG = {
 
 
 def yt_dlp_run(args, capture=True):
-    cmd = [sys.executable, '-m', 'yt_dlp'] + args
-    return subprocess.run(cmd, capture_output=capture, text=True, encoding='utf-8', errors='replace')
+    # 2026-05-30 (Task #41): UTF-8 強制で Windows cp932 化け再発防止
+    # PYTHONIOENCODING + PYTHONUTF8 + --encoding utf-8 の三段重ね
+    env = os.environ.copy()
+    env['PYTHONIOENCODING'] = 'utf-8'
+    env['PYTHONUTF8'] = '1'
+    # --encoding utf-8 を既存 args に必ず先頭追加 (既存だと yt-dlp が重複拒否しない)
+    cmd = [sys.executable, '-m', 'yt_dlp', '--encoding', 'utf-8'] + args
+    return subprocess.run(cmd, capture_output=capture, text=True, encoding='utf-8', errors='replace', env=env)
 
 
 def fetch_uploads(channel_handle, limit=10):

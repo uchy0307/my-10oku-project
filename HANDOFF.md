@@ -214,3 +214,60 @@
 8. 以降は cron で自動稼働 → **PC は OFF にしてOK**
 
 storageState の cookie が失効した場合は手順 2-3 を再実施するだけでよい。
+
+---
+
+## 🔴 2026-05-30 進捗 (commit `bd0ebb6` まで)
+
+### 動画パイプライン根本対応 (commit `3bf44ea`)
+- silence padding ロジック完全削除 (2026-05-25 「削除済」記載は実装未反映 = ハルシネーション認定)
+- 動画 seg ループ追加削除 (concat_video.txt 末尾 seg_0 重複の温床)
+- ASS 字幕生成 + subtitles filter 全 pipeline 削除 (うっちー様指示「今後 YT 全部字幕なし」)
+- スマホパネル累計表示 yt-dlp `/shorts` URL 別取得 → long/shorts 精密分離
+- ディスク 45 GB 解放 (3.87→49 GB)
+
+### X 自動投稿稼働開始 (commit `46e9e35`)
+- developer.x.com 申請 + Pay Per Use $25 入金 + API key 4 つ + GitHub Secrets 設定完了
+- `_x_post_periodic.py` URL 本文除去 ($0.200 → $0.015、 月 180 投稿 $2.70)
+- `user_auth=True` 明示で 403 解消
+- GitHub Actions cron 4 時間毎 (JST 9/13/17/21/1/5) 稼働中
+
+### X profile 案 B + C ハイブリッド (commit `b8c2520`)
+- banner = 案 B 墨絵 zen (山並み + 朱赤月 + 「苦徹成珠」)
+- avatar = 案 C 兜
+- 表示名「苦徹成珠 ─ 侍の美学」 / Bio 110 字 / ピン留めツイート 1 件
+- `.github/workflows/x-profile-update.yml` でスマホから dispatch 可
+
+### 統一デザイン仕様書 (commit `5b5d74c`)
+- `assets/x_branding/design_spec_unified.md` 252 行
+- 配色: 和紙白 #F8F4E9 + 墨 #2C2C30 + 朱赤 #A52A2A + 金 #D4AF37
+- React/CSS コンポーネント例完備 → 別 repo `uchy0307/toi-suite` で適用
+
+### edge-tts ふりがな辞書 (commit `cdaf8c3`)
+- `scripts/_yomi_dict.json` 261 エントリ (歴史武将 80 + 地名 100 + 用語 50 + 心理学 30)
+- gen_audio で「今川氏親→いまがわうじちか」自動置換
+- 動作確認済 (psych_004 で yomi diff=+110、 大量置換成功)
+
+### YT 準備 (5/30 走行中 → 一部完了)
+- 歴史 long 10 本 台本生成完了 (031-040: 楽市楽座 / 石見銀山 / 朱印船 / 蔵屋敷 / 江戸通貨 / 豪商 / 北前船 / 殖産興業 / 渋沢栄一 / 戦後復興)
+- 大人 long 10 本 台本生成完了 (013-022: 嫌われたくない / 見捨てられ不安 / 承認欲求 / 比較 / 怒り / 信頼 / つらい / 中年期 / アタッチメント / 認知的不協和)
+- 大人 long 18 本 音声生成完了 ✅
+- 歴史 long 音声生成 走行中
+
+### 残作業 (動画化フェーズ前提)
+- **image_urls 自動取得** (Task #39): Gemini → Wikimedia API、 完了次第動画化可
+- **Gemini chapter_image_map** (Task #36): 「タイトルと画像不一致」根本対策
+- **note post.mjs dry-run** (Task #29): PC 戻り次第
+- **toi-suite 別 repo HP 統一実装** (Task #27): 仕様書ベースで別 Claude session or 手動
+- **150 PWA 共通基盤** (Task #31): Phase 4-1 着手未
+
+### スクリプト改善 (commit `bd0ebb6`)
+- `upload_quarantine.mjs` --ids / --force flag 追加 (Task #30)
+- `generate_stock_scripts.py` 重複自動 reject (title_dedup_check.py 連携)
+- `sync_uploaded.mjs` `youtube/uploaded_titles.json` 集約出力 (Task #13)
+
+### X リンク全所注入 (commit `fd04130`)
+- articles/note_*.md 200 本 末尾シグネチャ
+- youtube/*/scripts/*.json 88 本 description 末尾
+- README.md + CLAUDE.md + generate_stock_scripts.py 全更新
+

@@ -101,15 +101,36 @@ def script_to_text(path: Path) -> str:
 
 async def synth_one(text: str, out_mp3: Path) -> None:
     out_mp3.parent.mkdir(parents=True, exist_ok=True)
+    # 一旦 raw.mp3 に出力 → ffmpeg atempo で 1.5 倍化 → out_mp3
+    raw_mp3 = out_mp3.with_suffix('.raw.mp3')
     comm = edge_tts.Communicate(text=text, voice=VOICE, rate=RATE, pitch=PITCH)
     audio_bytes = 0
-    with open(out_mp3, "wb") as f:
+    with open(raw_mp3, "wb") as f:
         async for chunk in comm.stream():
             if chunk.get("type") == "audio":
                 f.write(chunk["data"])
                 audio_bytes += len(chunk["data"])
     if audio_bytes < 5000:
+        try:
+            raw_mp3.unlink()
+        except Exception:
+            pass
         raise RuntimeError(f"audio too small ({audio_bytes}B)")
+    # 2026-05-30 (Task #40): ffmpeg atempo 0.65 で post-process (edge-tts 早口対策)
+    # atempo 0.65 = 1.54 倍に伸長、 例 600s → 923s、 12000 chars × 0.65 補正 = 約 1538s で pipeline 1500s 要件達成
+    import subprocess
+    try:
+        subprocess.run(
+            ['ffmpeg', '-y', '-i', str(raw_mp3),
+             '-filter:a', 'atempo=0.65',
+             '-vn', '-c:a', 'libmp3lame', '-b:a', '128k',
+             str(out_mp3)],
+            check=True, capture_output=True, timeout=120
+        )
+        raw_mp3.unlink()
+    except subprocess.CalledProcessError as e:
+        print(f"  [WARN] ffmpeg atempo failed: {e.stderr.decode('utf-8', 'replace')[:200]}")
+        raw_mp3.rename(out_mp3)  # フォールバック: raw をそのまま使う
 
 
 def main():

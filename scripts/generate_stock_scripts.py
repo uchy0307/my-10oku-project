@@ -83,8 +83,10 @@ KIND_CONFIG = {
         "filename_tpl": "long_{id}.json",
         "channel_name": "歴史侍チャンネル @Japanese.Samurai.Channel",
         "chapters": 5,
-        "char_min": 5500,
-        "char_max": 7500,
+        # 2026-05-30: char_min/max を倍増 (Task #40)。 既存 7500 chars × edge-tts 12 chars/秒 = 600s で
+        # pipeline 1500s 要件未達 fail。 12000 chars に増 + ffmpeg atempo 0.6 で約 1666s 確保。
+        "char_min": 11000,
+        "char_max": 14000,
         "tone": "落ち着いた侍語り・戦国〜幕末ファン向け・断言と問いかけ・ナレーション一人称",
         "ng": "現代政治への直接言及、医療・法律の確定助言、暴力扇動",
     },
@@ -94,8 +96,9 @@ KIND_CONFIG = {
         "filename_tpl": "psych_{id}.json",
         "channel_name": "大人心理学チャンネル @Otona_Psychology",
         "chapters": 5,
-        "char_min": 5500,
-        "char_max": 7500,
+        # 2026-05-30: 同上 (Task #40)
+        "char_min": 11000,
+        "char_max": 14000,
         "tone": "落ち着いた大人向け・知的かつ官能の余韻・直接的な表現も可・成熟した悩める大人向け",
         "ng": "未成年関連、暴力扇動、明確な性行為描写、医療・法律の確定助言",
     },
@@ -288,6 +291,10 @@ def main():
     ap.add_argument("--topics-file", default=None,
                     help="diverse topics JSON のパス (例: youtube/topics_history_diverse.json) を指定すると "
                          "KIND_CONFIG のデフォルトを上書きする")
+    ap.add_argument("--force", action="store_true",
+                    help="既存 ID も上書き再生成 (char_max 変更後の全本再生成用)")
+    ap.add_argument("--idx-from", type=int, default=1)
+    ap.add_argument("--idx-to", type=int, default=999)
     args = ap.parse_args()
 
     cfg = KIND_CONFIG[args.kind]
@@ -331,17 +338,23 @@ def main():
     existing = {p.stem for p in out_dir.glob("*.json")}
     print(f"[info] kind={args.kind} topics={len(topics)} existing={len(existing)} (source: {topics_path.name})")
 
-    # 既存IDをスキップしてリスト化
+    # --force 時は既存 skip しない、 --idx-from/to で範囲絞り込み可
     pending = []
     for t in topics:
         tid = t["id"]
+        try:
+            tid_n = int(tid)
+            if not (args.idx_from <= tid_n <= args.idx_to):
+                continue
+        except (ValueError, TypeError):
+            pass
         fname = cfg["filename_tpl"].format(id=tid).rsplit(".", 1)[0]
-        if fname in existing:
+        if fname in existing and not args.force:
             continue
         pending.append(t)
 
     target = pending[: args.count]
-    print(f"[info] generating {len(target)} scripts (skipped {len(topics) - len(pending)} existing)")
+    print(f"[info] generating {len(target)} scripts (force={args.force}, skipped {len(topics) - len(pending)} non-target)")
     if not target:
         print("[info] nothing to generate")
         return

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>江戸職業診断｜あなたは江戸時代なら何の仕事?｜苦徹成珠</title>
+<meta name="description" content="8つの問いで、あなたが江戸時代に就いていた職業を診断。大工・棒手振り・戯作者・火消し… 江戸庶民のあなたは? 無料・登録不要。">
+<meta property="og:title" content="江戸職業診断｜あなたは江戸時代なら何の仕事?">
+<meta property="og:description" content="8つの問いであなたの江戸での職業を診断。結果をシェアしよう。">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Yuji+Boku&family=Noto+Serif+JP:wght@500;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#1a140c;--ink:#f5ecd8;--gold:#D4AF37;--aka:#A52A2A;--ai:#3A6EA5;--sub:#b0a489;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:var(--bg);color:var(--ink);font-family:'Noto Sans JP',sans-serif;line-height:1.7;-webkit-text-size-adjust:100%;}
+.wrap{max-width:680px;margin:0 auto;padding:1.5rem 1.2rem 4rem;}
+header{text-align:center;padding:2rem 0 1rem;}
+.brand{font-family:'Yuji Boku','Noto Serif JP',serif;color:var(--gold);font-size:1.05rem;letter-spacing:.15em;}
+h1{font-family:'Yuji Boku','Noto Serif JP',serif;font-size:clamp(1.7rem,5.5vw,2.6rem);margin:.8rem 0;line-height:1.3;}
+.lead{color:var(--sub);font-size:.95rem;}
+.btn{display:inline-block;background:var(--aka);color:#fff;font-weight:700;padding:1rem 2.5rem;border:1px solid var(--aka);border-radius:4px;cursor:pointer;font-size:1.05rem;transition:.25s;text-decoration:none;font-family:'Noto Sans JP',sans-serif;}
+.btn:hover{background:transparent;color:var(--gold);border-color:var(--gold);}
+.btn-ghost{background:transparent;color:var(--gold);border:1px solid var(--gold);}
+.card{background:#241a0f;border:1px solid rgba(212,175,55,.22);border-radius:8px;padding:1.5rem;margin:1rem 0;}
+.q-num{color:var(--gold);font-size:.85rem;letter-spacing:.1em;margin-bottom:.5rem;}
+.q-text{font-family:'Noto Serif JP',serif;font-weight:500;font-size:1.25rem;margin-bottom:1.4rem;}
+.opt{display:block;width:100%;text-align:left;background:#30230f;border:1px solid rgba(245,236,216,.12);color:var(--ink);padding:1rem 1.2rem;border-radius:6px;margin:.6rem 0;cursor:pointer;font-size:1rem;transition:.2s;font-family:inherit;}
+.opt:hover{border-color:var(--gold);background:#3c2d15;}
+.progress{height:5px;background:#30230f;border-radius:3px;margin:1.5rem 0;overflow:hidden;}
+.bar{height:100%;background:linear-gradient(90deg,var(--aka),var(--gold));width:0;transition:width .4s;}
+.hidden{display:none;}
+#result{text-align:center;}
+.r-type{font-family:'Yuji Boku','Noto Serif JP',serif;font-size:clamp(2rem,8vw,3rem);color:var(--gold);margin:.5rem 0;}
+.r-sub{color:var(--sub);margin-bottom:1rem;}
+.r-desc{font-family:'Noto Serif JP',serif;text-align:left;line-height:2;margin:1.5rem 0;}
+.r-traits{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;margin:1rem 0;}
+.trait{background:rgba(212,175,55,.15);color:var(--gold);padding:.3rem .9rem;border-radius:20px;font-size:.85rem;}
+img#shareImg{max-width:100%;border-radius:8px;margin:1rem 0;}
+canvas{display:none;}
+.share{display:flex;gap:.8rem;justify-content:center;flex-wrap:wrap;margin:1.5rem 0;}
+.foot{text-align:center;color:var(--sub);font-size:.8rem;margin-top:3rem;line-height:1.9;}
+.foot a{color:var(--gold);text-decoration:none;}
+.cross{background:#241a0f;border:1px solid rgba(165,42,42,.3);border-radius:8px;padding:1.3rem;margin:2rem 0;text-align:center;}
+.cross h3{font-family:'Noto Serif JP',serif;font-size:1.1rem;margin-bottom:.8rem;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">苦徹成珠 ─ 侍の美学</div>
+    <h1>江戸職業診断</h1>
+    <p class="lead">8つの問いで、あなたが江戸時代に就いていた仕事がわかる</p>
+  </header>
+
+  <section id="intro">
+    <div class="card" style="text-align:center;">
+      <p style="font-family:'Noto Serif JP',serif;font-size:1.1rem;margin-bottom:1.5rem;">
+        もしあなたが大江戸の町人だったら──<br>どんな仕事で飯を食っていたか。
+      </p>
+      <p class="lead" style="margin-bottom:1.8rem;">所要1分・全8問・登録不要</p>
+      <button class="btn" onclick="start()">診断を始める</button>
+    </div>
+  </section>
+
+  <section id="quiz" class="hidden">
+    <div class="progress"><div class="bar" id="bar"></div></div>
+    <div class="card">
+      <div class="q-num" id="qnum"></div>
+      <div class="q-text" id="qtext"></div>
+      <div id="opts"></div>
+    </div>
+  </section>
+
+  <section id="result" class="hidden">
+    <div class="card">
+      <div class="lead">あなたの江戸での仕事は</div>
+      <div class="r-type" id="rtype"></div>
+      <div class="r-sub" id="rsub"></div>
+      <div class="r-traits" id="rtraits"></div>
+      <canvas id="shareCanvas" width="1080" height="1080"></canvas>
+      <img id="shareImg" alt="診断結果">
+      <div class="r-desc" id="rdesc"></div>
+      <div class="share">
+        <a class="btn" id="xshare" target="_blank" rel="noopener">Xでシェア</a>
+        <button class="btn-ghost btn" onclick="saveImg()">結果画像を保存</button>
+        <button class="btn-ghost btn" onclick="location.reload()">もう一度</button>
+      </div>
+    </div>
+    <div class="cross">
+      <h3>江戸庶民のリアルな暮らしを、もっと</h3>
+      <p class="lead" style="margin-bottom:1rem;">年収・離婚率・食・遊び… 教科書が教えない江戸の真実を動画で</p>
+      <a class="btn" href="https://www.youtube.com/@Japanese.Samurai.Channel" target="_blank" rel="noopener">歴史侍チャンネルを見る</a>
+    </div>
+  </section>
+
+  <div class="foot">
+    <a href="https://www.youtube.com/@Japanese.Samurai.Channel">歴史侍チャンネル</a> ／
+    <a href="https://x.com/SoothingSoothin">X</a> ／
+    <a href="https://toi-suite.vercel.app/">toi-suite</a><br>
+    苦徹成珠 ─ SAMURAI AESTHETICS
+  </div>
+</div>
+
+<script>
+// 8問 → 6職業判定
+const TYPES={
+  daiku:{name:"大工",sub:"江戸の花形・腕一本の職人",traits:["手に職","宵越しの金は持たぬ","粋"],
+    desc:"火事と喧嘩は江戸の華。焼けるたびに腕を振るう大工は、江戸で最も稼ぐ花形職人だった。あなたは手に職を持ち、その日暮らしでも腕と度胸で生きる、典型的な江戸っ子気質。宵越しの金は持たない潔さが信条。",color:"#A52A2A"},
+  bote:{name:"棒手振り",sub:"路地を駆ける行商人",traits:["商才","フットワーク","人情"],
+    desc:"天秤棒一本で野菜や魚を担ぎ、長屋の路地を売り歩く行商人。元手いらずで始められ、江戸の流通を支えた。あなたは身軽で愛想がよく、人の懐に入るのが上手い。小さく始めて確実に稼ぐ、堅実な商売人タイプ。",color:"#D4AF37"},
+  gesaku:{name:"戯作者",sub:"江戸の人気作家",traits:["創作","風刺","流行を読む"],
+    desc:"草双紙や黄表紙で庶民を笑わせ、泣かせた人気作家。時に幕府を風刺して筆を折られることも。あなたは創造力と批評眼に長け、流行を生み出す側の人。言葉とアイデアで世間を動かす、江戸のクリエイター。",color:"#7B4FA0"},
+  hikeshi:{name:"町火消し",sub:"いろは四十八組の男伊達",traits:["勇敢","チームワーク","男気"],
+    desc:"纏を振って火事場に飛び込む、江戸の守護者。命がけの仕事で町の英雄だった。あなたは仲間思いで勇敢、いざという時に頼られる人。リスクを恐れず、人のために体を張れる男気・女気の持ち主。",color:"#3A6EA5"},
+  kamiyui:{name:"髪結い",sub:"情報が集まる社交の達人",traits:["対人力","聞き上手","情報通"],
+    desc:"髪を結いながら客の噂話に耳を傾ける、江戸の情報ハブ。床屋は男たちの社交場だった。あなたは聞き上手で人脈が広く、街の情報が自然と集まる。コミュ力を武器に渡り歩く、江戸の社交派。",color:"#2C7A4B"},
+  ranigaku:{name:"蘭学者",sub:"時代の先を読む知の探究者",traits:["探究心","語学","先見性"],
+    desc:"禁を冒してでも西洋の知を学んだ、時代の最先端を行く知識人。杉田玄白のように歴史を動かすことも。あなたは知的好奇心が強く、誰も知らないことを学ぶのが喜び。先見性で未来を切り拓く探究者。",color:"#b8860b"},
+};
+const Q=[
+ {q:"仕事で大事にするのは?",a:[["腕と技術","daiku"],["人付き合い","bote"],["アイデア","gesaku"],["仲間との結束","hikeshi"],["新しい知識","ranigaku"]]},
+ {q:"休みの日は何をする?",a:[["仲間と一杯","daiku"],["街をぶらぶら","bote"],["本を読む・書く","gesaku"],["体を動かす","hikeshi"],["人と話す","kamiyui"]]},
+ {q:"お金についての考えは?",a:[["宵越しの金は持たない","daiku"],["こつこつ確実に","bote"],["稼ぎより面白さ","gesaku"],["仲間のために使う","hikeshi"],["学びに投資","ranigaku"]]},
+ {q:"周りからどう見られている?",a:[["頼れる職人","daiku"],["愛想のいい人","bote"],["変わり者","gesaku"],["勇敢な人","hikeshi"],["物知り","ranigaku"]]},
+ {q:"ピンチのときは?",a:[["腕でねじ伏せる","daiku"],["人に助けを求める","kamiyui"],["機転で切り抜ける","gesaku"],["体を張る","hikeshi"],["知識で対処","ranigaku"]]},
+ {q:"あなたの強みは?",a:[["手先の器用さ","daiku"],["商売の勘","bote"],["表現力","gesaku"],["度胸","hikeshi"],["探究心","ranigaku"]]},
+ {q:"理想の暮らしは?",a:[["腕一本で気ままに","daiku"],["小さくても安定","bote"],["好きを仕事に","gesaku"],["人の役に立つ","hikeshi"],["知を極める","ranigaku"]]},
+ {q:"人付き合いは?",a:[["仲間内で濃く","daiku"],["広く浅く明るく","kamiyui"],["少数の理解者と","gesaku"],["熱く深く","hikeshi"],["話の合う人と","ranigaku"]]},
+];
+let idx=0,score={daiku:0,bote:0,gesaku:0,hikeshi:0,kamiyui:0,ranigaku:0};
+const $=id=>document.getElementById(id);
+function start(){$("intro").classList.add("hidden");$("quiz").classList.remove("hidden");render();}
+function render(){
+  const q=Q[idx];
+  $("qnum").textContent=`問 ${idx+1} / ${Q.length}`;
+  $("qtext").textContent=q.q;
+  $("bar").style.width=`${(idx/Q.length)*100}%`;
+  const o=$("opts");o.innerHTML="";
+  q.a.forEach(([label,type])=>{const b=document.createElement("button");b.className="opt";b.textContent=label;b.onclick=()=>{score[type]++;next();};o.appendChild(b);});
+}
+function next(){idx++;if(idx<Q.length)render();else show();}
+function show(){
+  $("bar").style.width="100%";
+  $("quiz").classList.add("hidden");$("result").classList.remove("hidden");
+  let best="daiku",max=-1;for(const k in score){if(score[k]>max){max=score[k];best=k;}}
+  const t=TYPES[best];
+  $("rtype").textContent=t.name;$("rsub").textContent=t.sub;$("rdesc").textContent=t.desc;
+  const tr=$("rtraits");tr.innerHTML="";t.traits.forEach(v=>{const s=document.createElement("span");s.className="trait";s.textContent="#"+v;tr.appendChild(s);});
+  drawShare(t);
+  const text=encodeURIComponent(`私の江戸での仕事は【${t.name}】${t.sub}でした!\nあなたは江戸時代なら何の仕事?\n#江戸職業診断 #日本史`);
+  $("xshare").href=`https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent(location.href)}`;
+}
+function drawShare(t){
+  const c=$("shareCanvas"),x=c.getContext("2d");
+  x.fillStyle="#1a140c";x.fillRect(0,0,1080,1080);
+  x.strokeStyle=t.color;x.lineWidth=6;x.strokeRect(40,40,1000,1000);
+  x.textAlign="center";
+  x.fillStyle="#D4AF37";x.font="34px 'Noto Serif JP',serif";x.fillText("苦徹成珠 ─ 侍の美学",540,140);
+  x.fillStyle="#b0a489";x.font="40px 'Noto Sans JP',sans-serif";x.fillText("私の江戸での仕事は",540,320);
+  x.fillStyle=t.color;x.font="bold 130px 'Noto Serif JP',serif";x.fillText(t.name,540,480);
+  x.fillStyle="#f5ecd8";x.font="42px 'Noto Serif JP',serif";x.fillText(t.sub,540,565);
+  x.fillStyle="#D4AF37";x.font="36px 'Noto Sans JP',sans-serif";x.fillText(t.traits.map(v=>"#"+v).join("  "),540,650);
+  x.fillStyle="#d8cdb4";x.font="34px 'Noto Sans JP',sans-serif";wrap(x,t.desc,540,740,920,50);
+  x.fillStyle="#D4AF37";x.font="32px 'Noto Sans JP',sans-serif";x.fillText("▶ 江戸職業診断 で検索",540,1000);
+  $("shareImg").src=c.toDataURL("image/png");
+}
+function wrap(ctx,text,cx,cy,maxW,lh){const chars=[...text];let line="",y=cy;for(const ch of chars){if(ctx.measureText(line+ch).width>maxW){ctx.fillText(line,cx,y);line=ch;y+=lh;}else line+=ch;}if(line)ctx.fillText(line,cx,y);}
+function saveImg(){const a=document.createElement("a");a.href=$("shareCanvas").toDataURL("image/png");a.download="江戸職業診断_結果.png";a.click();}
+</script>
+</body>
+</html>

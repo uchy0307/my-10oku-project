@@ -1,0 +1,47 @@
+name: X Profile 更新 (one-shot, スマホから dispatch 可)
+
+on:
+  workflow_dispatch:
+    inputs:
+      skip_image:
+        description: '画像 upload スキップ (テキストのみ更新)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+      skip_pin:
+        description: 'ピン留めツイート投稿スキップ'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install tweepy
+        run: pip install tweepy
+      - name: Update X profile
+        env:
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
+        run: |
+          ARGS=""
+          if [ "${{ inputs.skip_image }}" = "true" ]; then
+            ARGS="$ARGS --skip-image"
+          fi
+          if [ "${{ inputs.skip_pin }}" = "true" ]; then
+            ARGS="$ARGS --skip-pin"
+          fi
+          python scripts/_x_profile_update.py $ARGS

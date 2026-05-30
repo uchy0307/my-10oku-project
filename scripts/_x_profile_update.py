@@ -24,9 +24,9 @@ from pathlib import Path
 if sys.stdout is not None and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-ROOT = Path(r'C:\Users\user\Documents\10oku-project')
+ROOT = Path(__file__).resolve().parent.parent  # OS 不問 (GitHub Actions ubuntu 対応)
 
-# .env load
+# .env load (ローカル実行用、 GitHub Actions では Secrets から渡る)
 env_path = ROOT / '.env'
 if env_path.exists():
     for line in env_path.read_text(encoding='utf-8').splitlines():

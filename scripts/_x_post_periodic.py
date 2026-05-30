@@ -68,6 +68,7 @@ TEMPLATES = [
 
 
 def post_to_x(text, dry_run=False):
+    import traceback
     print(f'[x-post] text ({len(text)} chars):\n{text}\n')
     if dry_run:
         print('[x-post] DRY-RUN (not posted)')
@@ -79,9 +80,19 @@ def post_to_x(text, dry_run=False):
         return False
     keys = [os.environ.get(k, '') for k in ('X_API_KEY', 'X_API_SECRET', 'X_ACCESS_TOKEN', 'X_ACCESS_SECRET')]
     if not all(keys):
-        print('[x-post] ERR: X_API_KEY/SECRET/ACCESS_TOKEN/SECRET not set in env', file=sys.stderr)
+        missing = [n for n, v in zip(('X_API_KEY', 'X_API_SECRET', 'X_ACCESS_TOKEN', 'X_ACCESS_SECRET'), keys) if not v]
+        print(f'[x-post] ERR: missing env vars: {missing}', file=sys.stderr)
         return False
     api_key, api_secret, access_token, access_secret = keys
+    # 長さ確認 (空白/typo 検出用)
+    print(f'[x-post] key lengths: api_key={len(api_key)} api_secret={len(api_secret)} '
+          f'access_token={len(access_token)} access_secret={len(access_secret)}')
+    print(f'[x-post] tweepy version: {tweepy.__version__}')
+    print(f'[x-post] api_key first/last 2: {api_key[:2]}...{api_key[-2:]}')
+    print(f'[x-post] access_token first/last 2: {access_token[:2]}...{access_token[-2:]}')
+    # 検証: token 内に「-」 (アクセストークンの ID 部区切り) が含まれるか
+    if '-' not in access_token:
+        print('[x-post] WARN: access_token に「-」がない (本物の Access Token は通常 数字-英数字_... 形式)', file=sys.stderr)
     try:
         client = tweepy.Client(
             consumer_key=api_key,
@@ -94,7 +105,23 @@ def post_to_x(text, dry_run=False):
         print(f'[x-post] OK -> tweet id={tid}')
         return True
     except Exception as e:
-        print(f'[x-post] FAIL: {e}', file=sys.stderr)
+        print(f'[x-post] FAIL: {type(e).__name__}: {e}', file=sys.stderr)
+        if hasattr(e, 'response') and e.response is not None:
+            try:
+                print(f'[x-post] HTTP status: {e.response.status_code}', file=sys.stderr)
+                print(f'[x-post] response body:\n{e.response.text[:3000]}', file=sys.stderr)
+                print(f'[x-post] response headers (relevant):', file=sys.stderr)
+                for h in ('x-rate-limit-limit', 'x-rate-limit-remaining', 'x-rate-limit-reset', 'www-authenticate'):
+                    v = e.response.headers.get(h)
+                    if v:
+                        print(f'  {h}: {v}', file=sys.stderr)
+            except Exception as inner:
+                print(f'[x-post] (failed to extract response details: {inner})', file=sys.stderr)
+        if hasattr(e, 'api_codes'):
+            print(f'[x-post] api_codes: {e.api_codes}', file=sys.stderr)
+        if hasattr(e, 'api_messages'):
+            print(f'[x-post] api_messages: {e.api_messages}', file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
         return False
 
 

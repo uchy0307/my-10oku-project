@@ -249,11 +249,11 @@ def check_title_dup(title: str, threshold: float = 0.7) -> bool:
         return False
 
 
-def generate_one(topic: dict, cfg: dict) -> dict:
+def generate_one(topic: dict, cfg: dict, skip_dup_check: bool = False) -> dict:
     """1本分の台本JSONを生成"""
     print(f"[gen] {topic['id']}: {topic['title']}")
-    # 2026-05-30: title 重複防止 (Task #13)
-    if check_title_dup(topic['title'], threshold=0.7):
+    # 2026-05-30: title 重複防止 (Task #13)。 --force 再生成時は自己重複で skip されるので無効化
+    if not skip_dup_check and check_title_dup(topic['title'], threshold=0.7):
         print(f"  [DUP] title 重複検出、 skip: {topic['title']}")
         return None
     outline = call_gemini(build_outline_prompt(topic, cfg))
@@ -369,7 +369,7 @@ def main():
     skip = 0
     for t in target:
         try:
-            data = generate_one(t, cfg)
+            data = generate_one(t, cfg, skip_dup_check=args.force)
             if data is None:
                 # 重複検出で skip
                 skip += 1

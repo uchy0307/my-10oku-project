@@ -39,11 +39,13 @@ except ImportError:
 ROOT = Path(__file__).resolve().parent.parent
 
 VOICE = "ja-JP-NanamiNeural"
-# 2026-05-30: RATE を -25% に変更。 +0% だと早口で 30min 動画化要件 (>=1500s) を満たせず、
-# build_videos_seq.py で 600-880s しか出ず pipeline 「< 1500s で fail」になった。
-# -25% で読み速度を落とし、 台本 7000-12000 chars で 1500s+ 確保。
-RATE = "-25%"
+# 2026-05-30: RATE は +0% (自然速度)。 速度調整は ffmpeg atempo を「動的計算」で行う。
+# RATE=-25% + atempo 固定 0.65 の二重適用で 80 分になる事故があったため、 RATE は触らない。
+RATE = "+0%"
 PITCH = "+0Hz"
+# 動画化要件: 30 分動画 = audio >= 1500s。 目標 1750s (29min) に landing させる。
+TARGET_SEC = 1750
+MIN_SEC = 1500
 
 KIND_CONFIG = {
     "history": {
@@ -99,9 +101,31 @@ def script_to_text(path: Path) -> str:
     return "\n\n".join(parts)
 
 
+def _probe_dur(p: Path) -> float:
+    import subprocess
+    try:
+        r = subprocess.run(
+            ['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', str(p)],
+            capture_output=True, text=True, timeout=30)
+        s = (r.stdout or '').strip()
+        return float(s) if s else 0.0
+    except Exception:
+        return 0.0
+
+
+def _atempo_chain(factor: float) -> str:
+    """ffmpeg atempo は 0.5-100.0 のみ。 0.5 未満は連鎖。 factor<1 で減速 (長くなる)。"""
+    factor = max(0.25, min(4.0, factor))
+    if factor >= 0.5:
+        return f'atempo={factor:.4f}'
+    # 0.25-0.5 は atempo=0.5 を 2 段 (0.5*0.5=0.25 まで対応)
+    import math
+    a = math.sqrt(factor)
+    return f'atempo={a:.4f},atempo={a:.4f}'
+
+
 async def synth_one(text: str, out_mp3: Path) -> None:
     out_mp3.parent.mkdir(parents=True, exist_ok=True)
-    # 一旦 raw.mp3 に出力 → ffmpeg atempo で 1.5 倍化 → out_mp3
     raw_mp3 = out_mp3.with_suffix('.raw.mp3')
     comm = edge_tts.Communicate(text=text, voice=VOICE, rate=RATE, pitch=PITCH)
     audio_bytes = 0
@@ -116,21 +140,34 @@ async def synth_one(text: str, out_mp3: Path) -> None:
         except Exception:
             pass
         raise RuntimeError(f"audio too small ({audio_bytes}B)")
-    # 2026-05-30 (Task #40): ffmpeg atempo 0.65 で post-process (edge-tts 早口対策)
-    # atempo 0.65 = 1.54 倍に伸長、 例 600s → 923s、 12000 chars × 0.65 補正 = 約 1538s で pipeline 1500s 要件達成
+    # 2026-05-30 (Task #40): 動的 atempo。 raw 実測 → TARGET_SEC に landing。
+    # 短い時だけ減速 (factor<1)。 既に十分長ければそのまま (raw 採用)。
     import subprocess
+    raw_dur = _probe_dur(raw_mp3)
+    if raw_dur <= 0:
+        raw_mp3.rename(out_mp3)
+        return
+    if raw_dur >= MIN_SEC:
+        # 既に要件満たす → そのまま採用 (再エンコード不要)
+        raw_mp3.rename(out_mp3)
+        print(f"    raw {raw_dur:.0f}s >= {MIN_SEC}s, atempo 不要")
+        return
+    factor = raw_dur / TARGET_SEC   # <1 → 減速 (長くなる)
+    af = _atempo_chain(factor)
     try:
         subprocess.run(
             ['ffmpeg', '-y', '-i', str(raw_mp3),
-             '-filter:a', 'atempo=0.65',
+             '-filter:a', af,
              '-vn', '-c:a', 'libmp3lame', '-b:a', '128k',
              str(out_mp3)],
-            check=True, capture_output=True, timeout=120
+            check=True, capture_output=True, timeout=180
         )
+        final = _probe_dur(out_mp3)
+        print(f"    raw {raw_dur:.0f}s → {af} → {final:.0f}s")
         raw_mp3.unlink()
     except subprocess.CalledProcessError as e:
         print(f"  [WARN] ffmpeg atempo failed: {e.stderr.decode('utf-8', 'replace')[:200]}")
-        raw_mp3.rename(out_mp3)  # フォールバック: raw をそのまま使う
+        raw_mp3.rename(out_mp3)
 
 
 def main():

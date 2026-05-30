@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>人生後悔度診断｜今のままだと何を後悔する?｜苦徹成珠</title>
+<meta name="description" content="10の問いで、あなたが将来後悔しやすい領域を診断。仕事・人間関係・挑戦・健康… 今気づけば、まだ間に合う。無料・登録不要。">
+<meta property="og:title" content="人生後悔度診断｜今のままだと何を後悔する?">
+<meta property="og:description" content="10の問いであなたの後悔リスクを診断。今気づけば、まだ間に合う。">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Yuji+Boku&family=Noto+Serif+JP:wght@500;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F8F4E9;--ink:#2C2C30;--aka:#A52A2A;--gold:#9C7E1A;--sub:#6b6b70;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:var(--bg);color:var(--ink);font-family:'Noto Sans JP',sans-serif;line-height:1.7;-webkit-text-size-adjust:100%;}
+.wrap{max-width:680px;margin:0 auto;padding:1.5rem 1.2rem 4rem;}
+header{text-align:center;padding:2rem 0 1rem;}
+.brand{font-family:'Yuji Boku','Noto Serif JP',serif;color:var(--gold);font-size:1.05rem;letter-spacing:.15em;}
+h1{font-family:'Yuji Boku','Noto Serif JP',serif;font-size:clamp(1.7rem,5.5vw,2.6rem);margin:.8rem 0;line-height:1.3;}
+.lead{color:var(--sub);font-size:.95rem;}
+.btn{display:inline-block;background:var(--aka);color:#fff;font-weight:700;padding:1rem 2.5rem;border:1px solid var(--aka);border-radius:4px;cursor:pointer;font-size:1.05rem;transition:.25s;text-decoration:none;font-family:'Noto Sans JP',sans-serif;}
+.btn:hover{background:transparent;color:var(--aka);}
+.btn-ghost{background:transparent;color:var(--aka);border:1px solid var(--aka);}
+.card{background:#fff;border:1px solid rgba(44,44,48,.12);border-radius:8px;padding:1.5rem;margin:1rem 0;}
+.q-num{color:var(--aka);font-size:.85rem;letter-spacing:.1em;margin-bottom:.5rem;}
+.q-text{font-family:'Noto Serif JP',serif;font-weight:500;font-size:1.25rem;margin-bottom:1.4rem;}
+.opt{display:block;width:100%;text-align:left;background:#f3eee0;border:1px solid rgba(44,44,48,.1);color:var(--ink);padding:1rem 1.2rem;border-radius:6px;margin:.6rem 0;cursor:pointer;font-size:1rem;transition:.2s;font-family:inherit;}
+.opt:hover{border-color:var(--aka);background:#ece5d3;}
+.progress{height:5px;background:#e5dfce;border-radius:3px;margin:1.5rem 0;overflow:hidden;}
+.bar{height:100%;background:linear-gradient(90deg,var(--gold),var(--aka));width:0;transition:width .4s;}
+.hidden{display:none;}
+#result{text-align:center;}
+.score{font-family:'Yuji Boku','Noto Serif JP',serif;font-size:clamp(3rem,14vw,5rem);color:var(--aka);line-height:1;margin:.3rem 0;}
+.r-rank{font-family:'Noto Serif JP',serif;font-size:clamp(1.4rem,5vw,2rem);color:var(--ink);margin:.5rem 0;font-weight:700;}
+.r-sub{color:var(--sub);margin-bottom:1rem;}
+.r-desc{font-family:'Noto Serif JP',serif;text-align:left;line-height:2;margin:1.5rem 0;}
+img#shareImg{max-width:100%;border-radius:8px;margin:1rem 0;border:1px solid rgba(44,44,48,.12);}
+canvas{display:none;}
+.share{display:flex;gap:.8rem;justify-content:center;flex-wrap:wrap;margin:1.5rem 0;}
+.foot{text-align:center;color:var(--sub);font-size:.8rem;margin-top:3rem;line-height:1.9;}
+.foot a{color:var(--aka);text-decoration:none;}
+.cross{background:#fff;border:1px solid rgba(165,42,42,.3);border-radius:8px;padding:1.3rem;margin:2rem 0;text-align:center;}
+.cross h3{font-family:'Noto Serif JP',serif;font-size:1.1rem;margin-bottom:.8rem;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">苦徹成珠 ─ 侍の美学</div>
+    <h1>人生後悔度診断</h1>
+    <p class="lead">10の問いで、あなたが将来後悔しやすい領域がわかる</p>
+  </header>
+
+  <section id="intro">
+    <div class="card" style="text-align:center;">
+      <p style="font-family:'Noto Serif JP',serif;font-size:1.1rem;margin-bottom:1.5rem;">
+        このまま生きたら、何を後悔するだろう。<br>今気づけば、まだ間に合う。
+      </p>
+      <p class="lead" style="margin-bottom:1.8rem;">所要1分・全10問・登録不要</p>
+      <button class="btn" onclick="start()">診断を始める</button>
+    </div>
+  </section>
+
+  <section id="quiz" class="hidden">
+    <div class="progress"><div class="bar" id="bar"></div></div>
+    <div class="card">
+      <div class="q-num" id="qnum"></div>
+      <div class="q-text" id="qtext"></div>
+      <div id="opts"></div>
+    </div>
+  </section>
+
+  <section id="result" class="hidden">
+    <div class="card">
+      <div class="lead">あなたの後悔リスクは</div>
+      <div class="score" id="score"></div>
+      <div class="r-rank" id="rank"></div>
+      <div class="r-sub" id="rsub"></div>
+      <canvas id="shareCanvas" width="1080" height="1080"></canvas>
+      <img id="shareImg" alt="診断結果">
+      <div class="r-desc" id="rdesc"></div>
+      <div class="share">
+        <a class="btn" id="xshare" target="_blank" rel="noopener">Xでシェア</a>
+        <button class="btn-ghost btn" onclick="saveImg()">結果画像を保存</button>
+        <button class="btn-ghost btn" onclick="location.reload()">もう一度</button>
+      </div>
+    </div>
+    <div class="cross">
+      <h3>後悔しない自分に、問いで近づく</h3>
+      <p class="lead" style="margin-bottom:1rem;">200の問いで、人生の優先順位を問い直す自己対話アプリ</p>
+      <a class="btn" href="https://note.com/happy_happy_4649" target="_blank" rel="noopener">200の問いを見る</a>
+    </div>
+  </section>
+
+  <div class="foot">
+    <a href="https://note.com/happy_happy_4649">note 200の問い</a> ／
+    <a href="https://x.com/SoothingSoothin">X</a> ／
+    <a href="https://toi-suite.vercel.app/">toi-suite</a><br>
+    苦徹成珠 ─ SAMURAI AESTHETICS
+  </div>
+</div>
+
+<script>
+// 10問。後悔リスクポイント(0-10、高いほど後悔リスク大)。合計→後悔度%
+const Q=[
+ {q:"やりたいことを我慢していることがある?",a:[["たくさんある",10],["少しある",6],["あまりない",3],["全くない",0]]},
+ {q:"大切な人に感謝を伝えているか?",a:[["普段から伝える",0],["たまに",4],["照れて言えない",8],["全く言わない",10]]},
+ {q:"挑戦より安全を選びがち?",a:[["いつも安全策",10],["どちらかと言えば",7],["挑戦する方",3],["常に挑戦",0]]},
+ {q:"健康を後回しにしている?",a:[["かなり無理してる",10],["少し不安",6],["気をつけている",2],["万全",0]]},
+ {q:"本音で人と付き合えている?",a:[["仮面をかぶりがち",9],["相手による",6],["わりと素直",3],["完全に本音",0]]},
+ {q:"自分の時間を持てているか?",a:[["全然ない",10],["少ない",7],["そこそこ",3],["十分ある",0]]},
+ {q:"学び続けているか?",a:[["何年も止まってる",9],["たまに",5],["習慣的に",2],["毎日学ぶ",0]]},
+ {q:"後悔している過去がある?",a:[["引きずっている",9],["時々思い出す",6],["受け入れた",2],["後悔なし",0]]},
+ {q:"今の人間関係に満足?",a:[["孤独を感じる",9],["物足りない",6],["まあ満足",3],["とても満足",0]]},
+ {q:"5年後の自分を想像できる?",a:[["不安で見えない",8],["漠然と",5],["なんとなく",3],["明確にある",0]]},
+];
+const RANKS=[
+ {min:70,rank:"後悔リスク・高",sub:"今が分岐点",desc:"このまま進むと「やらなかった後悔」を抱えやすい状態。でも、それに気づけた今この瞬間が転機。完璧を目指さず、明日ひとつだけ『先延ばしにしていたこと』に手をつけよう。小さな一歩が未来の後悔を確実に減らす。"},
+ {min:45,rank:"後悔リスク・中",sub:"軌道修正のチャンス",desc:"いくつかの領域で『心の声』を後回しにしているサイン。今ならまだ十分に間に合う。我慢していること・伝えそびれた感謝を1つ書き出すだけで、人生の納得度は変わり始める。"},
+ {min:20,rank:"後悔リスク・低",sub:"いいバランス",desc:"自分の心とよく向き合えている。大きな後悔は残りにくいタイプ。あと一歩は『さらに正直に』。たまに浮かぶ小さな違和感も無視せず拾えば、晩年に『いい人生だった』と心から言える。"},
+ {min:0,rank:"後悔リスク・ごく僅か",sub:"自分を生きている",desc:"やりたいことに挑み、大切な人を大切にできている稀有な人。あなたの生き方は、まわりにとっても道しるべ。この調子で、心の声に従い続けてほしい。"},
+];
+let idx=0,total=0;
+const $=id=>document.getElementById(id);
+function start(){$("intro").classList.add("hidden");$("quiz").classList.remove("hidden");render();}
+function render(){
+  const q=Q[idx];
+  $("qnum").textContent=`問 ${idx+1} / ${Q.length}`;
+  $("qtext").textContent=q.q;
+  $("bar").style.width=`${(idx/Q.length)*100}%`;
+  const o=$("opts");o.innerHTML="";
+  q.a.forEach(([label,pt])=>{const b=document.createElement("button");b.className="opt";b.textContent=label;b.onclick=()=>{total+=pt;next();};o.appendChild(b);});
+}
+function next(){idx++;if(idx<Q.length)render();else show();}
+function show(){
+  $("bar").style.width="100%";
+  $("quiz").classList.add("hidden");$("result").classList.remove("hidden");
+  const max=Q.length*10;
+  const pct=Math.round((total/max)*100);
+  const r=RANKS.find(x=>pct>=x.min)||RANKS[RANKS.length-1];
+  $("score").textContent=pct+"%";
+  $("rank").textContent=r.rank;
+  $("rsub").textContent=r.sub;
+  $("rdesc").textContent=r.desc;
+  drawShare(pct,r);
+  const text=encodeURIComponent(`私の人生後悔リスクは【${pct}%】${r.rank}でした。\nこのまま生きたら何を後悔する?\n#人生後悔度診断 #苦徹成珠`);
+  $("xshare").href=`https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent(location.href)}`;
+}
+function drawShare(pct,r){
+  const c=$("shareCanvas"),x=c.getContext("2d");
+  x.fillStyle="#F8F4E9";x.fillRect(0,0,1080,1080);
+  x.strokeStyle="#A52A2A";x.lineWidth=6;x.strokeRect(40,40,1000,1000);
+  x.textAlign="center";
+  x.fillStyle="#9C7E1A";x.font="34px 'Noto Serif JP',serif";x.fillText("苦徹成珠 ─ 侍の美学",540,150);
+  x.fillStyle="#6b6b70";x.font="40px 'Noto Sans JP',sans-serif";x.fillText("私の人生後悔リスクは",540,310);
+  x.fillStyle="#A52A2A";x.font="bold 200px 'Noto Serif JP',serif";x.fillText(pct+"%",540,540);
+  x.fillStyle="#2C2C30";x.font="bold 70px 'Noto Serif JP',serif";x.fillText(r.rank,540,660);
+  x.fillStyle="#6b6b70";x.font="40px 'Noto Serif JP',serif";x.fillText(r.sub,540,730);
+  x.fillStyle="#4a4a50";x.font="32px 'Noto Sans JP',sans-serif";wrap(x,r.desc,540,810,920,46);
+  x.fillStyle="#9C7E1A";x.font="32px 'Noto Sans JP',sans-serif";x.fillText("▶ 人生後悔度診断 で検索",540,1005);
+  $("shareImg").src=c.toDataURL("image/png");
+}
+function wrap(ctx,text,cx,cy,maxW,lh){const chars=[...text];let line="",y=cy;for(const ch of chars){if(ctx.measureText(line+ch).width>maxW){ctx.fillText(line,cx,y);line=ch;y+=lh;}else line+=ch;}if(line)ctx.fillText(line,cx,y);}
+function saveImg(){const a=document.createElement("a");a.href=$("shareCanvas").toDataURL("image/png");a.download="人生後悔度診断_結果.png";a.click();}
+</script>
+</body>
+</html>

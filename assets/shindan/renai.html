@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>恋愛偏差値診断｜あなたの恋の戦闘力は?｜大人の心理学</title>
+<meta name="description" content="10の問いで、あなたの恋愛偏差値を診断。脈の読み方・駆け引き・距離感… あなたの恋の戦闘力は? 無料・登録不要。">
+<meta property="og:title" content="恋愛偏差値診断｜あなたの恋の戦闘力は?">
+<meta property="og:description" content="10の問いであなたの恋愛偏差値を診断。結果をシェアしよう。">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#1a1016;--ink:#fbeef0;--rose:#e6a4b4;--aka:#c4576f;--gold:#D4AF37;--sub:#b39aa2;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:var(--bg);color:var(--ink);font-family:'Noto Sans JP',sans-serif;line-height:1.7;-webkit-text-size-adjust:100%;}
+.wrap{max-width:680px;margin:0 auto;padding:1.5rem 1.2rem 4rem;}
+header{text-align:center;padding:2rem 0 1rem;}
+.brand{font-family:'Noto Serif JP',serif;color:var(--rose);font-size:1rem;letter-spacing:.15em;}
+h1{font-family:'Noto Serif JP',serif;font-size:clamp(1.7rem,5.5vw,2.6rem);margin:.8rem 0;line-height:1.3;}
+.lead{color:var(--sub);font-size:.95rem;}
+.btn{display:inline-block;background:var(--aka);color:#fff;font-weight:700;padding:1rem 2.5rem;border:1px solid var(--aka);border-radius:30px;cursor:pointer;font-size:1.05rem;transition:.25s;text-decoration:none;font-family:'Noto Sans JP',sans-serif;}
+.btn:hover{background:transparent;color:var(--rose);border-color:var(--rose);}
+.btn-ghost{background:transparent;color:var(--rose);border:1px solid var(--rose);}
+.card{background:#241620;border:1px solid rgba(230,164,180,.25);border-radius:14px;padding:1.5rem;margin:1rem 0;}
+.q-num{color:var(--rose);font-size:.85rem;letter-spacing:.1em;margin-bottom:.5rem;}
+.q-text{font-family:'Noto Serif JP',serif;font-weight:500;font-size:1.25rem;margin-bottom:1.4rem;}
+.opt{display:block;width:100%;text-align:left;background:#2e1c28;border:1px solid rgba(251,238,240,.12);color:var(--ink);padding:1rem 1.2rem;border-radius:10px;margin:.6rem 0;cursor:pointer;font-size:1rem;transition:.2s;font-family:inherit;}
+.opt:hover{border-color:var(--rose);background:#3a2433;}
+.progress{height:5px;background:#2e1c28;border-radius:3px;margin:1.5rem 0;overflow:hidden;}
+.bar{height:100%;background:linear-gradient(90deg,var(--aka),var(--rose));width:0;transition:width .4s;}
+.hidden{display:none;}
+#result{text-align:center;}
+.score{font-family:'Noto Serif JP',serif;font-size:clamp(3.5rem,16vw,6rem);color:var(--rose);line-height:1;margin:.3rem 0;font-weight:700;}
+.r-rank{font-family:'Noto Serif JP',serif;font-size:clamp(1.6rem,6vw,2.4rem);color:var(--gold);margin:.3rem 0;}
+.r-sub{color:var(--sub);margin-bottom:1rem;}
+.r-desc{font-family:'Noto Serif JP',serif;text-align:left;line-height:2;margin:1.5rem 0;}
+img#shareImg{max-width:100%;border-radius:12px;margin:1rem 0;}
+canvas{display:none;}
+.share{display:flex;gap:.8rem;justify-content:center;flex-wrap:wrap;margin:1.5rem 0;}
+.foot{text-align:center;color:var(--sub);font-size:.8rem;margin-top:3rem;line-height:1.9;}
+.foot a{color:var(--rose);text-decoration:none;}
+.cross{background:#241620;border:1px solid rgba(212,175,55,.3);border-radius:14px;padding:1.3rem;margin:2rem 0;text-align:center;}
+.cross h3{font-family:'Noto Serif JP',serif;font-size:1.1rem;margin-bottom:.8rem;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">大人の心理学</div>
+    <h1>恋愛偏差値診断</h1>
+    <p class="lead">10の問いで、あなたの恋の戦闘力がわかる</p>
+  </header>
+
+  <section id="intro">
+    <div class="card" style="text-align:center;">
+      <p style="font-family:'Noto Serif JP',serif;font-size:1.1rem;margin-bottom:1.5rem;">
+        脈の読み方、駆け引き、距離感──<br>あなたの恋愛偏差値は、いくつ?
+      </p>
+      <p class="lead" style="margin-bottom:1.8rem;">所要1分・全10問・登録不要</p>
+      <button class="btn" onclick="start()">診断を始める</button>
+    </div>
+  </section>
+
+  <section id="quiz" class="hidden">
+    <div class="progress"><div class="bar" id="bar"></div></div>
+    <div class="card">
+      <div class="q-num" id="qnum"></div>
+      <div class="q-text" id="qtext"></div>
+      <div id="opts"></div>
+    </div>
+  </section>
+
+  <section id="result" class="hidden">
+    <div class="card">
+      <div class="lead">あなたの恋愛偏差値は</div>
+      <div class="score" id="score"></div>
+      <div class="r-rank" id="rank"></div>
+      <div class="r-sub" id="rsub"></div>
+      <canvas id="shareCanvas" width="1080" height="1080"></canvas>
+      <img id="shareImg" alt="診断結果">
+      <div class="r-desc" id="rdesc"></div>
+      <div class="share">
+        <a class="btn" id="xshare" target="_blank" rel="noopener">Xでシェア</a>
+        <button class="btn-ghost btn" onclick="saveImg()">結果画像を保存</button>
+        <button class="btn-ghost btn" onclick="location.reload()">もう一度</button>
+      </div>
+    </div>
+    <div class="cross">
+      <h3>恋の悩みを、心理学で深掘り</h3>
+      <p class="lead" style="margin-bottom:1rem;">脈あり・別れ・復縁・距離感… 恋で使える心理学を音声で</p>
+      <a class="btn" href="https://www.youtube.com/@Otona_Psychology" target="_blank" rel="noopener">大人の心理学 ch を見る</a>
+    </div>
+  </section>
+
+  <div class="foot">
+    <a href="https://www.youtube.com/@Otona_Psychology">大人の心理学</a> ／
+    <a href="https://x.com/SoothingSoothin">X</a> ／
+    <a href="https://toi-suite.vercel.app/">toi-suite</a><br>
+    苦徹成珠 ─ SAMURAI AESTHETICS
+  </div>
+</div>
+
+<script>
+// 10問。各選択肢に恋愛偏差値ポイント(0-10)。合計→偏差値換算(30-75)
+const Q=[
+ {q:"気になる人からのLINE、返信は?",a:[["すぐ返す",3],["少し置いて返す",8],["相手に合わせる",10],["気が向いたとき",5]]},
+ {q:"デートの店選び、どうする?",a:[["相手の好みをリサーチ",10],["定番の人気店",6],["自分の行きたい店",4],["その場で決める",5]]},
+ {q:"相手の脈を感じ取れる?",a:[["仕草や目線でわかる",10],["何となく",6],["言われないとわからない",3],["考えたことない",4]]},
+ {q:"好きな人の前での自分は?",a:[["自然体でいられる",9],["少し緊張する",6],["別人のように固まる",3],["盛ってしまう",5]]},
+ {q:"恋の駆け引き、得意?",a:[["引くタイミングがわかる",10],["たまに使う",7],["苦手で素直すぎる",4],["やったことない",3]]},
+ {q:"相手との適切な距離は?",a:[["近すぎず遠すぎず保てる",10],["つい近づきすぎる",5],["怖くて距離を取る",4],["相手次第",7]]},
+ {q:"既読スルーされたら?",a:[["相手の状況を冷静に考える",10],["少し不安になる",6],["追撃LINEしてしまう",2],["気にしない",7]]},
+ {q:"過去の恋の終わり方は?",a:[["円満に納得して",9],["引きずったが立ち直った",7],["未練が残りがち",4],["いつも振られる",3]]},
+ {q:"相手の本音を引き出せる?",a:[["聞き上手で自然に",10],["努力はする",6],["自分が話しすぎる",3],["踏み込めない",4]]},
+ {q:"恋愛で一番大事にするのは?",a:[["お互いの自立と尊重",10],["ときめきと情熱",7],["安心感と安定",8],["相手に尽くすこと",5]]},
+];
+const RANKS=[
+ {min:70,rank:"恋愛巧者",sub:"S級・恋の達人",desc:"あなたは相手の心を読み、適切な距離を保ちながら関係を育てられる稀有な人。駆け引きも自然体も使い分け、恋を主導できる。注意点は『余裕がありすぎて本気が伝わりにくい』こと。たまには素直に。"},
+ {min:60,rank:"恋愛上級者",sub:"A級・安定の魅力",desc:"脈を読み、相手を尊重できるバランス型。大きな失敗は少なく、信頼を積み上げられる。あと一歩は『勝負どころでの大胆さ』。守りに入りすぎず、ここぞで踏み込めば恋は加速する。"},
+ {min:50,rank:"恋愛中級者",sub:"B級・伸びしろ大",desc:"基本はできているが、不安に飲まれて自滅することも。相手の状況を冷静に捉える練習で一気に伸びる。『追いすぎ』『考えすぎ』を手放せば、あなたの魅力はもっと伝わる。"},
+ {min:40,rank:"恋愛発展途上",sub:"C級・素直さが武器",desc:"駆け引きは苦手でも、その素直さは実は最強の武器。テクニックより『相手をよく見て聞く』だけで偏差値は跳ね上がる。まずは距離感の心理学から学ぼう。"},
+ {min:0,rank:"恋愛ピュア",sub:"D級・無限の伸びしろ",desc:"恋の経験はこれから。でも大丈夫、恋愛は才能ではなく学べる技術。脈の読み方も距離感も、知れば変わる。今日がスタート地点。心理学を味方につけよう。"},
+];
+let idx=0,total=0;
+const $=id=>document.getElementById(id);
+function start(){$("intro").classList.add("hidden");$("quiz").classList.remove("hidden");render();}
+function render(){
+  const q=Q[idx];
+  $("qnum").textContent=`問 ${idx+1} / ${Q.length}`;
+  $("qtext").textContent=q.q;
+  $("bar").style.width=`${(idx/Q.length)*100}%`;
+  const o=$("opts");o.innerHTML="";
+  q.a.forEach(([label,pt])=>{
+    const b=document.createElement("button");b.className="opt";b.textContent=label;
+    b.onclick=()=>{total+=pt;next();};o.appendChild(b);
+  });
+}
+function next(){idx++;if(idx<Q.length)render();else show();}
+function show(){
+  $("bar").style.width="100%";
+  $("quiz").classList.add("hidden");$("result").classList.remove("hidden");
+  // 0-100pt → 偏差値 30-75
+  const max=Q.length*10;
+  const hensa=Math.round(30+(total/max)*45);
+  const r=RANKS.find(x=>hensa>=x.min)||RANKS[RANKS.length-1];
+  $("score").textContent=hensa;
+  $("rank").textContent=r.rank;
+  $("rsub").textContent=r.sub;
+  $("rdesc").textContent=r.desc;
+  drawShare(hensa,r);
+  const text=encodeURIComponent(`私の恋愛偏差値は【${hensa}】${r.rank}でした!\nあなたの恋の戦闘力は?\n#恋愛偏差値診断 #大人の心理学`);
+  $("xshare").href=`https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent(location.href)}`;
+}
+function drawShare(hensa,r){
+  const c=$("shareCanvas"),x=c.getContext("2d");
+  const g=x.createLinearGradient(0,0,0,1080);g.addColorStop(0,"#2e1c28");g.addColorStop(1,"#1a1016");
+  x.fillStyle=g;x.fillRect(0,0,1080,1080);
+  x.strokeStyle="#c4576f";x.lineWidth=6;x.strokeRect(40,40,1000,1000);
+  x.textAlign="center";
+  x.fillStyle="#e6a4b4";x.font="34px 'Noto Serif JP',serif";x.fillText("大人の心理学",540,150);
+  x.fillStyle="#b39aa2";x.font="40px 'Noto Sans JP',sans-serif";x.fillText("私の恋愛偏差値は",540,310);
+  x.fillStyle="#e6a4b4";x.font="bold 220px 'Noto Serif JP',serif";x.fillText(String(hensa),540,560);
+  x.fillStyle="#D4AF37";x.font="bold 80px 'Noto Serif JP',serif";x.fillText(r.rank,540,680);
+  x.fillStyle="#fbeef0";x.font="40px 'Noto Serif JP',serif";x.fillText(r.sub,540,750);
+  x.fillStyle="#cfb8c0";x.font="32px 'Noto Sans JP',sans-serif";wrap(x,r.desc,540,830,920,46);
+  x.fillStyle="#e6a4b4";x.font="32px 'Noto Sans JP',sans-serif";x.fillText("▶ 恋愛偏差値診断 で検索",540,1005);
+  $("shareImg").src=c.toDataURL("image/png");
+}
+function wrap(ctx,text,cx,cy,maxW,lh){
+  const chars=[...text];let line="",y=cy;
+  for(const ch of chars){if(ctx.measureText(line+ch).width>maxW){ctx.fillText(line,cx,y);line=ch;y+=lh;}else line+=ch;}
+  if(line)ctx.fillText(line,cx,y);
+}
+function saveImg(){const a=document.createElement("a");a.href=$("shareCanvas").toDataURL("image/png");a.download="恋愛偏差値診断_結果.png";a.click();}
+</script>
+</body>
+</html>

@@ -127,15 +127,35 @@
     }
     .pillar {
       background: var(--white);
-      padding: 2.5rem 2rem;
       border: 1px solid rgba(44,44,48,0.1);
       transition: all 0.3s;
+      overflow: hidden;
     }
     .pillar:hover {
       transform: translateY(-2px);
       border-color: var(--akabeni);
       box-shadow: 0 8px 24px rgba(44,44,48,0.08);
     }
+    .pillar-img {
+      width: 100%;
+      aspect-ratio: 3 / 2;
+      object-fit: cover;
+      background: #ece7d8;
+      display: block;
+    }
+    .pillar-body { padding: 2rem; }
+    .pillar-tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 0.2rem 0.7rem;
+      border-radius: 2px;
+      margin-bottom: 0.8rem;
+    }
+    .tag-life { background: rgba(212,175,55,0.15); color: #9C7E1A; }
+    .tag-history { background: rgba(44,44,48,0.1); color: #2C2C30; }
+    .tag-love { background: rgba(165,42,42,0.12); color: #A52A2A; }
     .pillar h3 {
       font-family: 'Yuji Boku', 'Noto Serif JP', serif;
       color: var(--ink);
@@ -255,24 +275,40 @@
 
   <section class="pillars">
     <article class="pillar">
-      <h3>6軸自己診断</h3>
-      <p>決断力 / 洞察力 / 大義 / 精神力 / 適応力 / 規律心 / 自己理解 ─ 7 問で「あなたの中の侍」を可視化。</p>
-      <a href="https://toi-suite.vercel.app/#sample">無料で試す</a>
+      <img class="pillar-img" src="pillar_shindan.png" alt="6軸自己診断" loading="lazy">
+      <div class="pillar-body">
+        <span class="pillar-tag tag-life">人生をひらく</span>
+        <h3>6軸自己診断</h3>
+        <p>決断力 / 洞察力 / 大義 / 精神力 / 適応力 / 規律心 / 自己理解 ─ 7 問で、 自分という地図を描く。</p>
+        <a href="https://toi-suite.vercel.app/#sample">無料で試す</a>
+      </div>
     </article>
     <article class="pillar">
-      <h3>200 の問い</h3>
-      <p>心理学・古典・現代思想を侍の視座で再編した、 1 問 100 円から深掘りできる問答集。</p>
-      <a href="https://note.com/happy_happy_4649">note で読む</a>
+      <img class="pillar-img" src="pillar_toi.png" alt="200の問い" loading="lazy">
+      <div class="pillar-body">
+        <span class="pillar-tag tag-life">人生を問う</span>
+        <h3>200 の問い</h3>
+        <p>心理学・古典・現代思想を再編した、 1 問 100 円から深掘りできる自己対話アプリ集。</p>
+        <a href="https://note.com/happy_happy_4649">note で読む</a>
+      </div>
     </article>
     <article class="pillar">
-      <h3>音声ドラマ</h3>
-      <p>島津義弘の捨て奸、 直江兼続の愛 ─ 戦国武将の哲学を現代に翻訳した語り。</p>
-      <a href="https://www.youtube.com/@Japanese.Samurai.Channel">YouTube で聴く</a>
+      <img class="pillar-img" src="pillar_drama.png" alt="音声ドラマ" loading="lazy">
+      <div class="pillar-body">
+        <span class="pillar-tag tag-history">侍の物語</span>
+        <h3>音声ドラマ</h3>
+        <p>島津義弘の捨て奸、 直江兼続の愛 ─ 戦国武将の生き様を、 現代に響く物語として。</p>
+        <a href="https://www.youtube.com/@Japanese.Samurai.Channel">YouTube で聴く</a>
+      </div>
     </article>
     <article class="pillar">
-      <h3>大人の心理学</h3>
-      <p>成熟した悩める大人のための心理学。 深夜の感情、 アタッチメント、 認知バイアス。</p>
-      <a href="https://www.youtube.com/@Otona_Psychology">YouTube で聴く</a>
+      <img class="pillar-img" src="pillar_otona.png" alt="大人の心理学" loading="lazy">
+      <div class="pillar-body">
+        <span class="pillar-tag tag-love">大人の恋と心</span>
+        <h3>大人の心理学</h3>
+        <p>脈ありのサイン、 別れと復縁、 深夜にふと蘇る感情 ─ 恋で使える心理学。</p>
+        <a href="https://www.youtube.com/@Otona_Psychology">YouTube で聴く</a>
+      </div>
     </article>
   </section>
 

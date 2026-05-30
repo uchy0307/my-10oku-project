@@ -230,6 +230,12 @@ log(`thumbnail generated: ${thumbPath} (${thumbSize}B)`);
 if (thumbSize < 10000) fail('thumbnail too small / generation failed');
 
 // ---------- 8. Upload to YouTube ----------
+// 2026-05-30: NO_UPLOAD=1 で build のみ (mp4 ストック化、 投稿しない)。
+// CLAUDE.md「夜間 MP4 事前ストック → cron は投稿のみ」アーキテクチャ用。
+if (process.env.NO_UPLOAD === '1') {
+  log(`[NO_UPLOAD] build complete (stock). output.mp4 + thumbnail.jpg ready at ${WORK}. skipping YouTube upload.`);
+  process.exit(0);
+}
 const { YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET, YOUTUBE_REFRESH_TOKEN } = process.env;
 if (!YOUTUBE_CLIENT_ID || !YOUTUBE_CLIENT_SECRET || !YOUTUBE_REFRESH_TOKEN) {
   fail('YOUTUBE_CLIENT_ID / YOUTUBE_CLIENT_SECRET / YOUTUBE_REFRESH_TOKEN required', 2);

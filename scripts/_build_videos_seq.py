@@ -13,6 +13,7 @@ if sys.stdout is not None and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
 ROOT = Path(__file__).resolve().parent.parent
+NO_UPLOAD = False  # main() で --no-upload により上書き
 
 
 def build_one(kind: str, idx: str) -> bool:
@@ -26,7 +27,10 @@ def build_one(kind: str, idx: str) -> bool:
         raise ValueError(f'unknown kind: {kind}')
     env = os.environ.copy()
     env[env_name] = idx
-    print(f'\n[build] {kind}/{idx} start (ffmpeg encode 30-60min)')
+    # 2026-05-30: --no-upload で build のみ (mp4 ストック、 投稿しない)
+    if NO_UPLOAD:
+        env['NO_UPLOAD'] = '1'
+    print(f'\n[build] {kind}/{idx} start (ffmpeg encode 30-60min){" [NO_UPLOAD/stock]" if NO_UPLOAD else ""}')
     t0 = time.time()
     try:
         proc = subprocess.run(['node', str(pipeline)], env=env, cwd=str(ROOT),
@@ -44,7 +48,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--kind', choices=['history', 'psych'], required=True)
     ap.add_argument('--idxs', required=True, help='comma-separated idx list (e.g. 031,032)')
+    ap.add_argument('--no-upload', action='store_true', help='build のみ (mp4 ストック、 投稿しない)')
     args = ap.parse_args()
+    global NO_UPLOAD
+    NO_UPLOAD = args.no_upload
     idxs = [s.strip() for s in args.idxs.split(',') if s.strip()]
     print(f'[build_seq] kind={args.kind} count={len(idxs)} idxs={idxs}')
     ok, fail = 0, 0

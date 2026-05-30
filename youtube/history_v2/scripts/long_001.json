@@ -51,5 +51,31 @@
     "https://upload.wikimedia.org/wikipedia/commons/0/0c/Kuroda_Nagamasa.jpg",
     "https://upload.wikimedia.org/wikipedia/commons/6/61/Uesugi_Kagekatsu_Portrait_Yonezawa_City_Uesugi_Museum.png",
     "https://upload.wikimedia.org/wikipedia/commons/5/55/Mori_Terumoto.jpg"
-  ]
+  ],
+  "chapter_image_map": {
+    "1": [
+      0,
+      1
+    ],
+    "2": [
+      2,
+      3,
+      4
+    ],
+    "3": [
+      5,
+      6,
+      7
+    ],
+    "4": [
+      8,
+      9,
+      10
+    ],
+    "5": [
+      11,
+      12,
+      13
+    ]
+  }
 }

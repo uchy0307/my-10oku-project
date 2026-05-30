@@ -49,5 +49,29 @@
     "https://commons.wikimedia.org/wiki/Special:FilePath/Tsutsujigasaki-yakata_air.jpg",
     "https://commons.wikimedia.org/wiki/Special:FilePath/Kasugayama_Castle_ruins.JPG",
     "https://commons.wikimedia.org/wiki/Special:FilePath/Furinkazan-banner.png"
-  ]
+  ],
+  "chapter_image_map": {
+    "1": [
+      0,
+      1
+    ],
+    "2": [
+      2,
+      3
+    ],
+    "3": [
+      4,
+      5,
+      6
+    ],
+    "4": [
+      7,
+      8
+    ],
+    "5": [
+      9,
+      10,
+      11
+    ]
+  }
 }

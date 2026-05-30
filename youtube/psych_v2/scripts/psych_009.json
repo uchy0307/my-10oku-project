@@ -41,5 +41,24 @@
     "https://upload.wikimedia.org/wikipedia/commons/d/d6/Western_style_house_of_the_Fujita_Memorial_Garden_20220618c.jpg"
   ],
   "thumbnail_title": "声だけで惹かれる男女の周波数の秘密",
-  "_wiki_article": "ふらいんぐうぃっち"
+  "_wiki_article": "ふらいんぐうぃっち",
+  "chapter_image_map": {
+    "1": [
+      0
+    ],
+    "2": [
+      1
+    ],
+    "3": [
+      2,
+      3
+    ],
+    "4": [
+      4
+    ],
+    "5": [
+      5,
+      6
+    ]
+  }
 }

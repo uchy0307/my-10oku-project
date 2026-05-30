@@ -49,5 +49,29 @@
     "https://commons.wikimedia.org/wiki/Special:FilePath/Kobayakawa_Takakage.jpg",
     "https://commons.wikimedia.org/wiki/Special:FilePath/Nagoya_Castle_Hizen.jpg",
     "https://commons.wikimedia.org/wiki/Special:FilePath/Ulsan_Battle_Folding_Screen.jpg"
-  ]
+  ],
+  "chapter_image_map": {
+    "1": [
+      0,
+      1
+    ],
+    "2": [
+      2,
+      3
+    ],
+    "3": [
+      4,
+      5,
+      6
+    ],
+    "4": [
+      7,
+      8
+    ],
+    "5": [
+      9,
+      10,
+      11
+    ]
+  }
 }

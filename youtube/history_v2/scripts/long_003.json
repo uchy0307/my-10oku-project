@@ -51,5 +51,31 @@
     "https://upload.wikimedia.org/wikipedia/commons/f/fd/Ruins_of_Odaka_Castle_%28Honmaru%29_02%2C_Odaka-cho_Midori_Ward_Nagoya_2014.jpg",
     "https://upload.wikimedia.org/wikipedia/commons/1/15/Statue_of_Oda_Nobuhide_at_Bansh%C5%8D-ji.jpg",
     "https://upload.wikimedia.org/wikipedia/commons/5/53/Ashikaga_Yoshiteru.jpg"
-  ]
+  ],
+  "chapter_image_map": {
+    "1": [
+      0,
+      1
+    ],
+    "2": [
+      2,
+      3,
+      4
+    ],
+    "3": [
+      5,
+      6,
+      7
+    ],
+    "4": [
+      8,
+      9,
+      10
+    ],
+    "5": [
+      11,
+      12,
+      13
+    ]
+  }
 }

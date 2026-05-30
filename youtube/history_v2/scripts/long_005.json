@@ -49,5 +49,29 @@
     "https://upload.wikimedia.org/wikipedia/commons/a/ae/Tone_River_2015.jpg",
     "https://upload.wikimedia.org/wikipedia/commons/1/18/IwatsukiJoUramon.jpg",
     "https://upload.wikimedia.org/wikipedia/commons/c/c1/Satake_Yoshishige_em_uma_cerim%C3%B4nia_das_cabe%C3%A7as_dos_inimigos_derrotados%2C_por_Konkor%C5%8D.jpg"
-  ]
+  ],
+  "chapter_image_map": {
+    "1": [
+      0,
+      1
+    ],
+    "2": [
+      2,
+      3
+    ],
+    "3": [
+      4,
+      5,
+      6
+    ],
+    "4": [
+      7,
+      8
+    ],
+    "5": [
+      9,
+      10,
+      11
+    ]
+  }
 }
